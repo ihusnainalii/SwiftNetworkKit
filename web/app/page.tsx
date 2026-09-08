@@ -5,6 +5,7 @@ import { CodePlayground } from "@/components/CodePlayground";
 import { ConcurrencyVisualizer } from "@/components/ConcurrencyVisualizer";
 import { LibraryComparison } from "@/components/LibraryComparison";
 import { BentoFeatures } from "@/components/BentoFeatures";
+import { RoadmapSection } from "@/components/RoadmapSection";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
 import { ApiExplorer } from "@/components/ApiExplorer";
 import { SpmInstall } from "@/components/SpmInstall";
@@ -30,6 +31,7 @@ export default function Home() {
         <ConcurrencyVisualizer />
         <LibraryComparison />
         <BentoFeatures />
+        <RoadmapSection />
         <MetricsDashboard />
         <ApiExplorer />
         <SpmInstall />

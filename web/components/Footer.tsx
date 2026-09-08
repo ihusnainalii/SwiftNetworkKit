@@ -13,11 +13,11 @@ export function Footer() {
           </div>
           <div>
             <span className="font-bold text-sm text-slate-900 dark:text-white">SwiftNetworkKit</span>
-            <p className="text-xs text-slate-500">Released under Apache-2.0 License</p>
+            <p className="text-xs text-slate-500">Source-available proprietary • Copyright © 2026 Husnain Ali</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400 font-mono">
+        <div className="flex flex-wrap items-center gap-6 text-xs text-slate-600 dark:text-slate-400 font-mono">
           <a
             href="https://github.com/ihusnainalii/SwiftNetworkKit"
             target="_blank"
@@ -30,6 +30,8 @@ export function Footer() {
           <a href="#compare" className="hover:text-slate-900 dark:hover:text-white transition-colors">Compare</a>
           <a href="#pipeline" className="hover:text-slate-900 dark:hover:text-white transition-colors">Pipeline</a>
           <a href="#playground" className="hover:text-slate-900 dark:hover:text-white transition-colors">Code Builder</a>
+          <a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors">Modules</a>
+          <a href="#roadmap" className="hover:text-slate-900 dark:hover:text-white transition-colors">Roadmap</a>
           <a href="#api-reference" className="hover:text-slate-900 dark:hover:text-white transition-colors">API Docs</a>
         </div>
       </div>

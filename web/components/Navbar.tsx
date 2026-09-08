@@ -20,8 +20,8 @@ export function Navbar() {
           <div className="flex flex-col">
             <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
               SwiftNetworkKit
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                v1.0
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-bold">
+                v0.1.0
               </span>
             </span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Swift 6 Strict Concurrency</span>
@@ -29,16 +29,17 @@ export function Navbar() {
         </a>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300">
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
           <a href="#pipeline" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Pipeline</a>
-          <a href="#playground" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Code Builder</a>
+          <a href="#playground" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Playground</a>
           <a href="#concurrency" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Concurrency</a>
-          <a href="#compare" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors flex items-center gap-1.5">
+          <a href="#compare" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors flex items-center gap-1">
             <span>Compare</span>
             <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-mono font-bold">VS</span>
           </a>
           <a href="#features" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Features</a>
           <a href="#api-reference" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">API Docs</a>
+          <a href="#roadmap" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Roadmap</a>
           <a href="#installation" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Install</a>
         </nav>
 
@@ -81,11 +82,12 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden glass-panel mx-4 mb-4 p-4 flex flex-col gap-3">
           <a href="#pipeline" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Request Pipeline</a>
-          <a href="#playground" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Code Builder</a>
+          <a href="#playground" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Code Builder & Playground</a>
           <a href="#concurrency" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Concurrency Visualizer</a>
           <a href="#compare" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1 font-semibold text-orange-600 dark:text-orange-400">Library Comparison (VS)</a>
           <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Features Bento</a>
           <a href="#api-reference" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">API Reference</a>
+          <a href="#roadmap" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Roadmap to 1.0.0</a>
           <a href="#installation" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Installation</a>
         </div>
       )}

@@ -12,9 +12,15 @@ import PackageDescription
 
 let package = Package(
     name: "MyProject",
-    platforms: [.iOS(.v16), .macOS(.v13), .visionOS(.v1)],
+    platforms: [
+        .iOS(.v16),
+        .macOS(.v13),
+        .tvOS(.v16),
+        .watchOS(.v9),
+        .visionOS(.v1)
+    ],
     dependencies: [
-        .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.0.0")
+        .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "0.1.0")
     ],
     targets: [
         .target(
@@ -51,11 +57,11 @@ swift run NetworkKitDemo --offline`;
           Add to Your Project in Seconds
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
-          Install SwiftNetworkKit via Xcode Package Manager, <code className="text-xs text-orange-600 dark:text-orange-300 font-bold">Package.swift</code> manifest, or Swift CLI.
+          Install SwiftNetworkKit via Xcode Package Manager, <code className="text-xs text-orange-600 dark:text-orange-300 font-bold font-mono">Package.swift</code> manifest, or Swift CLI.
         </p>
       </div>
 
-      <div className="max-w-4xl mx-auto glass-panel p-8 bg-white/90 dark:bg-slate-900/70 shadow-xl">
+      <div className="max-w-4xl mx-auto glass-panel p-8 bg-white/90 dark:bg-slate-900/70 shadow-xl rounded-2xl border border-slate-200 dark:border-white/10">
         <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-200 dark:border-white/10">
           <div className="flex items-center gap-6 text-sm font-semibold text-slate-500 dark:text-slate-400">
             <button
@@ -103,7 +109,7 @@ swift run NetworkKitDemo --offline`;
               <code>https://github.com/ihusnainalii/SwiftNetworkKit</code>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Select Dependency Rule: <strong className="text-slate-800 dark:text-slate-200">Up to Next Major Version</strong> starting at <code className="text-orange-600 dark:text-orange-300 font-bold">1.0.0</code>.
+              Select Dependency Rule: <strong className="text-slate-800 dark:text-slate-200">Up to Next Minor Version</strong> starting from <code className="text-orange-600 dark:text-orange-300 font-bold font-mono">0.1.0</code>.
             </p>
           </div>
         )}

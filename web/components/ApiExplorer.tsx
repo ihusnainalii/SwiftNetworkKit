@@ -5,7 +5,7 @@ import { BookOpen, Search } from "lucide-react";
 
 interface ApiItem {
   name: string;
-  category: "core" | "auth" | "retry" | "security" | "connectivity" | "upload" | "testing";
+  category: "core" | "auth" | "oauth" | "cache" | "offline" | "retry" | "security" | "connectivity" | "upload" | "pagination" | "swiftui" | "testing";
   type: string;
   signature: string;
   summary: string;
@@ -16,9 +16,9 @@ const API_SYMBOLS: ApiItem[] = [
   {
     name: "NetworkClient",
     category: "core",
-    type: "Class / Actor-safe",
+    type: "Class / Sendable",
     signature: "public final class NetworkClient: Sendable",
-    summary: "The main networking engine. Manages request dispatching, URLSession lifecycle, token refresh loops, and metrics sinks.",
+    summary: "The main networking engine. Manages request dispatching, URLSession transport lifecycle, actor token refresh loops, caching, and metrics sinks.",
     code: `let client = NetworkClient(configuration: config, refresh: { ... })
 let user: User = try await client.request(GetProfile())`,
   },
@@ -27,7 +27,7 @@ let user: User = try await client.request(GetProfile())`,
     category: "core",
     type: "Protocol",
     signature: "public protocol Endpoint: Sendable",
-    summary: "Protocol declaring an API request. Associates a strongly-typed Decodable Response, HTTPMethod, headers, and AuthRequirement.",
+    summary: "Protocol declaring an API request. Associates a strongly-typed Decodable Response, HTTPMethod, headers, query items, body, and AuthRequirement.",
     code: `struct FetchFeed: Endpoint {
     typealias Response = [FeedItem]
     var path: String { "/feed" }
@@ -39,17 +39,18 @@ let user: User = try await client.request(GetProfile())`,
     category: "core",
     type: "Struct",
     signature: "public struct NetworkConfiguration: Sendable",
-    summary: "Central configuration holding baseURL, default headers, TokenStorage, RetryPolicy, SSLPinning, Interceptors, and Metrics.",
+    summary: "Central configuration holding environment, default headers, TokenStorage, RetryPolicy, SSLPinning, Cache, Concurrency limit, and Logger.",
     code: `var config = NetworkConfiguration(baseURL: "https://api.example.com")
-config.retry = .standard
+config.retry = .default
+config.cache = .memory(policy: .staleWhileRevalidate)
 config.sslPinning = .publicKeys(["sha256/..."])`,
   },
   {
     name: "TokenManager",
     category: "auth",
     type: "Actor",
-    signature: "public actor TokenManager",
-    summary: "Swift Actor managing single-flight 401 refresh token exchanges, caller queueing, loop guards, and Keychain accessibility.",
+    signature: "public actor TokenManager: TokenManaging",
+    summary: "Swift Actor managing single-flight 401 refresh token exchanges, caller queueing, loop guards, and proactive token expiration refresh.",
     code: `let manager = TokenManager(storage: KeychainTokenStorage(service: "app"), refresh: { ... })
 let token = try await manager.validToken()`,
   },
@@ -58,23 +59,52 @@ let token = try await manager.validToken()`,
     category: "auth",
     type: "Class",
     signature: "public final class KeychainTokenStorage: TokenStorage, @unchecked Sendable",
-    summary: "Production-ready iOS/macOS Keychain storage for access and refresh token pairs with customizable kSecAttrAccessible levels.",
-    code: `let storage = KeychainTokenStorage(service: "com.acme.app", accessibility: .afterFirstUnlock)`,
+    summary: "Production iOS/macOS Keychain storage for TokenPair with device-only kSecAttrAccessibleAfterFirstUnlock protection.",
+    code: `let storage = KeychainTokenStorage(service: "com.acme.app", accessibility: .afterFirstUnlockThisDeviceOnly)`,
+  },
+  {
+    name: "AuthorizationCodeFlow",
+    category: "oauth",
+    type: "Struct",
+    signature: "public struct AuthorizationCodeFlow: Sendable",
+    summary: "OAuth 2.0 Authorization Code flow with RFC 7636 PKCE. Generates authorization URLs, exchanges codes, and provides tokenManagerRefreshHandler.",
+    code: `let flow = AuthorizationCodeFlow(configuration: oauthConfig)
+let authURL = flow.authorizationURL(state: state, pkce: pkce)
+let tokens = try await flow.exchange(code: code, pkce: pkce)`,
+  },
+  {
+    name: "DiskCacheStore",
+    category: "cache",
+    type: "Actor",
+    signature: "public actor DiskCacheStore: ResponseCacheStore",
+    summary: "Disk-backed LRU HTTP response cache. Encrypted at rest with .completeFileProtectionUnlessOpen. Honors ETag, 304, and Cache-Control.",
+    code: `config.cache = CacheConfiguration(store: DiskCacheStore(), defaultPolicy: .staleWhileRevalidate, defaultTTL: 300)`,
+  },
+  {
+    name: "FileOfflineStore",
+    category: "offline",
+    type: "Actor",
+    signature: "public actor FileOfflineStore: OfflineRequestStore",
+    summary: "Persisted offline request queue. Encrypted at rest; automatically replays queued endpoints FIFO upon network reconnection.",
+    code: `config.offlineStore = FileOfflineStore()
+for await event in await client.offlineReplayEvents() {
+    print("Replayed: \\(event)")
+}`,
   },
   {
     name: "RetryPolicy",
     category: "retry",
     type: "Struct",
     signature: "public struct RetryPolicy: Sendable",
-    summary: "Configures exponential/constant backoff, full/equal jitter, max attempts, and Retry-After server header compliance.",
-    code: `let policy = RetryPolicy(maxAttempts: 3, backoff: .exponential(initial: 0.5), jitter: .full)`,
+    summary: "Configures exponential/constant backoff, full/equal jitter, idempotency safety, and Retry-After server header compliance.",
+    code: `config.retry = RetryPolicy(maxAttempts: 3, backoff: .exponential(base: 0.5), jitter: .full, respectRetryAfter: true)`,
   },
   {
     name: "SSLPinningConfiguration",
     category: "security",
     type: "Enum",
     signature: "public enum SSLPinningConfiguration: Sendable",
-    summary: "Zero-dependency SSL pinning supporting .certificateResources, SPKI SHA-256 .publicKeys, and .development discovery mode.",
+    summary: "Zero-dependency SSL pinning supporting .certificateResources (.cer/.der), SPKI SHA-256 .publicKeys, and .development discovery mode.",
     code: `config.sslPinning = .publicKeys(["sha256/k2v657xMp4bCWqJaQDZrU3J38RxQL0WPSnguE/9czoq="])`,
   },
   {
@@ -102,13 +132,31 @@ let result: UploadResult = try await client.upload(UploadEndpoint(), from: .mult
 }`,
   },
   {
+    name: "PaginatedEndpoint",
+    category: "pagination",
+    type: "Protocol",
+    signature: "public protocol PaginatedEndpoint: Endpoint",
+    summary: "Protocol defining cursor or page-number based pagination. Conforms seamlessly with client.paginate() AsyncThrowingStream and collectAll().",
+    code: `for try await page in client.paginate(ListUsersEndpoint()) {
+    print("Fetched page with \\(page.count) users")
+}`,
+  },
+  {
+    name: "NetworkResource",
+    category: "swiftui",
+    type: "Class / @Observable",
+    signature: "@Observable public final class NetworkResource<Value>: @unchecked Sendable",
+    summary: "SwiftUI iOS 17+ state holder managing phase (.idle, .loading, .loaded, .failed), value, error, and pull-to-refresh reload().",
+    code: `@State private var user = NetworkResource<User>(client: client)
+// In SwiftUI: await user.load(GetProfile())`,
+  },
+  {
     name: "MockNetworkTransport",
     category: "testing",
-    type: "Testing Utilities",
+    type: "Class",
     signature: "public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable",
-    summary: "Comprehensive testing kit. Mock responses, stub HTTP status codes, simulate network errors, and control time with TestClock.",
-    code: `let mock = MockNetworkTransport()
-mock.register(status: 200, json: "{\\"id\\": 1, \\"name\\": \\"Alice\\"}")
+    summary: "Comprehensive test seam shipping inside the package. Stub JSON models, HTTP status codes, network errors, and MockScenario presets.",
+    code: `let mock = MockNetworkTransport().enqueueJSON(User(id: 1, name: "Ada"), status: 200)
 let client = NetworkClient(configuration: config, transport: mock)`,
   },
 ];
@@ -136,7 +184,7 @@ export function ApiExplorer() {
           Searchable API Reference
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
-          Comprehensive type dictionary for protocols, models, actors, interceptors, and testing utilities.
+          Comprehensive type dictionary for protocols, models, actors, interceptors, cache stores, offline queues, and testing utilities.
         </p>
       </div>
 
@@ -152,15 +200,15 @@ export function ApiExplorer() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {["all", "core", "auth", "retry", "security", "testing"].map((cat) => (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {["all", "core", "auth", "oauth", "cache", "offline", "retry", "security", "upload", "pagination", "swiftui", "testing"].map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all uppercase ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all uppercase ${
                 category === cat
-                  ? "bg-sky-600 text-white"
-                  : "glass-panel text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900/60 shadow-sm"
+                  ? "bg-sky-600 text-white shadow-sm"
+                  : "glass-panel text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900/60 shadow-sm border border-slate-200 dark:border-transparent"
               }`}
             >
               {cat}
@@ -171,7 +219,7 @@ export function ApiExplorer() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filtered.map((item, i) => (
-          <div key={i} className="glass-panel p-6 flex flex-col justify-between hover:border-sky-500/50 transition-all duration-300 bg-white/90 dark:bg-slate-900/70 shadow-lg">
+          <div key={i} className="glass-panel p-6 flex flex-col justify-between hover:border-sky-500/50 transition-all duration-300 bg-white/90 dark:bg-slate-900/70 shadow-lg rounded-2xl">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 font-bold">

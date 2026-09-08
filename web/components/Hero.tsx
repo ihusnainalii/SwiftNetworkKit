@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Terminal, Copy, Check, PlayCircle, GitCompare, ShieldCheck, Lock, RefreshCw } from "lucide-react";
+import { Terminal, Copy, Check, PlayCircle, GitCompare, ShieldCheck, Lock, RefreshCw, Compass } from "lucide-react";
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
@@ -15,7 +15,7 @@ export function Hero() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const codeSample = `// 1. Configure once with Keychain Auth
+  const codeSample = `// 1. Configure once with Keychain Token Storage
 let client = NetworkClient(
     configuration: NetworkConfiguration(
         baseURL: "https://api.example.com",
@@ -23,7 +23,8 @@ let client = NetworkClient(
     ),
     refresh: { storage in
         try await authService.refreshToken(storage.refreshToken())
-    }
+    },
+    onSessionExpired: { await AppRouter.logout() }
 )
 
 // 2. Strongly Typed Protocol-Oriented Endpoint
@@ -33,7 +34,7 @@ struct GetProfile: Endpoint {
     var authentication: AuthRequirement { .required }
 }
 
-// 3. Concurrency-Safe Execution
+// 3. Concurrency-Safe Async Execution
 let user: User = try await client.request(GetProfile())`;
 
   const copyCode = () => {
@@ -51,7 +52,7 @@ let user: User = try await client.request(GetProfile())`;
           
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-panel border border-orange-500/30 text-xs font-semibold text-orange-600 dark:text-orange-400 mb-6 shadow-sm">
             <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-ping"></span>
-            Swift 6 Strict Concurrency Safe • Zero External Dependencies
+            <span>Swift 6 Strict Concurrency • Zero External Dependencies • v0.1.0</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] mb-6 text-slate-900 dark:text-white">
@@ -60,7 +61,7 @@ let user: User = try await client.request(GetProfile())`;
           </h1>
 
           <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 font-normal leading-relaxed mb-8 max-w-2xl">
-            A production-grade, modular networking architecture with <strong className="text-slate-900 dark:text-slate-200">Actor-isolated single-flight 401 token refresh</strong>, <strong className="text-slate-900 dark:text-slate-200">zero-dependency SPKI SSL pinning</strong>, jittered retry engine, redacting logging, and RFC 7578 disk uploads.
+            A production-grade, composable Apple-platform networking layer with <strong className="text-slate-900 dark:text-slate-200">Actor-isolated single-flight 401 token refresh</strong>, <strong className="text-slate-900 dark:text-slate-200">zero-dependency SPKI SSL pinning</strong>, OAuth 2.0 PKCE, persisted offline replay queue, and RFC 7578 disk uploads.
           </p>
 
           {/* SPM Quick Copy Bar */}
@@ -74,7 +75,7 @@ let user: User = try await client.request(GetProfile())`;
               className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-md shadow-orange-600/30"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? "Copied!" : "Copy URL"}</span>
+              <span>{copied ? "Copied!" : "Copy SPM URL"}</span>
             </button>
           </div>
 
@@ -101,7 +102,14 @@ let user: User = try await client.request(GetProfile())`;
               className="px-6 py-3.5 rounded-xl glass-panel hover:border-orange-500/40 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-all shadow-sm"
             >
               <GitCompare className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-              <span>Compare Libraries</span>
+              <span>Compare (vs Alamofire/Moya)</span>
+            </a>
+            <a
+              href="#roadmap"
+              className="px-6 py-3.5 rounded-xl glass-panel hover:border-sky-500/40 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition-all shadow-sm"
+            >
+              <Compass className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+              <span>1.0.0 Roadmap</span>
             </a>
           </div>
 
@@ -109,7 +117,7 @@ let user: User = try await client.request(GetProfile())`;
 
         {/* Right 3D Spatial Code Terminal */}
         <div className="lg:col-span-5">
-          <div className="glass-panel p-6 shadow-2xl relative overflow-hidden border border-slate-200 dark:border-white/15 bg-slate-900 text-slate-100">
+          <div className="glass-panel p-6 shadow-2xl relative overflow-hidden border border-slate-200 dark:border-white/15 bg-slate-900 text-slate-100 rounded-2xl">
             
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
               <div className="flex items-center gap-2">
