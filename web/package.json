@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build && rm -rf ../docs && cp -r out ../docs",
     "start": "next start",
     "lint": "next lint"

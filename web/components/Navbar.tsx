@@ -82,10 +82,10 @@ const INTERACTIVE_LABS: DropdownItem[] = [
   },
   {
     id: "graphs",
-    title: "Caching & Concurrency Graphs",
-    desc: "Two-tier latency waterfall, jitter curves & ROI calculator",
+    title: "Visual Performance Benchmarks",
+    desc: "Simple caching speed, retry backoff & concurrency comparisons",
     href: "#graphs",
-    badge: "Interactive",
+    badge: "Benchmarks",
   },
   {
     id: "metrics",
