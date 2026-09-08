@@ -27,7 +27,6 @@ interface Milestone {
   tag: string;
   title: string;
   category: "core" | "auth_security" | "storage_cache" | "concurrency_streams" | "tooling_frameworks";
-  icon: React.ComponentType<{ className?: string }>;
   summary: string;
   concurrencyModel: string;
   primaryTypes: string[];
@@ -41,7 +40,6 @@ const MILESTONES: Milestone[] = [
     tag: "M0",
     title: "Scaffold & Core Types",
     category: "core",
-    icon: Layers,
     summary: "Package scaffold, immutable value-type models, and protocol-oriented Endpoint DSL under Swift 6 strict concurrency.",
     concurrencyModel: "Immutable Sendable Value Types",
     primaryTypes: ["Endpoint", "HTTPMethod", "Scheme", "RequestBody", "NetworkError", "EmptyResponse"],
@@ -63,7 +61,6 @@ const MILESTONES: Milestone[] = [
     tag: "M1",
     title: "Request Pipeline & Transport Layer",
     category: "core",
-    icon: Zap,
     summary: "Execution engine routing requests through interceptors, URLSession transport, status validation, and typed JSON decoding.",
     concurrencyModel: "Structured Concurrency (async/await)",
     primaryTypes: ["NetworkClient", "NetworkTransport", "URLSessionTransport", "RequestBuilder"],
@@ -81,7 +78,6 @@ let profile: UserProfile = try await client.request(GetProfileEndpoint())`
     tag: "M2",
     title: "Auth Strategies & Actor TokenManager",
     category: "auth_security",
-    icon: Lock,
     summary: "Single-flight token refresh actor with caller deduplication, loop prevention, and hardware-backed Keychain storage.",
     concurrencyModel: "Isolated Swift Actor (TokenManager)",
     primaryTypes: ["TokenManager", "AuthStrategy", "BearerAuth", "APIKeyAuth", "KeychainTokenStorage"],
@@ -103,7 +99,6 @@ let profile: UserProfile = try await client.request(GetProfileEndpoint())`
     tag: "M3",
     title: "Retry Engine, Backoff & Rate Limiting",
     category: "storage_cache",
-    icon: RefreshCw,
     summary: "Configurable exponential backoff with full/equal jitter and strict RFC 6585 HTTP 429 Retry-After header compliance.",
     concurrencyModel: "Pure Sendable Functions & Clocks",
     primaryTypes: ["RetryPolicy", "ExponentialBackoff", "JitterStrategy", "ContinuousClockAdapter"],
@@ -124,7 +119,6 @@ let profile: UserProfile = try await client.request(GetProfileEndpoint())`
     tag: "M4",
     title: "Observability, Interceptors & Redacting Logger",
     category: "concurrency_streams",
-    icon: Eye,
     summary: "Bidirectional request/response interception, correlation trace propagation, metrics collection, and zero-leak PII redaction.",
     concurrencyModel: "@TaskLocal TraceContext + InMemoryMetrics Actor",
     primaryTypes: ["RequestInterceptor", "ResponseInterceptor", "RedactingLogger", "TraceContext", "MetricsCollector"],
@@ -145,7 +139,6 @@ let config = NetworkConfiguration(baseURL: url, logger: logger)`
     tag: "M5",
     title: "SSL & SPKI Certificate Pinning",
     category: "auth_security",
-    icon: Shield,
     summary: "Subject Public Key Info (SPKI) SHA-256 hash pinning preventing certificate expiration lockouts and MitM attacks.",
     concurrencyModel: "Thread-Safe URLSessionDelegate Bridge",
     primaryTypes: ["SSLPinningConfiguration", "SPKIPinningDelegate", "PinnedCertificate"],
@@ -167,7 +160,6 @@ let config = NetworkConfiguration(baseURL: url, logger: logger)`
     tag: "M6",
     title: "Connectivity & Reachability Engine",
     category: "concurrency_streams",
-    icon: Wifi,
     summary: "Real-time network path monitoring over Network.framework NWPathMonitor with AsyncStream broadcasting.",
     concurrencyModel: "NWPathMonitor + AsyncStream Bridge",
     primaryTypes: ["NetworkMonitor", "PathNetworkMonitor", "NetworkStatus", "ConnectionType"],
@@ -187,7 +179,6 @@ for await status in monitor.statusStream {
     tag: "M7",
     title: "Multipart Form, Upload & Download Progress",
     category: "concurrency_streams",
-    icon: UploadCloud,
     summary: "RFC 7578 multipart/form-data encoding and non-blocking upload/download byte progress streams.",
     concurrencyModel: "AsyncThrowingStream Byte Progress",
     primaryTypes: ["MultipartFormData", "ProgressEvent", "UploadRequest", "DownloadProgressEvent"],
@@ -206,7 +197,6 @@ for await status in monitor.statusStream {
     tag: "M8",
     title: "Policy-Driven HTTP Response Caching",
     category: "storage_cache",
-    icon: HardDrive,
     summary: "Two-tier Memory and Disk caching with SHA-256 cache keys, TTL management, and RFC 7234 Cache-Control validation.",
     concurrencyModel: "Isolated Actors (DiskCacheStore & MemoryCacheStore)",
     primaryTypes: ["CachePolicy", "ResponseCache", "DiskCacheStore", "MemoryCacheStore", "CachedResponse"],
@@ -225,7 +215,6 @@ endpoint.cachePolicy = .returnCacheDataElseLoad`
     tag: "M9",
     title: "Request Lifecycle, Deduplication & Priority",
     category: "core",
-    icon: GitMerge,
     summary: "In-flight GET request collapsing, priority-based execution queueing, and string RequestID cancellation registry.",
     concurrencyModel: "Actor RequestDeduplicator + PriorityTaskQueue",
     primaryTypes: ["RequestDeduplicator", "PriorityTaskQueue", "RequestRegistry", "RequestPriority", "RequestID"],
@@ -243,7 +232,6 @@ let profile = try await client.request(GetProfileEndpoint())`
     tag: "M10",
     title: "OAuth 2.0 PKCE Engine",
     category: "auth_security",
-    icon: KeyRound,
     summary: "Full RFC 7636 Proof Key for Code Exchange (PKCE) implementation with SHA-256 code challenge generation and token exchange.",
     concurrencyModel: "CryptoKit Hardware-Accelerated SHA-256",
     primaryTypes: ["AuthorizationCodeFlow", "PKCEChallenge", "TokenResponse", "TokenPair"],
@@ -266,7 +254,6 @@ let profile = try await client.request(GetProfileEndpoint())`
     tag: "M11",
     title: "Persisted Offline Request Queue",
     category: "storage_cache",
-    icon: Database,
     summary: "Disk-persisted FIFO request spooling with automatic background replay when network connectivity is restored.",
     concurrencyModel: "Isolated Actor (OfflineRequestQueue)",
     primaryTypes: ["OfflineRequestQueue", "OfflineStore", "FileOfflineStore", "QueuedRequest"],
@@ -288,7 +275,6 @@ let queueID = try await offlineQueue.enqueue(CreateCommentEndpoint(text: "Hello"
     tag: "M12",
     title: "AsyncSequence Pagination & Parallel Batching",
     category: "concurrency_streams",
-    icon: ListOrdered,
     summary: "Cursor and offset-based pagination over Swift AsyncSequence, plus parallel TaskGroup batch execution.",
     concurrencyModel: "TaskGroup + AsyncSequence Streams",
     primaryTypes: ["PaginatedEndpoint", "PageCursor", "ParallelBatchRunner"],
@@ -307,7 +293,6 @@ let queueID = try await offlineQueue.enqueue(CreateCommentEndpoint(text: "Hello"
     tag: "M13",
     title: "Test Doubles, Stubs & Mock Scenarios",
     category: "tooling_frameworks",
-    icon: FlaskConical,
     summary: "Built-in, zero-flakiness mock transport, URLProtocol interceptors, and scenario matchers shipped directly in package.",
     concurrencyModel: "Thread-Safe Mock Transport Isolation",
     primaryTypes: ["MockNetworkTransport", "MockURLProtocol", "MockScenario", "RequestMatcher"],
@@ -330,7 +315,6 @@ let queueID = try await offlineQueue.enqueue(CreateCommentEndpoint(text: "Hello"
     tag: "M14",
     title: "Combine Publishers & SwiftUI @Observable",
     category: "tooling_frameworks",
-    icon: Sparkles,
     summary: "Opt-in Combine publishers and iOS 17+ @Observable load state holders with pull-to-refresh and lifecycle integration.",
     concurrencyModel: "@MainActor + Observation Framework",
     primaryTypes: ["NetworkResource", "LoadState", "Paged", "AnyPublisher"],
@@ -353,6 +337,43 @@ final class ProfileViewModel {
 }`
   }
 ];
+
+function MilestoneIcon({ id, className = "w-4 h-4" }: { id: string; className?: string }) {
+  switch (id) {
+    case "m0":
+      return <Layers className={className} />;
+    case "m1":
+      return <Zap className={className} />;
+    case "m2":
+      return <Lock className={className} />;
+    case "m3":
+      return <RefreshCw className={className} />;
+    case "m4":
+      return <Eye className={className} />;
+    case "m5":
+      return <Shield className={className} />;
+    case "m6":
+      return <Wifi className={className} />;
+    case "m7":
+      return <UploadCloud className={className} />;
+    case "m8":
+      return <HardDrive className={className} />;
+    case "m9":
+      return <GitMerge className={className} />;
+    case "m10":
+      return <KeyRound className={className} />;
+    case "m11":
+      return <Database className={className} />;
+    case "m12":
+      return <ListOrdered className={className} />;
+    case "m13":
+      return <FlaskConical className={className} />;
+    case "m14":
+      return <Sparkles className={className} />;
+    default:
+      return <Cpu className={className} />;
+  }
+}
 
 export function MilestonesSection() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -416,7 +437,6 @@ export function MilestonesSection() {
         {/* Left Column: Milestone List */}
         <div className="lg:col-span-5 space-y-2.5 max-h-[680px] overflow-y-auto pr-2 custom-scrollbar">
           {filtered.map((m) => {
-            const Icon = m.icon;
             const isActive = m.id === activeMilestone.id;
             return (
               <button
@@ -436,7 +456,7 @@ export function MilestonesSection() {
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <MilestoneIcon id={m.id} className="w-4 h-4" />
                   </div>
                   <div className="truncate">
                     <div className="flex items-center gap-2">
@@ -467,7 +487,7 @@ export function MilestonesSection() {
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-200 dark:border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-md">
-                {React.createElement(activeMilestone.icon, { className: "w-5 h-5" })}
+                <MilestoneIcon id={activeMilestone.id} className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">

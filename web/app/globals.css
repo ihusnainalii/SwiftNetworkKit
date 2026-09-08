@@ -77,6 +77,20 @@ body {
   background: rgba(148, 163, 184, 0.55);
 }
 
+/* Hide Next.js dev logo / badge / indicators */
+#__next-build-watcher,
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+[data-nextjs-dev-overlay],
+div[class*="nextjs-toast"],
+div[class*="nextjs-dev-indicator"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
 /* Antigravity Spatial Canvas & Mesh Gradients */
 .antigravity-bg {
   position: fixed;

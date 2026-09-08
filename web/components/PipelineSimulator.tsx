@@ -10,7 +10,10 @@ import {
   Terminal,
   Check,
   UploadCloud,
-  DownloadCloud
+  DownloadCloud,
+  KeyRound,
+  Database,
+  HardDrive
 } from "lucide-react";
 
 interface Step {
@@ -94,7 +97,7 @@ export function PipelineSimulator() {
   const [passedSteps, setPassedSteps] = useState<number[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([
-    "Select a scenario above to simulate the live networking packet flow...",
+    "Select any architectural scenario below to simulate the live networking packet pipeline...",
   ]);
 
   const activeStep = PIPELINE_STEPS[activeIndex];
@@ -105,18 +108,18 @@ export function PipelineSimulator() {
     setPassedSteps((prev) => (prev.includes(index) ? prev : [...prev, index]));
   };
 
-  const runScenario = async (type: "success" | "auth" | "retry" | "drop" | "upload" | "download") => {
+  const runScenario = async (type: "success" | "auth" | "retry" | "drop" | "upload" | "download" | "oauth" | "offline" | "cache") => {
     if (isRunning) return;
     setIsRunning(true);
     setPassedSteps([]);
-    setLogs([`🚀 Initializing request simulation: [${type.toUpperCase()}]...`]);
+    setLogs([`🚀 Initializing pipeline simulation: [${type.toUpperCase()}]...`]);
 
     if (type === "success") {
       for (let i = 0; i < PIPELINE_STEPS.length; i++) {
         setActiveIndex(i);
         setLogs((prev) => [...prev, `➔ Step ${i + 1}: ${PIPELINE_STEPS[i].title} - Completed`]);
         markPassed(i);
-        await sleep(400);
+        await sleep(350);
       }
       setLogs((prev) => [...prev, "✅ HTTP 200 OK: UserProfile successfully received & decoded in 42ms"]);
     } else if (type === "auth") {
@@ -232,25 +235,21 @@ export function PipelineSimulator() {
       await sleep(300);
       setLogs((prev) => [...prev, "✅ Request recovered after network reconnection!"]);
     } else if (type === "upload") {
-      // 1. Endpoint
       setActiveIndex(0);
       markPassed(0);
       setLogs((prev) => [...prev, "➔ Step 1: UploadMediaEndpoint configured with MultipartFormData (Boundary: SwiftNetworkKit-Boundary-491)"]);
       await sleep(350);
 
-      // 2. Interceptor
       setActiveIndex(1);
       markPassed(1);
-      setLogs((prev) => [...prev, "➔ Step 2: RequestInterceptors attached Content-Type: multipart/form-data & Content-Length: 480,219,300 (480 MB)"]);
+      setLogs((prev) => [...prev, "➔ Step 2: RequestInterceptors attached Content-Type: multipart/form-data & Content-Length: 480 MB"]);
       await sleep(350);
 
-      // 3. Token
       setActiveIndex(2);
       markPassed(2);
       setLogs((prev) => [...prev, "➔ Step 3: TokenManager injected Bearer auth header from Keychain"]);
       await sleep(350);
 
-      // 4. Transport Stream
       setActiveIndex(3);
       markPassed(3);
       setLogs((prev) => [...prev, "➔ Step 4: DiskUploadStream initialized with zero RAM memory footprint (Streaming from disk tempfile)..."]);
@@ -262,49 +261,41 @@ export function PipelineSimulator() {
       setLogs((prev) => [...prev, "📤 Uploading: [████████████████] 100% (480 MB complete)"]);
       await sleep(350);
 
-      // 5. Retry
       setActiveIndex(4);
       markPassed(4);
       setLogs((prev) => [...prev, "➔ Step 5: RetryEngine verified idempotency token tx_upload_8891"]);
       await sleep(300);
 
-      // 6. Response Interceptors
       setActiveIndex(5);
       markPassed(5);
       setLogs((prev) => [...prev, "➔ Step 6: Server confirmed HTTP 201 Created (ETag: 7f8a920b)"]);
       await sleep(300);
 
-      // 7. Decode
       setActiveIndex(6);
       markPassed(6);
       setLogs((prev) => [...prev, "➔ Step 7: Decoded UploadReceipt struct (URL: https://cdn.myapp.com/raw/4k_video.mov)"]);
       await sleep(300);
 
-      // 8. Metrics
       setActiveIndex(7);
       markPassed(7);
       await sleep(300);
       setLogs((prev) => [...prev, "✅ 480 MB File uploaded successfully with 0 MB memory leak!"]);
     } else if (type === "download") {
-      // 1. Endpoint
       setActiveIndex(0);
       markPassed(0);
       setLogs((prev) => [...prev, "➔ Step 1: DownloadAssetEndpoint constructed for /v1/models/ai-core.bin (128 MB)"]);
       await sleep(350);
 
-      // 2. Interceptor
       setActiveIndex(1);
       markPassed(1);
       setLogs((prev) => [...prev, "➔ Step 2: Injected Range header: bytes=0- & Accept-Encoding: gzip, br"]);
       await sleep(350);
 
-      // 3. Token
       setActiveIndex(2);
       markPassed(2);
       setLogs((prev) => [...prev, "➔ Step 3: TokenManager verified session credentials"]);
       await sleep(350);
 
-      // 4. Transport Stream
       setActiveIndex(3);
       markPassed(3);
       setLogs((prev) => [...prev, "➔ Step 4: URLSessionDownloadTask streaming raw chunks to disk sandbox..."]);
@@ -316,29 +307,130 @@ export function PipelineSimulator() {
       setLogs((prev) => [...prev, "📥 Downloading: [████████████████] 100% (128 MB complete)"]);
       await sleep(350);
 
-      // 5. Retry
       setActiveIndex(4);
       markPassed(4);
       setLogs((prev) => [...prev, "➔ Step 5: Resume token verified without network disconnects"]);
       await sleep(300);
 
-      // 6. Response Interceptors
       setActiveIndex(5);
       markPassed(5);
       setLogs((prev) => [...prev, "➔ Step 6: SHA-256 Checksum verified: 8f2b7a90... (Integrity Valid)"]);
       await sleep(300);
 
-      // 7. Destination Move
       setActiveIndex(6);
       markPassed(6);
       setLogs((prev) => [...prev, "➔ Step 7: Atomically moved temp file to Library/Caches/ai-core.bin"]);
       await sleep(300);
 
-      // 8. Metrics
       setActiveIndex(7);
       markPassed(7);
       await sleep(300);
       setLogs((prev) => [...prev, "✅ 128 MB Asset downloaded in 1.4s (91.4 MB/s throughput)!"]);
+    } else if (type === "oauth") {
+      setActiveIndex(0);
+      markPassed(0);
+      setLogs((prev) => [...prev, "➔ Step 1: AuthorizationCodeFlow initialized with RFC 7636 PKCE"]);
+      await sleep(350);
+
+      setActiveIndex(1);
+      markPassed(1);
+      setLogs((prev) => [...prev, "➔ Step 2: Generated 128-byte high-entropy code verifier & computed Base64URL SHA-256 challenge"]);
+      await sleep(350);
+
+      setActiveIndex(2);
+      markPassed(2);
+      setLogs((prev) => [...prev, "➔ Step 3: ASWebAuthenticationSession received auth code from identity provider"]);
+      await sleep(400);
+
+      setActiveIndex(3);
+      markPassed(3);
+      setLogs((prev) => [...prev, "➔ Step 4: Token endpoint exchange: Sending code + code_verifier over TLS"]);
+      await sleep(400);
+
+      setActiveIndex(5);
+      markPassed(4);
+      markPassed(5);
+      setLogs((prev) => [...prev, "➔ Step 6: Server validated PKCE challenge and issued TokenPair (Access + Refresh)"]);
+      await sleep(300);
+
+      setActiveIndex(6);
+      markPassed(6);
+      setLogs((prev) => [...prev, "➔ Step 7: TokenPair securely committed to KeychainTokenStorage"]);
+      await sleep(300);
+
+      setActiveIndex(7);
+      markPassed(7);
+      await sleep(300);
+      setLogs((prev) => [...prev, "✅ OAuth 2.0 PKCE completed! Application is authorized with zero credential leaks."]);
+    } else if (type === "offline") {
+      setActiveIndex(0);
+      markPassed(0);
+      setLogs((prev) => [...prev, "➔ Step 1: PostCommentEndpoint initialized with offlineBehavior: .queue"]);
+      await sleep(350);
+
+      setActiveIndex(1);
+      markPassed(1);
+      setLogs((prev) => [...prev, "➔ Step 2: NetworkMonitor reports .unsatisfied (Device offline)"]);
+      await sleep(350);
+
+      setActiveIndex(2);
+      markPassed(2);
+      setLogs((prev) => [...prev, "➔ Step 3: OfflineRequestQueue Actor spooled request to encrypted FileOfflineStore"]);
+      await sleep(400);
+
+      setLogs((prev) => [...prev, "📦 Stored in FIFO spool (UUID: 9E4A1B8F-3382). UI updated optimistically."]);
+      await sleep(700);
+
+      setLogs((prev) => [...prev, "📶 Network Reconnected! PathNetworkMonitor triggers automatic queue drain..."]);
+      await sleep(400);
+
+      setActiveIndex(3);
+      markPassed(3);
+      setLogs((prev) => [...prev, "➔ Step 4: Replaying spooled POST request in FIFO topological order"]);
+      await sleep(350);
+
+      setActiveIndex(5);
+      markPassed(4);
+      markPassed(5);
+      setLogs((prev) => [...prev, "➔ Step 6: Server confirmed HTTP 201 Created"]);
+      await sleep(300);
+
+      setActiveIndex(6);
+      markPassed(6);
+      await sleep(300);
+
+      setActiveIndex(7);
+      markPassed(7);
+      await sleep(300);
+      setLogs((prev) => [...prev, "✅ Offline queue drained: Comment published with 0 user intervention!"]);
+    } else if (type === "cache") {
+      setActiveIndex(0);
+      markPassed(0);
+      setLogs((prev) => [...prev, "➔ Step 1: GetNewsFeedEndpoint requested with cachePolicy: .returnCacheDataElseLoad"]);
+      await sleep(350);
+
+      setActiveIndex(1);
+      markPassed(1);
+      setLogs((prev) => [...prev, "➔ Step 2: ResponseCache checked MemoryCacheStore & DiskCacheStore for SHA-256 key"]);
+      await sleep(350);
+
+      setActiveIndex(2);
+      markPassed(2);
+      setLogs((prev) => [...prev, "➔ Step 3: Valid cached entry found (TTL: 240s remaining, ETag: 88fa01)"]);
+      await sleep(300);
+
+      setActiveIndex(6);
+      markPassed(3);
+      markPassed(4);
+      markPassed(5);
+      markPassed(6);
+      setLogs((prev) => [...prev, "➔ Step 7: Fast-path decode: Cached binary payload loaded directly from disk in 1.8ms (0 network calls)"]);
+      await sleep(300);
+
+      setActiveIndex(7);
+      markPassed(7);
+      await sleep(300);
+      setLogs((prev) => [...prev, "✅ Instant Cache Hit! 0 KB cellular bandwidth used, 1.8ms latency."]);
     }
 
     setIsRunning(false);
@@ -354,64 +446,91 @@ export function PipelineSimulator() {
           Visual Request Lifecycle & Pipeline
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
-          Step through how SwiftNetworkKit processes requests across actors, interceptors, secure token caches, SSL trust evaluators, and decoding pipelines.
+          Step through how SwiftNetworkKit processes requests across actors, interceptors, secure token caches, SSL trust evaluators, offline spools, and decoding pipelines.
         </p>
       </div>
 
-      {/* Scenarios (6 Realistic Scenarios including Upload & Download) */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5 mb-10">
+      {/* Scenarios Grid (9 Realistic Architecture Scenarios) */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
         <button
           onClick={() => runScenario("success")}
           disabled={isRunning}
-          className="px-3.5 py-2 rounded-xl glass-panel hover:border-emerald-500/50 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-emerald-500/50 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
         >
-          <CheckCircle className="w-4 h-4" />
+          <CheckCircle className="w-3.5 h-3.5" />
           <span>Standard 200 OK</span>
+        </button>
+
+        <button
+          onClick={() => runScenario("oauth")}
+          disabled={isRunning}
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-sky-500/50 text-xs font-semibold text-sky-600 dark:text-sky-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          <span>OAuth 2.0 PKCE Flow</span>
+        </button>
+
+        <button
+          onClick={() => runScenario("cache")}
+          disabled={isRunning}
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-teal-500/50 text-xs font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+        >
+          <HardDrive className="w-3.5 h-3.5" />
+          <span>Two-Tier Cache Hit</span>
+        </button>
+
+        <button
+          onClick={() => runScenario("offline")}
+          disabled={isRunning}
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-indigo-500/50 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+        >
+          <Database className="w-3.5 h-3.5" />
+          <span>Offline Spool & Replay</span>
         </button>
 
         <button
           onClick={() => runScenario("upload")}
           disabled={isRunning}
-          className="px-3.5 py-2 rounded-xl glass-panel hover:border-indigo-500/50 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-purple-500/50 text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
         >
-          <UploadCloud className="w-4 h-4" />
-          <span>RFC 7578 Streaming Disk Upload</span>
+          <UploadCloud className="w-3.5 h-3.5" />
+          <span>Streaming Disk Upload</span>
         </button>
 
         <button
           onClick={() => runScenario("download")}
           disabled={isRunning}
-          className="px-3.5 py-2 rounded-xl glass-panel hover:border-teal-500/50 text-xs font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-blue-500/50 text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
         >
-          <DownloadCloud className="w-4 h-4" />
+          <DownloadCloud className="w-3.5 h-3.5" />
           <span>Chunked Asset Download</span>
         </button>
 
         <button
           onClick={() => runScenario("auth")}
           disabled={isRunning}
-          className="px-3.5 py-2 rounded-xl glass-panel hover:border-sky-500/50 text-xs font-semibold text-sky-600 dark:text-sky-400 flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-amber-500/50 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5" />
           <span>401 Token Refresh</span>
         </button>
 
         <button
           onClick={() => runScenario("retry")}
           disabled={isRunning}
-          className="px-3.5 py-2 rounded-xl glass-panel hover:border-amber-500/50 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-orange-500/50 text-xs font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
         >
-          <Timer className="w-4 h-4" />
+          <Timer className="w-3.5 h-3.5" />
           <span>503 Jitter Backoff</span>
         </button>
 
         <button
           onClick={() => runScenario("drop")}
           disabled={isRunning}
-          className="px-3.5 py-2 rounded-xl glass-panel hover:border-rose-500/50 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-2 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
+          className="px-3 py-1.5 rounded-xl glass-panel hover:border-rose-500/50 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm bg-white dark:bg-slate-900/60"
         >
-          <WifiOff className="w-4 h-4" />
-          <span>Network Drop & Reconnect</span>
+          <WifiOff className="w-3.5 h-3.5" />
+          <span>Network Reconnect</span>
         </button>
       </div>
 

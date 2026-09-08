@@ -15,7 +15,10 @@ import {
   Terminal,
   AlertCircle,
   Plus,
-  Trash2
+  Trash2,
+  Shield,
+  HardDrive,
+  Database
 } from "lucide-react";
 
 interface HeaderItem {
@@ -65,7 +68,7 @@ const PRESET_ENDPOINTS = [
       { key: "Content-Type", value: "application/json", enabled: true },
       { key: "Accept", value: "application/json", enabled: true }
     ],
-    body: JSON.stringify({ name: "Husnain", package: "SwiftNetworkKit", version: "1.0.0" }, null, 2),
+    body: JSON.stringify({ name: "Husnain", package: "SwiftNetworkKit", version: "0.1.0" }, null, 2),
     modelName: "EchoPayloadResponse"
   }
 ];
@@ -141,6 +144,8 @@ export function CodePlayground() {
   const [auth, setAuth] = useState<"bearer" | "apiKey" | "basic" | "none">("none");
   const [retry, setRetry] = useState<"standard" | "aggressive" | "none">("standard");
   const [ssl, setSsl] = useState<"spki" | "disabled">("spki");
+  const [cache, setCache] = useState<"returnCacheDataElseLoad" | "reloadRevalidating" | "none">("none");
+  const [offline, setOffline] = useState<"fail" | "queue">("fail");
   const [logging, setLogging] = useState<"verbose" | "basic" | "none">("verbose");
 
   // Output tabs
@@ -233,7 +238,7 @@ export function CodePlayground() {
   };
 
   // URL Parser for Swift Endpoint
-  let parsedUrl: URL;
+  let parsedUrl: URL | null = null;
   let origin = "https://api.example.com";
   let pathname = "/v1/resource";
   let searchParams: [string, string][] = [];
@@ -255,10 +260,6 @@ import Foundation
 public struct ${modelName}Endpoint: Endpoint {
     public typealias Response = ${modelName}
     
-    public var baseURL: URL {
-        URL(string: "${origin}")!
-    }
-    
     public var path: String {
         "${pathname}"
     }
@@ -267,13 +268,27 @@ public struct ${modelName}Endpoint: Endpoint {
         .${method.toLowerCase()}
     }
     
-    public var authRequirement: AuthRequirement {
+    public var authentication: AuthRequirement {
         .${auth === "none" ? "none" : "required"}
     }
 ${
+  cache !== "none"
+    ? `
+    public var cachePolicy: CachePolicy? {
+        .${cache}
+    }`
+    : ""
+}${
+  offline === "queue"
+    ? `
+    public var offlineBehavior: OfflineBehavior {
+        .queue
+    }`
+    : ""
+}${
   headers.filter((h) => h.enabled && h.key.trim()).length > 0
     ? `
-    public var headers: [String: String] {
+    public var headers: HTTPHeaders {
         [
 ${headers
   .filter((h) => h.enabled && h.key.trim())
@@ -285,7 +300,7 @@ ${headers
 }${
   searchParams.length > 0
     ? `
-    public var queryParameters: [String: Any]? {
+    public var queryParameters: QueryParameters? {
         [
 ${searchParams.map(([k, v]) => `            "${k}": "${v}"`).join(",\n")}
         ]
@@ -318,30 +333,42 @@ ${reqBody}
 // 2. Initialize NetworkClient
 var config = NetworkConfiguration(
     baseURL: URL(string: "${origin}")!,
-    headers: ["User-Agent": "MyiOSApp/1.0"]
+    defaultHeaders: ["User-Agent": "MyiOSApp/1.0"]
 )
 
 ${
   auth === "bearer"
     ? `config.tokenStorage = KeychainTokenStorage(service: "com.myapp.auth")`
     : auth === "apiKey"
-    ? `config.headers["X-API-Key"] = "sk_live_sample"`
-    : `// No Authorization header required (.none)`
+    ? `config.defaultHeaders["X-API-Key"] = "sk_live_sample"`
+    : `// Public endpoint without auth`
 }
 ${
   retry === "standard"
-    ? `config.retryPolicy = ExponentialBackoffPolicy(maxAttempts: 3, fullJitter: true)`
+    ? `config.retry = .standard // Exponential backoff + full jitter + Retry-After`
     : retry === "aggressive"
-    ? `config.retryPolicy = ExponentialBackoffPolicy(maxAttempts: 5, fullJitter: true)`
-    : `config.retryPolicy = .none`
+    ? `config.retry = RetryPolicy(maxRetries: 5, backoff: .exponential(initialDelay: 0.5, maxDelay: 10.0, jitter: .full))`
+    : `config.retry = .none`
+}
+${
+  cache !== "none"
+    ? `config.cache = CacheConfiguration(store: DiskCacheStore(), defaultPolicy: .${cache})`
+    : `// Caching disabled`
+}
+${
+  offline === "queue"
+    ? `config.offlineStore = FileOfflineStore()`
+    : `// Offline queueing disabled`
 }
 ${
   ssl === "spki"
     ? `// SPKI SHA-256 Public Key Pinning (Renewal-safe)
-config.sslPinning = .spkiSHA256(["sha256/9kE7yZ6W+V2r0x7G3h5...="])`
-    : `config.sslPinning = .disabled`
+config.sslPinning = SSLPinningConfiguration(
+    pinnedHashes: ["${parsedUrl?.host || "api.example.com"}": ["sha256/9kE7yZ6W+V2r0x7G3h5...="]]
+)`
+    : `// SSL Pinning disabled`
 }
-config.logLevel = .${logging}
+config.logger = RedactingLogger(rules: RedactionRule.standardRules, logLevel: .${logging})
 
 let client = NetworkClient(configuration: config)`;
 
@@ -352,12 +379,14 @@ do {
     print("Received typed response: \\(result)")
 } catch let error as NetworkError {
     switch error {
-    case .unauthorized:
-        print("Session expired or token invalid")
+    case .unauthorized(let reason):
+        print("Unauthorized: \\(reason ?? "Token expired")")
     case .sslPinningFailed(let host):
         print("Security warning: SSL pin mismatch on \\(host)")
-    case .httpError(let statusCode, _):
-        print("HTTP Error \\(statusCode)")
+    case .httpError(let statusCode, _, let context):
+        print("HTTP Error \\(statusCode) on \\(context.requestURL)")
+    case .offline:
+        print("Device is offline")
     default:
         print("Network request failed: \\(error.localizedDescription)")
     }
@@ -573,6 +602,35 @@ ${callSwift}`;
                   <option value="standard">Exponential + Jitter</option>
                   <option value="aggressive">Aggressive (5x)</option>
                   <option value="none">Disabled (.none)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Cache Strategy
+                </label>
+                <select
+                  value={cache}
+                  onChange={(e) => setCache(e.target.value as any)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1.5 font-mono text-slate-800 dark:text-slate-200"
+                >
+                  <option value="none">None (Live Hop)</option>
+                  <option value="returnCacheDataElseLoad">Cache Else Load</option>
+                  <option value="reloadRevalidating">Revalidate Cache</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Offline Behavior
+                </label>
+                <select
+                  value={offline}
+                  onChange={(e) => setOffline(e.target.value as any)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1.5 font-mono text-slate-800 dark:text-slate-200"
+                >
+                  <option value="fail">Fail Fast (.fail)</option>
+                  <option value="queue">Persist & Replay (.queue)</option>
                 </select>
               </div>
             </div>

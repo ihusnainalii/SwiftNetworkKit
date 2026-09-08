@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { GitCompare, Sparkles, AlertCircle, Check } from "lucide-react";
+import { GitCompare, Sparkles, AlertCircle, Check, X, Minus } from "lucide-react";
 
 type LibraryKey = "alamofire" | "moya" | "urlsession";
 
@@ -21,18 +21,19 @@ const COMPARISONS: Record<LibraryKey, ComparisonData> = {
     tagline: "Modern Swift 6 Strict Concurrency vs. Legacy Callback Architecture",
     otherLabel: "Alamofire Tradeoffs",
     snkPros: [
-      "Pure Swift 6 Actor-isolated concurrency with 0 data races",
+      "Pure Swift 6 Actor-isolated concurrency with 0 compiler data races",
       "Zero external dependencies (pure Apple standard frameworks)",
-      "Single-flight 401 token refresh built into the actor layer",
+      "Single-flight 401 token refresh built natively into the actor layer",
       "Built-in SPKI SHA-256 Public Key Pinning with development discovery mode",
       "Automatic Bearer token & password redaction in logs",
-      "Native AsyncStream reachability monitoring",
+      "Persisted offline request queue with automatic FIFO replay on reconnect",
     ],
     otherCons: [
       "Historical codebase originally designed around completion handlers & GCD locks",
       "Token refresh retriers require manual mutex / semaphore synchronizations",
       "Heavier binary footprint with thousands of lines of legacy code",
       "Logging does not redact sensitive Bearer tokens out-of-the-box",
+      "No built-in persisted offline request queue or SwiftUI @Observable bindings",
     ],
     snkCode: `// SwiftNetworkKit (Pure Swift 6 & Actor Isolated)
 let client = NetworkClient(
@@ -75,15 +76,15 @@ let feed = try await session.request("https://api.acme.com/feed")
     otherLabel: "Moya Tradeoffs",
     snkPros: [
       "Zero external dependencies (Moya pulls in Alamofire and multiple wrappers)",
-      "100% Swift 6 compiler compliance with Sendable guarantees",
+      "100% Swift 6 compiler compliance with Sendable value guarantees",
       "Lightweight and lightning fast to compile",
-      "Built-in single-flight token refresh, jitter retry, and metrics sinks",
+      "Built-in single-flight token refresh, jitter retry, offline queue, and metrics sinks",
     ],
     otherCons: [
       "Heavy external dependency graph (Alamofire + Moya + sub-specs)",
-      "Enum-based TargetType causes massive monolithic switch statements",
+      "Enum-based TargetType causes massive monolithic switch statements across app targets",
       "No native actor-isolated single-flight 401 refresh mechanism",
-      "Slower compilation and maintenance baggage",
+      "Slower compilation and high maintenance baggage",
     ],
     snkCode: `// SwiftNetworkKit (Composable Protocol-per-Endpoint)
 struct SubmitOrder: Endpoint {
@@ -92,6 +93,7 @@ struct SubmitOrder: Endpoint {
     var method: HTTPMethod { .post }
     var body: RequestBody? { .json(currentOrder) }
     var retryPolicy: RetryPolicy? { RetryPolicy(retryNonIdempotent: true) }
+    var offlineBehavior: OfflineBehavior { .queue }
 }
 
 let receipt = try await client.request(SubmitOrder())`,
@@ -120,17 +122,20 @@ enum MyAPIService: TargetType {
       "Intelligent exponential backoff with full jitter and Retry-After support",
       "Zero-dependency SPKI SSL pinning without touching raw C-based SecTrust APIs",
       "RFC 7578 multipart disk streaming with byte progress events",
+      "Built-in disk caching, offline replay queue, and test doubles",
     ],
     otherCons: [
       "Requires writing your own token refresh lock engine and retry queue from scratch",
       "Manual URLSessionDelegate SSL challenge handling is prone to security bugs",
       "No built-in redaction (developers accidentally log authorization headers)",
       "Writing RFC 7578 multipart form data by hand in memory is tedious and error-prone",
+      "No declarative endpoint mapping or structured error mapping",
     ],
     snkCode: `// SwiftNetworkKit (1 declarative statement)
 var config = NetworkConfiguration(baseURL: "https://api.acme.com")
 config.sslPinning = .publicKeys(["sha256/k2v657x...="])
 config.retry = .standard
+config.cache = CacheConfiguration(store: DiskCacheStore(), defaultPolicy: .returnCacheDataElseLoad)
 
 let user: User = try await client.request(GetProfile())`,
     otherCode: `// Vanilla URLSession (Dozens of lines of error-prone delegate code)
@@ -340,6 +345,36 @@ export function LibraryComparison() {
 
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
+                <div>Persisted Offline Request Queue</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Encrypted FIFO spool with automatic reconnect drain</div>
+              </td>
+              <td className="compare-highlight-col">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Built-in Spool Actor
+                </span>
+              </td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+            </tr>
+
+            <tr>
+              <td className="font-semibold text-slate-900 dark:text-white">
+                <div>Two-Tier HTTP Response Caching</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Memory + DiskCacheStore with SHA-256 & ETag 304</div>
+              </td>
+              <td className="compare-highlight-col">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Disk & Memory Actors
+                </span>
+              </td>
+              <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">Basic URLCache</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+              <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">URLCache only</td>
+            </tr>
+
+            <tr>
+              <td className="font-semibold text-slate-900 dark:text-white">
                 <div>Jittered Retry & Rate-Limiting</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Full & equal jitter, Retry-After header parsing</div>
               </td>
@@ -350,6 +385,21 @@ export function LibraryComparison() {
               </td>
               <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">Basic Backoff</td>
               <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">External / Plugin</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+            </tr>
+
+            <tr>
+              <td className="font-semibold text-slate-900 dark:text-white">
+                <div>SwiftUI @Observable & Combine</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">NetworkResource state container for iOS 17+ Observation</div>
+              </td>
+              <td className="compare-highlight-col">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Native NetworkResource
+                </span>
+              </td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">Combine only</td>
               <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
             </tr>
 
