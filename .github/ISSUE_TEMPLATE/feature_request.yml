@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose an accepted change. Discuss it first.
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Open this only after a [Discussion](https://github.com/ihusnainalii/SwiftNetworkKit/discussions)
+        where the change was agreed to fit the package's scope. Otherwise start there.
+  - type: input
+    id: discussion
+    attributes:
+      label: Link to the Discussion where this was agreed
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that is hard or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behavior
+      render: swift
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This keeps the package dependency-free.
+          required: true
+        - label: This does not duplicate something already achievable with an interceptor, a custom `Endpoint`, or configuration.
+          required: true

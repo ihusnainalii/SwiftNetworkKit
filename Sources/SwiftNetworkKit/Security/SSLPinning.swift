@@ -19,7 +19,8 @@ public enum SSLPinning: Sendable {
     case certificates(_ certificates: [Data], hosts: [String] = [])
 
     /// Pin to `.cer`/`.der` resources in a bundle. Missing file -> init fails.
-    case certificateResources(_ names: [String], extension: String = "cer", bundle: Bundle = .main, hosts: [String] = [])
+    case certificateResources(
+        _ names: [String], extension: String = "cer", bundle: Bundle = .main, hosts: [String] = [])
 
     /// Pin to SubjectPublicKeyInfo SHA-256 hashes: `"sha256/<base64>"` or bare base64.
     case publicKeys(_ spkiSHA256: [String], hosts: [String] = [])
@@ -32,11 +33,11 @@ public enum SSLPinning: Sendable {
 #if canImport(Security)
 import Security
 
-public extension SSLPinning {
+extension SSLPinning {
 
     /// Resolves to the internal configuration, or `nil` for `.disabled`.
     /// - Parameter defaultHost: host to pin when a case's `hosts:` is empty (the client passes its base URL host).
-    func resolve(defaultHost: String?) throws -> SSLPinningConfiguration? {
+    public func resolve(defaultHost: String?) throws -> SSLPinningConfiguration? {
         try resolve(defaultHost: defaultHost, mode: .enforced)
     }
 
@@ -57,7 +58,8 @@ public extension SSLPinning {
         case .certificateResources(let resources, let ext, let bundle, let hosts):
             let pins = try resources.flatMap { name -> [Pin] in
                 guard let url = bundle.url(forResource: name, withExtension: ext),
-                      let der = try? Data(contentsOf: url) else {
+                    let der = try? Data(contentsOf: url)
+                else {
                     throw SSLPinningError.resourceNotFound(
                         name: name, extension: ext, bundle: bundle.bundleIdentifier ?? bundle.bundlePath
                     )

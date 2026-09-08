@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(Security)
 import Security
 
@@ -30,8 +31,8 @@ enum SPKIHeader {
     /// The header for `key`'s type and bit size, or `nil` if the type is not supported.
     static func header(for key: SecKey) -> Data? {
         guard let attributes = SecKeyCopyAttributes(key) as? [CFString: Any],
-              let keyType = attributes[kSecAttrKeyType] as? String,
-              let keySize = attributes[kSecAttrKeySizeInBits] as? Int
+            let keyType = attributes[kSecAttrKeyType] as? String,
+            let keySize = attributes[kSecAttrKeySizeInBits] as? Int
         else { return nil }
 
         let rsa = kSecAttrKeyTypeRSA as String

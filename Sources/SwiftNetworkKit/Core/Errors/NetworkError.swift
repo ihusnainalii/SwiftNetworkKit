@@ -22,20 +22,23 @@ public enum NetworkError: Error, Sendable {
     case sessionExpired
     case cancelled
     case offline
+    /// The request was persisted to the offline queue; its replay outcome arrives on
+    /// ``NetworkClient/offlineReplayEvents()``.
+    case offlineQueued(RequestID)
     case transport(underlying: any Error & Sendable)
     case unknown(underlying: (any Error & Sendable)?)
 }
 
-public extension NetworkError {
+extension NetworkError {
     /// A stable, `Equatable` discriminant — handy for `switch`ing and for tests.
-    enum Code: String, Sendable, Hashable, CaseIterable {
+    public enum Code: String, Sendable, Hashable, CaseIterable {
         case invalidURL, noInternet, timeout, unauthorized, forbidden, notFound
         case validation, rateLimited, server, unacceptableStatusCode, decoding, encoding
-        case sslPinningFailed, tokenRefreshFailed, sessionExpired, cancelled, offline
+        case sslPinningFailed, tokenRefreshFailed, sessionExpired, cancelled, offline, offlineQueued
         case transport, unknown
     }
 
-    var code: Code {
+    public var code: Code {
         switch self {
         case .invalidURL: .invalidURL
         case .noInternet: .noInternet
@@ -54,16 +57,17 @@ public extension NetworkError {
         case .sessionExpired: .sessionExpired
         case .cancelled: .cancelled
         case .offline: .offline
+        case .offlineQueued: .offlineQueued
         case .transport: .transport
         case .unknown: .unknown
         }
     }
 
     /// The response context, for the cases that carry one.
-    var responseContext: ResponseContext? {
+    public var responseContext: ResponseContext? {
         switch self {
         case .unauthorized(let context), .forbidden(let context), .notFound(let context),
-             .validation(let context), .server(let context):
+            .validation(let context), .server(let context):
             context
         case .rateLimited(_, let context), .unacceptableStatusCode(_, let context):
             context
@@ -75,20 +79,20 @@ public extension NetworkError {
     }
 
     /// HTTP status code, when the error originated from a response.
-    var statusCode: Int? { responseContext?.statusCode }
+    public var statusCode: Int? { responseContext?.statusCode }
 
     /// Response headers, when available.
-    var responseHeaders: HTTPHeaders? { responseContext?.headers }
+    public var responseHeaders: HTTPHeaders? { responseContext?.headers }
 
     /// Raw response body, when available.
-    var responseData: Data? { responseContext?.data }
+    public var responseData: Data? { responseContext?.data }
 
     /// Server-supplied message, when the body carried one.
-    var serverMessage: String? { responseContext?.serverMessage }
+    public var serverMessage: String? { responseContext?.serverMessage }
 
     /// Normalizes an arbitrary thrown error: passes ``NetworkError`` through untouched,
     /// maps `URLError` / cancellation, and wraps anything else as `.unknown`.
-    static func normalize(_ error: any Error) -> NetworkError {
+    public static func normalize(_ error: any Error) -> NetworkError {
         switch error {
         case let networkError as NetworkError:
             return networkError
@@ -131,6 +135,7 @@ extension NetworkError: LocalizedError {
         case .sessionExpired: "The session has expired"
         case .cancelled: "The request was cancelled"
         case .offline: "The device is offline"
+        case .offlineQueued(let id): "Offline — request \(id) queued for replay"
         case .transport(let underlying): "Transport error: \(underlying)"
         case .unknown(let underlying): underlying.map { "Unknown error: \($0)" } ?? "An unknown error occurred"
         }

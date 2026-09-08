@@ -11,11 +11,11 @@ public protocol NetworkMonitor: Sendable {
     func statusUpdates() async -> AsyncStream<NetworkStatus>
 }
 
-public extension NetworkMonitor {
+extension NetworkMonitor {
 
     /// Yields once every time connectivity returns after having been lost. Handy for draining an
     /// offline queue.
-    func connectionRestored() async -> AsyncStream<Void> {
+    public func connectionRestored() async -> AsyncStream<Void> {
         let updates = await statusUpdates()
         return AsyncStream { continuation in
             let task = Task {

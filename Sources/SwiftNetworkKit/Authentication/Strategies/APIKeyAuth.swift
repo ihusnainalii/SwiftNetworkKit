@@ -26,7 +26,8 @@ public struct APIKeyAuth: AuthStrategy {
             request.setValue(value, forHTTPHeaderField: name)
         case .query(let name):
             guard let url = request.url,
-                  var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+                var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            else { return }
             var items = components.queryItems ?? []
             items.append(URLQueryItem(name: name, value: value))
             components.queryItems = items

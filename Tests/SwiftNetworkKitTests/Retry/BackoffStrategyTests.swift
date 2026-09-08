@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("BackoffStrategy")
@@ -17,7 +18,7 @@ struct BackoffStrategyTests {
         let backoff = BackoffStrategy.exponential(base: 1, multiplier: 10, maxDelay: 30)
         #expect(backoff.delay(forAttempt: 1, jitter: .none) == 1)
         #expect(backoff.delay(forAttempt: 2, jitter: .none) == 10)
-        #expect(backoff.delay(forAttempt: 3, jitter: .none) == 30) // 100 clamped
+        #expect(backoff.delay(forAttempt: 3, jitter: .none) == 30)  // 100 clamped
         #expect(backoff.delay(forAttempt: 9, jitter: .none) == 30)
     }
 

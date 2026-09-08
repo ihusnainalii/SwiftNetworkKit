@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(Security)
 import Security
 #endif
@@ -11,7 +12,8 @@ import Security
 /// upload response body, moves the finished download file before `URLSession` deletes it, and
 /// resolves ``completion`` when the task ends.
 final class TransportSessionDelegate: NSObject,
-    URLSessionDataDelegate, URLSessionDownloadDelegate, @unchecked Sendable {
+    URLSessionDataDelegate, URLSessionDownloadDelegate, @unchecked Sendable
+{
 
     #if canImport(Security)
     private let evaluator: (any ServerTrustEvaluating)?
@@ -52,7 +54,8 @@ final class TransportSessionDelegate: NSObject,
     ) {
         #if canImport(Security)
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let evaluator else {
+            let evaluator
+        else {
             completionHandler(.performDefaultHandling, nil)
             return
         }

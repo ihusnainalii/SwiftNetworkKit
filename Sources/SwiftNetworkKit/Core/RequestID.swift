@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Introduced here for ``TokenManager``'s per-request refresh guard; the request registry and
 /// cancellation APIs (M9) build on the same type.
-public struct RequestID: Hashable, Sendable, CustomStringConvertible {
+public struct RequestID: Hashable, Sendable, Codable, CustomStringConvertible {
     public let rawValue: UUID
 
     public init(rawValue: UUID = UUID()) {

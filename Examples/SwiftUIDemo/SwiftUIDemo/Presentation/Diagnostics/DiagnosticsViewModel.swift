@@ -10,6 +10,7 @@ final class DiagnosticsViewModel {
     private(set) var isRunning = false
     private(set) var metrics: [MetricsRow] = []
     private(set) var connectivity: [MetricsRow] = []
+    private(set) var offlineQueueDepth = 0
 
     init(diagnostics: any NetworkDiagnostics) {
         self.diagnostics = diagnostics
@@ -18,12 +19,15 @@ final class DiagnosticsViewModel {
     var baseURL: String { diagnostics.baseURL }
     var retryPolicySummary: String { diagnostics.retryPolicySummary }
     var sslPinningSummary: String { diagnostics.sslPinningSummary }
+    var cacheSummary: String { diagnostics.cacheSummary }
+    var requestManagementSummary: String { diagnostics.requestManagementSummary }
 
     func refreshMetrics() async {
         async let metrics = diagnostics.metricsSummary()
         async let connectivity = diagnostics.connectivitySummary()
         self.metrics = await metrics
         self.connectivity = await connectivity
+        self.offlineQueueDepth = await diagnostics.offlineQueueDepth()
     }
     var defaultHeaders: [(key: String, value: String)] {
         diagnostics.defaultHeaders.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }

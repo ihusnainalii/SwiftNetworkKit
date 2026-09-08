@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or usage help
+    url: https://github.com/ihusnainalii/SwiftNetworkKit/discussions
+    about: How-to questions, best practices, and design ideas belong in Discussions, not issues.
+  - name: Security vulnerability
+    url: https://github.com/ihusnainalii/SwiftNetworkKit/security/advisories/new
+    about: Report privately. Do not open a public issue for security problems (see SECURITY.md).

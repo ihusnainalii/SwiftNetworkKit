@@ -20,7 +20,8 @@ enum RequestBuilder {
             path = path.replacingOccurrences(of: ":\(key)", with: encoded)
         }
 
-        let trimmedBase = base.absoluteString.hasSuffix("/")
+        let trimmedBase =
+            base.absoluteString.hasSuffix("/")
             ? String(base.absoluteString.dropLast())
             : base.absoluteString
         let normalizedPath = path.isEmpty || path.hasPrefix("/") ? path : "/" + path

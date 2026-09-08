@@ -69,6 +69,30 @@ public struct NetworkConfiguration: Sendable {
     /// A misconfigured value (missing resource, bad hash) fails `NetworkClient.init` loudly.
     public var sslPinning: SSLPinning
 
+    // MARK: HTTP caching (M8)
+
+    /// Response caching. Defaults to ``CacheConfiguration/disabled`` (no caching).
+    public var cache: CacheConfiguration
+
+    // MARK: Request management (M9)
+
+    /// How many requests may run at once. Extra requests queue, ordered by ``Endpoint/priority``.
+    /// Defaults to 6 (the `URLSession` per-host limit).
+    public var maxConcurrentRequests: Int
+
+    /// When `true`, concurrent identical `GET`/`HEAD` requests share one in-flight operation.
+    /// An ``Endpoint`` can override with ``Endpoint/deduplicate``. Defaults to `false`.
+    public var enableDeduplication: Bool
+
+    // MARK: Offline queue (M11)
+
+    /// Persistence for requests made offline by endpoints that opt into ``OfflineBehavior/queue(expiresAfter:)``.
+    /// `nil` disables the offline queue. Requires ``networkMonitor`` too.
+    public var offlineStore: (any OfflineStore)?
+
+    /// Connectivity source. Used to fail-fast offline requests and to trigger offline-queue replay.
+    public var networkMonitor: (any NetworkMonitor)?
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
@@ -86,7 +110,12 @@ public struct NetworkConfiguration: Sendable {
         tracing: TraceHeaders = TraceHeaders(),
         logger: any NetworkLogger = ConsoleNetworkLogger(),
         metrics: any NetworkMetrics = NoopMetrics(),
-        sslPinning: SSLPinning = .disabled
+        sslPinning: SSLPinning = .disabled,
+        cache: CacheConfiguration = .disabled,
+        maxConcurrentRequests: Int = 6,
+        enableDeduplication: Bool = false,
+        offlineStore: (any OfflineStore)? = nil,
+        networkMonitor: (any NetworkMonitor)? = nil
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -105,6 +134,11 @@ public struct NetworkConfiguration: Sendable {
         self.logger = logger
         self.metrics = metrics
         self.sslPinning = sslPinning
+        self.cache = cache
+        self.maxConcurrentRequests = maxConcurrentRequests
+        self.enableDeduplication = enableDeduplication
+        self.offlineStore = offlineStore
+        self.networkMonitor = networkMonitor
     }
 
     /// Convenience single-environment initializer.

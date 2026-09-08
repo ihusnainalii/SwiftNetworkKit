@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient logging")
@@ -27,7 +28,8 @@ struct NetworkClientLoggingTests {
 
     @Test("LogLevel.none emits nothing")
     func none() async throws {
-        let transport = MockNetworkTransport(); transport.enqueue(.json(body))
+        let transport = MockNetworkTransport()
+        transport.enqueue(.json(body))
         let logger = CapturingLogger()
         _ = try await client(transport, level: .none, logger: logger).request(GetThing())
         #expect(logger.lines.isEmpty)
@@ -35,7 +37,8 @@ struct NetworkClientLoggingTests {
 
     @Test("LogLevel.basic emits one request line and one response line")
     func basic() async throws {
-        let transport = MockNetworkTransport(); transport.enqueue(.json(body))
+        let transport = MockNetworkTransport()
+        transport.enqueue(.json(body))
         let logger = CapturingLogger()
         _ = try await client(transport, level: .basic, logger: logger).request(GetThing())
         #expect(logger.lines.count == 2)

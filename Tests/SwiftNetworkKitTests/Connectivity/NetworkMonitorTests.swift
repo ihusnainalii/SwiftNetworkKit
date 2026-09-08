@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkMonitor")
@@ -51,16 +52,19 @@ struct NetworkMonitorTests {
 
         async let count = {
             var n = 0
-            for await _ in restored { n += 1; if n == 2 { break } }
+            for await _ in restored {
+                n += 1
+                if n == 2 { break }
+            }
             return n
         }()
 
         await monitor.send([
-            .satisfied(.wifi),   // was requiresConnection (offline) -> but wasOffline starts false
+            .satisfied(.wifi),  // was requiresConnection (offline) -> but wasOffline starts false
             .unsatisfied,
-            .satisfied(.wifi),   // restore #1
+            .satisfied(.wifi),  // restore #1
             .unsatisfied,
-            .satisfied(.cellular), // restore #2
+            .satisfied(.cellular),  // restore #2
         ])
 
         #expect(await count == 2)
@@ -72,8 +76,8 @@ struct NetworkMonitorTests {
         do {
             let stream = await monitor.statusUpdates()
             var iterator = stream.makeAsyncIterator()
-            _ = await iterator.next() // consume the seed
-        } // iterator + stream dropped here -> onTermination
+            _ = await iterator.next()  // consume the seed
+        }  // iterator + stream dropped here -> onTermination
 
         for _ in 0..<100 where await monitor.subscriberCount != 0 {
             await Task.yield()
@@ -89,7 +93,7 @@ struct NetworkMonitorTests {
 
         var received = 0
         for await _ in stream { received += 1 }
-        #expect(received == 1) // just the seed, then the stream ended
+        #expect(received == 1)  // just the seed, then the stream ended
         #expect(await monitor.subscriberCount == 0)
     }
 

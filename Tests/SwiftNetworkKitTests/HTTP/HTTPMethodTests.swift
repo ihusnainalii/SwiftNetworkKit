@@ -1,4 +1,5 @@
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("HTTPMethod")
@@ -11,17 +12,19 @@ struct HTTPMethodTests {
         #expect(HTTPMethod.custom("report").rawValue == "REPORT")
     }
 
-    @Test("idempotency classification", arguments: [
-        (HTTPMethod.get, true),
-        (.head, true),
-        (.put, true),
-        (.delete, true),
-        (.options, true),
-        (.trace, true),
-        (.post, false),
-        (.patch, false),
-        (.custom("LOCK"), false),
-    ])
+    @Test(
+        "idempotency classification",
+        arguments: [
+            (HTTPMethod.get, true),
+            (.head, true),
+            (.put, true),
+            (.delete, true),
+            (.options, true),
+            (.trace, true),
+            (.post, false),
+            (.patch, false),
+            (.custom("LOCK"), false),
+        ])
     func idempotency(method: HTTPMethod, expected: Bool) {
         #expect(method.isIdempotent == expected)
     }

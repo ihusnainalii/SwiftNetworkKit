@@ -1,12 +1,15 @@
 import Foundation
 import Security
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("ServerTrustEvaluator")
 struct ServerTrustEvaluatorTests {
 
-    private func evaluator(_ config: SSLPinningConfiguration, log: @escaping @Sendable (String) -> Void = { _ in }) -> ServerTrustEvaluator {
+    private func evaluator(
+        _ config: SSLPinningConfiguration, log: @escaping @Sendable (String) -> Void = { _ in }
+    ) -> ServerTrustEvaluator {
         ServerTrustEvaluator(configuration: config, log: log)
     }
 
@@ -22,36 +25,47 @@ struct ServerTrustEvaluatorTests {
     func publicKeyMatch() throws {
         let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
         let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
-        let result = evaluator(config).evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
+        let result = evaluator(config).evaluate(
+            trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result.isSuccess)
     }
 
     @Test("wrong pin fails with .sslPinningFailed")
     func wrongPin() throws {
-        let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]])
-        let result = evaluator(config).evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
+        let config = SSLPinningConfiguration(pins: [
+            PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]
+        ])
+        let result = evaluator(config).evaluate(
+            trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result.failureCode == .sslPinningFailed)
     }
 
     @Test("unmatched host is not pinned (passes)")
     func unmatchedHost() throws {
         let config = SSLPinningConfiguration(pins: ["other.example.com": [.publicKeySHA256(PinningFixtures.bogusHash)]])
-        let result = evaluator(config).evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
+        let result = evaluator(config).evaluate(
+            trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result.isSuccess)
     }
 
     @Test("rotation: any pin in the list may match")
     func rotation() throws {
         let good = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
-        let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash), good]])
-        let result = evaluator(config).evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
+        let config = SSLPinningConfiguration(pins: [
+            PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash), good]
+        ])
+        let result = evaluator(config).evaluate(
+            trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result.isSuccess)
     }
 
     @Test("certificate (DER) pin passes")
     func certificatePin() throws {
-        let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [.certificate(try PinningFixtures.der("pinning-rsa"))]])
-        let result = evaluator(config).evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
+        let config = SSLPinningConfiguration(pins: [
+            PinningFixtures.rsaHost: [.certificate(try PinningFixtures.der("pinning-rsa"))]
+        ])
+        let result = evaluator(config).evaluate(
+            trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result.isSuccess)
     }
 
@@ -59,7 +73,8 @@ struct ServerTrustEvaluatorTests {
     func ecPublicKey() throws {
         let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.ecSPKISHA256)!)
         let config = SSLPinningConfiguration(pins: [PinningFixtures.ecHost: [pin]])
-        let result = evaluator(config).evaluate(trust: try PinningFixtures.trust(for: "pinning-ec"), host: PinningFixtures.ecHost)
+        let result = evaluator(config).evaluate(
+            trust: try PinningFixtures.trust(for: "pinning-ec"), host: PinningFixtures.ecHost)
         #expect(result.isSuccess)
     }
 
@@ -84,7 +99,9 @@ private final class LoggedLines: @unchecked Sendable {
     var all: [String] { lock.withLock { lines } }
 }
 
-private extension Result where Success == Void, Failure == NetworkError {
-    var isSuccess: Bool { if case .success = self { return true } else { return false } }
-    var failureCode: NetworkError.Code? { if case .failure(let e) = self { return e.code } else { return nil } }
+extension Result where Success == Void, Failure == NetworkError {
+    fileprivate var isSuccess: Bool { if case .success = self { return true } else { return false } }
+    fileprivate var failureCode: NetworkError.Code? {
+        if case .failure(let e) = self { return e.code } else { return nil }
+    }
 }

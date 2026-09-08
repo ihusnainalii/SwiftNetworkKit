@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("InMemoryMetrics")
@@ -56,7 +57,7 @@ struct InMemoryMetricsTests {
         let snap = await metrics.snapshot()
         #expect(snap.requestCount == 10)
         #expect(snap.successCount + snap.failureCount == 10)
-        #expect(snap.failureCount == 4) // i = 0, 3, 6, 9
+        #expect(snap.failureCount == 4)  // i = 0, 3, 6, 9
         #expect(snap.statusCodeHistogram[200] == 6)
         #expect(snap.statusCodeHistogram[500] == 4)
     }

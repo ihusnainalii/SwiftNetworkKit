@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient pipeline")
@@ -27,7 +28,7 @@ struct NetworkClientTests {
         errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil
     ) -> NetworkClient {
         var configuration = NetworkConfiguration(baseURL: "https://api.example.com", errorMapper: errorMapper)
-        configuration.retry = .none // these tests exercise single-response mapping; retry has its own suite
+        configuration.retry = .none  // these tests exercise single-response mapping; retry has its own suite
         return NetworkClient(configuration: configuration, transport: transport)
     }
 
@@ -105,8 +106,11 @@ struct NetworkClientTests {
         transport.enqueue(.failure(.noInternet))
         let code: NetworkError.Code? = await withCheckedContinuation { continuation in
             client(transport).request(ProfileEndpoint()) { result in
-                if case .failure(let error) = result { continuation.resume(returning: error.code) }
-                else { continuation.resume(returning: nil) }
+                if case .failure(let error) = result {
+                    continuation.resume(returning: error.code)
+                } else {
+                    continuation.resume(returning: nil)
+                }
             }
         }
         #expect(code == .noInternet)
@@ -118,8 +122,11 @@ struct NetworkClientTests {
         transport.enqueue(.json(Data(#"{"id":1,"full_name":"x"}"#.utf8)))
         let code: NetworkError.Code? = await withCheckedContinuation { continuation in
             let handle = client(transport).request(ProfileEndpoint()) { result in
-                if case .failure(let error) = result { continuation.resume(returning: error.code) }
-                else { continuation.resume(returning: nil) }
+                if case .failure(let error) = result {
+                    continuation.resume(returning: error.code)
+                } else {
+                    continuation.resume(returning: nil)
+                }
             }
             handle.cancel()
         }

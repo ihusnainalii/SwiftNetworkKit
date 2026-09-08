@@ -17,6 +17,11 @@ public final class NetworkClient: Sendable {
     let interceptors: InterceptorChain
     let logFormatter: NetworkLogFormatter
 
+    let registry = RequestRegistry()
+    let queue: RequestQueue
+    let deduplicator = RequestDeduplicator()
+    let offlineQueue: OfflineRequestQueue?
+
     /// Present only when a `refresh` handler was supplied; `nil` disables automatic token refresh.
     let tokenManager: TokenManager?
 
@@ -35,6 +40,16 @@ public final class NetworkClient: Sendable {
     ) {
         self.configuration = configuration
         self.transport = transport ?? Self.defaultTransport(for: configuration)
+        self.queue = RequestQueue(maxConcurrent: configuration.maxConcurrentRequests)
+        if let store = configuration.offlineStore, let monitor = configuration.networkMonitor {
+            let offlineTransport = self.transport
+            self.offlineQueue = OfflineRequestQueue(
+                store: store, monitor: monitor, metrics: configuration.metrics,
+                send: { request in try await offlineTransport.data(for: request).1 }
+            )
+        } else {
+            self.offlineQueue = nil
+        }
         self.interceptors = InterceptorChain(
             requestInterceptors: [TracingInterceptor(configuration.tracing)] + configuration.requestInterceptors,
             responseInterceptors: configuration.responseInterceptors
@@ -58,9 +73,108 @@ public final class NetworkClient: Sendable {
     }
 
     /// Sends the endpoint and decodes its ``Endpoint/Response``.
-    public func request<E: Endpoint>(_ endpoint: E) async throws -> E.Response {
-        try await perform(endpoint) { data, response, decoder in
+    ///
+    /// The request runs through the concurrency queue (``NetworkConfiguration/maxConcurrentRequests``),
+    /// is de-duplicated when enabled, and is registered so it can be cancelled — by cancelling the
+    /// calling task, or via ``cancel(_:)`` / ``cancelAll()`` using the supplied `id`.
+    @discardableResult
+    public func request<E: Endpoint>(
+        _ endpoint: E,
+        id: RequestID = RequestID()
+    ) async throws -> E.Response {
+        let work = Task { try await self.dispatch(endpoint) }
+        await registry.register(id) { work.cancel() }
+        defer {
+            let registry = registry
+            Task { await registry.deregister(id) }
+        }
+
+        return try await withTaskCancellationHandler {
+            do {
+                return try await work.value
+            } catch {
+                throw NetworkError.normalize(error)
+            }
+        } onCancel: {
+            work.cancel()
+        }
+    }
+
+    /// Cancels a specific in-flight request. No-op if it already finished.
+    public func cancel(_ id: RequestID) async {
+        await registry.cancel(id)
+    }
+
+    /// Cancels every in-flight request.
+    public func cancelAll() async {
+        await registry.cancelAll()
+    }
+
+    /// Stops admitting queued requests. Running requests continue; new ones wait for ``resumeQueue()``.
+    public func pauseQueue() async {
+        await queue.pause()
+    }
+
+    /// Resumes admitting queued requests.
+    public func resumeQueue() async {
+        await queue.resume()
+    }
+
+    /// A stream of outcomes for requests that were queued while offline and later replayed.
+    public func offlineReplayEvents() async -> AsyncStream<OfflineReplayEvent> {
+        guard let offlineQueue else { return AsyncStream { $0.finish() } }
+        return await offlineQueue.events()
+    }
+
+    /// Replays any queued offline requests now (also happens automatically on reconnect).
+    public func replayOfflineQueue() async {
+        await offlineQueue?.replayNow()
+    }
+
+    /// Persists `request` for later replay if the endpoint opted in and the body can be archived.
+    private func offlineQueueID<E: Endpoint>(for endpoint: E, request: URLRequest) async throws -> RequestID? {
+        guard let offlineQueue, case .queue(let expiresAfter) = endpoint.offlineBehavior else { return nil }
+        if case .multipart = endpoint.body { return nil }  // multipart bodies don't survive archiving
+        return try? await offlineQueue.enqueue(request, expiresAfter: expiresAfter)
+    }
+
+    /// Runs `operation` through the concurrency queue unless the endpoint opts out. Used by the
+    /// response-shape helpers in `NetworkClient+Convenience`.
+    func queued<T: Sendable>(
+        priority: RequestPriority,
+        skipQueue: Bool,
+        _ operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        if skipQueue { return try await operation() }
+        return try await queue.enqueue(priority: priority, operation)
+    }
+
+    private func dispatch<E: Endpoint>(_ endpoint: E) async throws -> E.Response {
+        let run: @Sendable () async throws -> E.Response = { [self] in
+            try await deduplicatedPerform(endpoint)
+        }
+        if endpoint.skipRequestQueue {
+            return try await run()
+        }
+        return try await queue.enqueue(priority: endpoint.priority, run)
+    }
+
+    private func deduplicatedPerform<E: Endpoint>(_ endpoint: E) async throws -> E.Response {
+        let wantsDedup = (endpoint.deduplicate ?? configuration.enableDeduplication) && endpoint.method.isCacheable
+        let decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> E.Response = { data, response, decoder in
             try endpoint.decode(data, response: response, using: decoder)
+        }
+        guard wantsDedup else {
+            return try await perform(endpoint, decode: decode)
+        }
+        let request = try? RequestBuilder.build(
+            endpoint: endpoint, environment: configuration.environment, configuration: configuration
+        )
+        guard let request else {
+            return try await perform(endpoint, decode: decode)
+        }
+        return try await deduplicator.result(for: DeduplicationKey.make(request)) { [self] in
+            try await perform(endpoint, decode: decode)
         }
     }
 
@@ -70,7 +184,7 @@ public final class NetworkClient: Sendable {
     /// inside `execute` and does not consume a retry attempt.
     func perform<E: Endpoint, T: Sendable>(
         _ endpoint: E,
-        decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+        decode: @escaping @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
     ) async throws -> T {
         if Task.isCancelled { throw NetworkError.cancelled }
         let requestID = RequestID()
@@ -110,11 +224,16 @@ public final class NetworkClient: Sendable {
         }
     }
 
+    // The composition root: one linear pass through build -> cache-read -> auth -> request
+    // interceptors -> transport -> status map -> 304 handling -> response interceptors ->
+    // cache-write -> decode. Splitting it hides that pipeline across call sites for no real gain.
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func execute<E: Endpoint, T: Sendable>(
         _ endpoint: E,
         requestID: RequestID,
         interceptorRetries: Int,
-        decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+        bypassCacheRead: Bool = false,
+        decode: @escaping @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
     ) async throws -> T {
         let anyEndpoint = AnyEndpoint(endpoint)
 
@@ -126,6 +245,41 @@ public final class NetworkClient: Sendable {
         try await authorize(&urlRequest, for: endpoint)
         urlRequest = try await interceptors.adapt(urlRequest, for: anyEndpoint)
 
+        // MARK: cache read
+        let policy = endpoint.cachePolicy ?? configuration.cache.defaultPolicy
+        let cache = (endpoint.method.isCacheable && policy != .ignoreCache) ? configuration.cache.store : nil
+        let cacheKey = CacheKey.make(
+            method: endpoint.method.rawValue,
+            url: urlRequest.url,
+            isAuthenticated: urlRequest.value(forHTTPHeaderField: "Authorization") != nil
+        )
+        var storedEntry: CachedResponse?
+
+        if let cache, policy.readsCache, !bypassCacheRead {
+            storedEntry = await cache.value(forKey: cacheKey)
+            if let storedEntry {
+                if policy == .staleWhileRevalidate {
+                    Task.detached { [self] in
+                        _ = try? await execute(
+                            endpoint, requestID: RequestID(), interceptorRetries: 0,
+                            bypassCacheRead: true, decode: decode
+                        )
+                    }
+                    return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+                }
+                if storedEntry.isFresh(ttl: configuration.cache.defaultTTL),
+                    policy == .cacheFirst || policy == .cacheOnly
+                {
+                    return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+                }
+                if let etag = storedEntry.etag {
+                    urlRequest.setValue(etag, forHTTPHeaderField: "If-None-Match")
+                }
+            } else if policy == .cacheOnly {
+                throw NetworkError.offline
+            }
+        }
+
         let started = configuration.clock.now()
         emit(logFormatter.requestLines(urlRequest, endpoint: anyEndpoint, level: logLevel), level: .basic)
 
@@ -135,8 +289,28 @@ public final class NetworkClient: Sendable {
             (rawData, response) = try await transport.data(for: urlRequest)
         } catch {
             let mapped = NetworkError.normalize(error)
+            if let storedEntry, policy == .networkFirst || policy == .cacheFirst {
+                emit(["\u{2190} serving cached response (network failed: \(mapped.code.rawValue))"], level: .basic)
+                return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+            }
+            if mapped.code == .noInternet, let queued = try await offlineQueueID(for: endpoint, request: urlRequest) {
+                await recordFailure(mapped, requestID: requestID, status: nil, since: started)
+                throw NetworkError.offlineQueued(queued)
+            }
             await recordFailure(mapped, requestID: requestID, status: nil, since: started)
             throw mapped
+        }
+
+        // 304 Not Modified — the cached body is still current.
+        if response.statusCode == 304, let storedEntry {
+            var refreshed = storedEntry
+            refreshed.storedAt = Date()
+            await cache?.setValue(refreshed, forKey: cacheKey)
+            await configuration.metrics.record(
+                .success(requestID, duration: elapsed(since: started), status: 304)
+            )
+            emit(["\u{2190} 304 (\(Int(elapsed(since: started).components.seconds * 1000))ms) — cached"], level: .basic)
+            return try decodeCached(refreshed, endpoint: endpoint, request: urlRequest, decode: decode)
         }
 
         var context = ResponseContext(
@@ -157,10 +331,11 @@ public final class NetworkClient: Sendable {
         case .retry(let after) where interceptorRetries < 2:
             try await configuration.clock.sleep(for: .seconds(after))
             return try await execute(
-                endpoint, requestID: requestID, interceptorRetries: interceptorRetries + 1, decode: decode
+                endpoint, requestID: requestID, interceptorRetries: interceptorRetries + 1,
+                bypassCacheRead: true, decode: decode
             )
         case .retry:
-            break // interceptor-retry cap reached — proceed with the response we have
+            break  // interceptor-retry cap reached — proceed with the response we have
         }
 
         if let error = StatusCodeMapper.map(context: context, errorMapper: configuration.errorMapper) {
@@ -177,11 +352,29 @@ public final class NetworkClient: Sendable {
                     throw error
                 }
                 return try await execute(
-                    endpoint, requestID: requestID, interceptorRetries: interceptorRetries, decode: decode
+                    endpoint, requestID: requestID, interceptorRetries: interceptorRetries,
+                    bypassCacheRead: true, decode: decode
                 )
             }
             await recordFailure(error, requestID: requestID, status: context.statusCode, since: started)
             throw error
+        }
+
+        // MARK: cache write
+        if let cache, policy.writesCache, HTTPStatus.isSuccess(context.statusCode) {
+            let cacheControl = CacheControl(headers: context.headers)
+            if !cacheControl.noStore {
+                await cache.setValue(
+                    CachedResponse(
+                        data: context.data ?? Data(),
+                        headers: context.headers,
+                        statusCode: context.statusCode,
+                        etag: context.headers["ETag"],
+                        maxAge: cacheControl.mustRevalidate ? 0 : cacheControl.maxAge
+                    ),
+                    forKey: cacheKey
+                )
+            }
         }
 
         let decoder = endpoint.decoder ?? configuration.defaultDecoder
@@ -208,6 +401,32 @@ public final class NetworkClient: Sendable {
             let mapped = NetworkError.decoding(underlying: asSendableError(error), context)
             await recordFailure(mapped, requestID: requestID, status: context.statusCode, since: started)
             throw mapped
+        }
+    }
+
+    /// Decodes a cached entry as if it had just come off the wire.
+    private func decodeCached<E: Endpoint, T: Sendable>(
+        _ entry: CachedResponse,
+        endpoint: E,
+        request: URLRequest,
+        decode: @escaping @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+    ) throws -> T {
+        let decoder = endpoint.decoder ?? configuration.defaultDecoder
+        let url = request.url ?? URL(string: "https://cache.invalid")!
+        let response = HTTPURLResponse(
+            url: url, statusCode: entry.statusCode, httpVersion: "HTTP/1.1",
+            headerFields: entry.headers.dictionary
+        )!
+        do {
+            return try decode(entry.data, response, decoder)
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.decoding(
+                underlying: asSendableError(error),
+                ResponseContext(
+                    statusCode: entry.statusCode, headers: entry.headers, data: entry.data, request: request)
+            )
         }
     }
 

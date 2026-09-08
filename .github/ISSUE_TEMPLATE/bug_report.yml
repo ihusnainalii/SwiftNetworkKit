@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in SwiftNetworkKit does not behave as documented.
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions and "how do I" go to [Discussions](https://github.com/ihusnainalii/SwiftNetworkKit/discussions),
+        not here. Security issues go to [private reporting](https://github.com/ihusnainalii/SwiftNetworkKit/security/advisories/new).
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched existing issues and Discussions.
+          required: true
+        - label: I am on the latest tagged release.
+          required: true
+        - label: I can reproduce this with a minimal sample (ideally using `MockNetworkTransport` or `URLProtocolStub`).
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: SwiftNetworkKit version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Swift / Xcode / OS
+      placeholder: "Swift 6.0, Xcode 16.4, iOS 18.0 simulator"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: A code sample or, better, a failing test. Paste as text, not a screenshot.
+      render: swift
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (LogLevel.debug)
+      description: Optional. Tokens are already redacted by the library.
+      render: text

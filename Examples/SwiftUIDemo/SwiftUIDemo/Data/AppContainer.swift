@@ -18,13 +18,24 @@ struct AppContainer: Sendable {
         )
         configuration.metrics = metrics
         configuration.requestInterceptors = [ClientHeaderInterceptor()]
-        let client = NetworkClient(configuration: configuration)
+        // GET responses (users, posts, todos, albums) are served from cache first, then revalidated.
+        configuration.cache = CacheConfiguration(
+            store: MemoryCacheStore(limitBytes: 8 * 1024 * 1024),
+            defaultPolicy: .cacheFirst,
+            defaultTTL: 120
+        )
+        configuration.maxConcurrentRequests = 4
+        configuration.enableDeduplication = true
         let monitor = PathNetworkMonitor()
+        let offlineStore = InMemoryOfflineStore()
+        configuration.networkMonitor = monitor
+        configuration.offlineStore = offlineStore
+        let client = NetworkClient(configuration: configuration)
         return AppContainer(
             users: LiveUsersRepository(client: client),
             userContent: LiveUserContentRepository(client: client),
             composer: LivePostComposer(client: client),
-            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor),
+            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor, offlineStore: offlineStore),
             media: LiveMediaDownloader(client: client)
         )
     }()

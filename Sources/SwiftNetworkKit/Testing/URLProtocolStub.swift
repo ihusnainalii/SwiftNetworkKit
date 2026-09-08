@@ -30,34 +30,39 @@ public final class URLProtocolStub: URLProtocol {
 
     /// Configures a successful stub response.
     public static func respond(status: Int = 200, headers: [String: String] = [:], body: Data = Data()) {
-        lock.lock(); defer { lock.unlock() }
-        state = State(response: Response(statusCode: status, headers: headers, body: body), error: nil, lastRequest: nil)
+        lock.lock()
+        defer { lock.unlock() }
+        state = State(
+            response: Response(statusCode: status, headers: headers, body: body), error: nil, lastRequest: nil)
     }
 
     /// Configures the stub to fail with `error`.
     public static func fail(with error: any Error) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         state = State(response: nil, error: error, lastRequest: nil)
     }
 
     /// The most recent request that reached the stub.
     public static var lastRequest: URLRequest? {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return state.lastRequest
     }
 
     /// Clears all configuration. Call in test teardown.
     public static func reset() {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         state = State()
     }
 
     // MARK: URLProtocol
 
-    public override class func canInit(with request: URLRequest) -> Bool { true }
-    public override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override public class func canInit(with request: URLRequest) -> Bool { true }
+    override public class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
-    public override func startLoading() {
+    override public func startLoading() {
         Self.lock.lock()
         Self.state.lastRequest = request
         let response = Self.state.response
@@ -85,5 +90,5 @@ public final class URLProtocolStub: URLProtocol {
         client?.urlProtocolDidFinishLoading(self)
     }
 
-    public override func stopLoading() {}
+    override public func stopLoading() {}
 }

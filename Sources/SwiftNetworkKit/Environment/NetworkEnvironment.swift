@@ -26,20 +26,29 @@ public struct NetworkEnvironment: Sendable {
     }
 }
 
-public extension NetworkEnvironment {
-    static func development(baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60) -> NetworkEnvironment {
-        NetworkEnvironment(kind: .development, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .debug)
+extension NetworkEnvironment {
+    public static func development(
+        baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60
+    ) -> NetworkEnvironment {
+        NetworkEnvironment(
+            kind: .development, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .debug)
     }
 
-    static func qa(baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60) -> NetworkEnvironment {
+    public static func qa(baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60) -> NetworkEnvironment {
         NetworkEnvironment(kind: .qa, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .verbose)
     }
 
-    static func staging(baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60) -> NetworkEnvironment {
-        NetworkEnvironment(kind: .staging, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .basic)
+    public static func staging(
+        baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60
+    ) -> NetworkEnvironment {
+        NetworkEnvironment(
+            kind: .staging, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .basic)
     }
 
-    static func production(baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60) -> NetworkEnvironment {
-        NetworkEnvironment(kind: .production, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .error)
+    public static func production(
+        baseURL: URL, headers: HTTPHeaders = [:], timeout: TimeInterval = 60
+    ) -> NetworkEnvironment {
+        NetworkEnvironment(
+            kind: .production, baseURL: baseURL, defaultHeaders: headers, timeout: timeout, logLevel: .error)
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("TokenManager")
@@ -69,11 +70,12 @@ struct TokenManagerTests {
     func proactiveRefresh() async throws {
         let refreshCount = Counter()
         let manager = TokenManager(
-            storage: InMemoryTokenStorage(seed: TokenPair(
-                accessToken: "old",
-                refreshToken: "r",
-                expiresAt: Date(timeIntervalSinceNow: 10)
-            )),
+            storage: InMemoryTokenStorage(
+                seed: TokenPair(
+                    accessToken: "old",
+                    refreshToken: "r",
+                    expiresAt: Date(timeIntervalSinceNow: 10)
+                )),
             proactiveLeeway: 60,
             refresh: { _ in
                 await refreshCount.increment()
@@ -89,12 +91,16 @@ struct TokenManagerTests {
     func noPrematureRefresh() async {
         let refreshCount = Counter()
         let manager = TokenManager(
-            storage: InMemoryTokenStorage(seed: TokenPair(
-                accessToken: "valid",
-                refreshToken: "r",
-                expiresAt: Date(timeIntervalSinceNow: 3_600)
-            )),
-            refresh: { _ in await refreshCount.increment(); return TokenPair(accessToken: "x") }
+            storage: InMemoryTokenStorage(
+                seed: TokenPair(
+                    accessToken: "valid",
+                    refreshToken: "r",
+                    expiresAt: Date(timeIntervalSinceNow: 3_600)
+                )),
+            refresh: { _ in
+                await refreshCount.increment()
+                return TokenPair(accessToken: "x")
+            }
         )
 
         #expect(await manager.tokenForOutgoingRequest() == "valid")

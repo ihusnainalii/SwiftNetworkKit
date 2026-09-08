@@ -14,29 +14,29 @@ public protocol TokenStorage: Sendable {
     func removeAll() async throws
 }
 
-public extension TokenStorage {
+extension TokenStorage {
     /// Reserved key under which the ``TokenPair`` is persisted.
-    static var tokenPairKey: String { "com.swiftnetworkkit.auth.tokenPair" }
+    public static var tokenPairKey: String { "com.swiftnetworkkit.auth.tokenPair" }
 
-    func currentTokenPair() async throws -> TokenPair? {
+    public func currentTokenPair() async throws -> TokenPair? {
         guard let data = try await data(forKey: Self.tokenPairKey) else { return nil }
         return try JSONDecoder().decode(TokenPair.self, from: data)
     }
 
-    func store(_ pair: TokenPair) async throws {
+    public func store(_ pair: TokenPair) async throws {
         try await setData(try JSONEncoder().encode(pair), forKey: Self.tokenPairKey)
     }
 
-    func accessToken() async throws -> String? {
+    public func accessToken() async throws -> String? {
         try await currentTokenPair()?.accessToken
     }
 
-    func refreshToken() async throws -> String? {
+    public func refreshToken() async throws -> String? {
         try await currentTokenPair()?.refreshToken
     }
 
     /// Removes just the token pair (leaves other stored values in place).
-    func clearTokenPair() async throws {
+    public func clearTokenPair() async throws {
         try await setData(nil, forKey: Self.tokenPairKey)
     }
 }

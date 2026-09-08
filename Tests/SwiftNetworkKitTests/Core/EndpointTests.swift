@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("Endpoint default decode")
@@ -10,11 +11,23 @@ struct EndpointTests {
         let fullName: String
     }
 
-    private struct RawEndpoint: Endpoint { typealias Response = Data; let path = "/x" }
-    private struct StringEndpoint: Endpoint { typealias Response = String; let path = "/x" }
-    private struct EmptyEndpoint: Endpoint { typealias Response = EmptyResponse; let path = "/x" }
-    private struct UserEndpoint: Endpoint { typealias Response = User; let path = "/x" }
-    
+    private struct RawEndpoint: Endpoint {
+        typealias Response = Data
+        let path = "/x"
+    }
+    private struct StringEndpoint: Endpoint {
+        typealias Response = String
+        let path = "/x"
+    }
+    private struct EmptyEndpoint: Endpoint {
+        typealias Response = EmptyResponse
+        let path = "/x"
+    }
+    private struct UserEndpoint: Endpoint {
+        typealias Response = User
+        let path = "/x"
+    }
+
     private struct UnsupportedEndpoint: Endpoint {
         struct NotDecodable: Sendable {}
         typealias Response = NotDecodable

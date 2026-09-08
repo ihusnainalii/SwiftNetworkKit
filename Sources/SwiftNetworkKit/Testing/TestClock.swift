@@ -43,8 +43,8 @@ public final class TestClock: NetworkClock, @unchecked Sendable {
     }
 }
 
-private extension Duration {
-    var inSeconds: TimeInterval {
+extension Duration {
+    fileprivate var inSeconds: TimeInterval {
         let (seconds, attoseconds) = components
         return TimeInterval(seconds) + TimeInterval(attoseconds) / 1e18
     }

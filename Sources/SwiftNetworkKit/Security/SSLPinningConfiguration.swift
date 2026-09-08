@@ -23,9 +23,10 @@ public struct SSLPinningConfiguration: Sendable, Hashable {
     ) {
         // An empty pin list would silently "allow all" under .enforced — that is always a bug.
         // .recordOnly legitimately starts with no pins (you are discovering them).
+        let emptyHost = pins.first { $0.value.isEmpty }?.key ?? "?"
         precondition(
             mode == .recordOnly || pins.allSatisfy { !$0.value.isEmpty },
-            "SSLPinningConfiguration: host \(pins.first { $0.value.isEmpty }?.key ?? "?") has no pins — that is a programmer error, not 'allow all'"
+            "SSLPinningConfiguration: host \(emptyHost) has no pins — that is a programmer error, not 'allow all'"
         )
         self.pins = Dictionary(uniqueKeysWithValues: pins.map { ($0.key.lowercased(), $0.value) })
         self.includeSubdomains = includeSubdomains

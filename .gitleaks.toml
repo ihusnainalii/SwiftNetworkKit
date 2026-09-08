@@ -1,0 +1,14 @@
+# gitleaks configuration for SwiftNetworkKit
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and demo placeholders — no real credentials in this repo."
+paths = [
+  '''Tests/SwiftNetworkKitTests/Fixtures/.*''',   # DER-encoded PUBLIC certs for pinning tests
+  '''Sources/NetworkKitDemo/.*''',                # scripted demo against a public fake API
+]
+regexes = [
+  '''(stale|fresh|demo|test|example|mock)-token''',
+  '''AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=''',  # doc example SPKI hash
+]

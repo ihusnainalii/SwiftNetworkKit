@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("SSLPinning resolution")
@@ -71,10 +72,14 @@ struct SSLPinningResolutionTests {
         #expect(resolved.mode == .recordOnly)
     }
 
+    // Exit tests (`#expect(processExitsWith:)`) require Swift 6.2+. On older toolchains the
+    // precondition in `SSLPinningConfiguration.init` still stands; it just is not asserted here.
+    #if compiler(>=6.2)
     @Test("SSLPinningConfiguration traps on an empty pin list for a host")
     func emptyPinsIsProgrammerError() async {
         await #expect(processExitsWith: .failure) {
             _ = SSLPinningConfiguration(pins: ["api.example.com": []])
         }
     }
+    #endif
 }

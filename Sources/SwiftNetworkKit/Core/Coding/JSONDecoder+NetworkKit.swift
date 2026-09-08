@@ -1,8 +1,8 @@
 import Foundation
 
-public extension JSONDecoder {
+extension JSONDecoder {
     /// SwiftNetworkKit's default decoder: `convertFromSnakeCase` keys, ISO-8601 dates.
-    static var networkKitDefault: JSONDecoder {
+    public static var networkKitDefault: JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601

@@ -7,11 +7,15 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let defaultHeaders: [String: String]
     let retryPolicySummary: String
     let sslPinningSummary: String
+    let cacheSummary: String
+    let requestManagementSummary: String
     private let metrics: InMemoryMetrics
     private let monitor: any NetworkMonitor
+    private let offlineStore: InMemoryOfflineStore
 
-    init(client: NetworkClient, metrics: InMemoryMetrics, monitor: any NetworkMonitor) {
+    init(client: NetworkClient, metrics: InMemoryMetrics, monitor: any NetworkMonitor, offlineStore: InMemoryOfflineStore) {
         self.monitor = monitor
+        self.offlineStore = offlineStore
         self.baseURL = client.configuration.environment.baseURL.absoluteString
         self.defaultHeaders = client.configuration.environment.defaultHeaders.dictionary
         self.metrics = metrics
@@ -30,6 +34,20 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
             backoff = "exponential \(base)s ×\(Int(multiplier)) (max \(Int(maxDelay))s)"
         }
         self.retryPolicySummary = "\(retry.maxAttempts) attempts, \(backoff)"
+
+        let cache = client.configuration.cache
+        if cache.store == nil {
+            self.cacheSummary = "disabled"
+        } else {
+            self.cacheSummary = "\(cache.defaultPolicy), TTL \(Int(cache.defaultTTL))s"
+        }
+
+        let dedup = client.configuration.enableDeduplication ? "dedup on" : "dedup off"
+        self.requestManagementSummary = "max \(client.configuration.maxConcurrentRequests) concurrent, \(dedup)"
+    }
+
+    func offlineQueueDepth() async -> Int {
+        await offlineStore.count
     }
 
     func connectivitySummary() async -> [MetricsRow] {
