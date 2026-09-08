@@ -1,13 +1,15 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("OfflineRequestQueue")
 struct OfflineRequestQueueTests {
 
     private func response(_ status: Int) -> HTTPURLResponse {
-        HTTPURLResponse(url: URL(string: "https://api.example.com/x")!, statusCode: status,
-                        httpVersion: "HTTP/1.1", headerFields: nil)!
+        HTTPURLResponse(
+            url: URL(string: "https://api.example.com/x")!, statusCode: status,
+            httpVersion: "HTTP/1.1", headerFields: nil)!
     }
 
     private func request(_ path: String) -> URLRequest {
@@ -31,7 +33,10 @@ struct OfflineRequestQueueTests {
         let queue = OfflineRequestQueue(
             store: InMemoryOfflineStore(),
             monitor: MockNetworkMonitor(),
-            send: { request in await sent.record(request.url!.path); return self.response(200) }
+            send: { request in
+                await sent.record(request.url!.path)
+                return self.response(200)
+            }
         )
         _ = try await queue.enqueue(request("/first"), expiresAfter: nil)
         _ = try await queue.enqueue(request("/second"), expiresAfter: nil)
@@ -53,7 +58,7 @@ struct OfflineRequestQueueTests {
             monitor: MockNetworkMonitor(),
             send: { _ in self.response(200) }
         )
-        _ = try await queue.enqueue(request("/stale"), expiresAfter: -1) // already expired
+        _ = try await queue.enqueue(request("/stale"), expiresAfter: -1)  // already expired
 
         let events = await queue.events()
         async let collected = collect(events, count: 1)
@@ -87,7 +92,10 @@ struct OfflineRequestQueueTests {
         let queue = OfflineRequestQueue(
             store: InMemoryOfflineStore(),
             monitor: monitor,
-            send: { request in await sent.record(request.url!.path); return self.response(201) }
+            send: { request in
+                await sent.record(request.url!.path)
+                return self.response(201)
+            }
         )
         _ = try await queue.enqueue(request("/deferred"), expiresAfter: nil)
 
@@ -102,8 +110,8 @@ private actor Sent {
     func record(_ path: String) { paths.append(path) }
 }
 
-private extension OfflineReplayEvent {
-    var kind: String {
+extension OfflineReplayEvent {
+    fileprivate var kind: String {
         switch self {
         case .replayed: "replayed"
         case .failed: "failed"

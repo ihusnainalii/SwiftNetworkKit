@@ -44,7 +44,8 @@ public actor FileOfflineStore: OfflineStore {
 
     private func load() -> [PersistedRequest] {
         if let loaded { return loaded }
-        let queue = (try? Data(contentsOf: fileURL))
+        let queue =
+            (try? Data(contentsOf: fileURL))
             .flatMap { try? JSONDecoder().decode([PersistedRequest].self, from: $0) } ?? []
         loaded = queue
         return queue
@@ -55,13 +56,15 @@ public actor FileOfflineStore: OfflineStore {
         try? FileManager.default.createDirectory(
             at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
         )
-        try? JSONEncoder().encode(queue).write(to: fileURL, options: .atomic)
+        try? JSONEncoder().encode(queue).write(to: fileURL, options: [.atomic, .completeFileProtectionUnlessOpen])
     }
 
     private static func defaultURL() -> URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let base =
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        return base
+        return
+            base
             .appendingPathComponent("SwiftNetworkKit", isDirectory: true)
             .appendingPathComponent("offline-queue.json")
     }

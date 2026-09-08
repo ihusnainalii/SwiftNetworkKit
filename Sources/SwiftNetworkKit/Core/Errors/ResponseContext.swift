@@ -22,7 +22,8 @@ public struct ResponseContext: Sendable {
                 if let string = object[key] as? String, !string.isEmpty { return string }
             }
             if let errors = object["errors"] as? [[String: Any]],
-               let first = errors.lazy.compactMap({ $0["message"] as? String }).first {
+                let first = errors.lazy.compactMap({ $0["message"] as? String }).first
+            {
                 return first
             }
             if let errors = object["errors"] as? [String], let first = errors.first { return first }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient retry")
@@ -109,7 +110,10 @@ struct NetworkClientRetryTests {
         task.cancel()
 
         let result = await task.result
-        guard case .failure(let error) = result else { Issue.record("expected failure"); return }
+        guard case .failure(let error) = result else {
+            Issue.record("expected failure")
+            return
+        }
         #expect(NetworkError.normalize(error).code == .cancelled)
     }
 }

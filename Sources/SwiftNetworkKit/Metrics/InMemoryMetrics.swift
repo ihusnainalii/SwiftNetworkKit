@@ -53,9 +53,15 @@ public actor InMemoryMetrics: NetworkMetrics {
 
     /// Resets every counter.
     public func reset() {
-        requestCount = 0; successCount = 0; failureCount = 0; retryCount = 0
-        timeoutCount = 0; tokenRefreshCount = 0; tokenRefreshSuccessCount = 0
-        statusCodeHistogram = [:]; durations = []
+        requestCount = 0
+        successCount = 0
+        failureCount = 0
+        retryCount = 0
+        timeoutCount = 0
+        tokenRefreshCount = 0
+        tokenRefreshSuccessCount = 0
+        statusCodeHistogram = [:]
+        durations = []
     }
 
     private static func average(_ values: [Duration]) -> Duration {

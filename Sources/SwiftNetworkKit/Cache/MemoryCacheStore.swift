@@ -4,7 +4,7 @@ import Foundation
 public actor MemoryCacheStore: ResponseCache {
 
     private var entries: [String: CachedResponse] = [:]
-    private var order: [String] = [] // least-recently-used first
+    private var order: [String] = []  // least-recently-used first
     private var totalBytes = 0
     private let limitBytes: Int
 

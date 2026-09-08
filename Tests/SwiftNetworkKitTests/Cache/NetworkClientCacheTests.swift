@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient caching")
@@ -55,7 +56,7 @@ struct NetworkClientCacheTests {
         let c = client(transport, store, policy: .cacheFirst)
 
         #expect(try await c.request(GetThing()) == Thing(v: "cached"))
-        #expect(try await c.request(GetThing()) == Thing(v: "cached")) // 304 -> served from cache
+        #expect(try await c.request(GetThing()) == Thing(v: "cached"))  // 304 -> served from cache
         #expect(transport.requestCount == 2)
         #expect(transport.recordedRequests.last?.value(forHTTPHeaderField: "If-None-Match") == "\"abc\"")
     }
@@ -71,12 +72,12 @@ struct NetworkClientCacheTests {
     @Test("networkFirst falls back to a cached response when the network fails")
     func networkFirstFallback() async throws {
         let transport = MockNetworkTransport()
-        transport.enqueue(.json(body("saved")))          // first call populates the cache
+        transport.enqueue(.json(body("saved")))  // first call populates the cache
         let store = MemoryCacheStore()
         let c = client(transport, store, policy: .networkFirst)
         _ = try await c.request(GetThing())
 
-        transport.enqueue(.failure(.noInternet))         // second call: offline
+        transport.enqueue(.failure(.noInternet))  // second call: offline
         #expect(try await c.request(GetThing()) == Thing(v: "saved"))
     }
 
@@ -100,8 +101,8 @@ struct NetworkClientCacheTests {
         let store = MemoryCacheStore()
         let c = client(transport, store, policy: .staleWhileRevalidate)
 
-        #expect(try await c.request(GetThing()) == Thing(v: "stale")) // populate
-        #expect(try await c.request(GetThing()) == Thing(v: "stale")) // served stale, refresh kicked off
+        #expect(try await c.request(GetThing()) == Thing(v: "stale"))  // populate
+        #expect(try await c.request(GetThing()) == Thing(v: "stale"))  // served stale, refresh kicked off
 
         // wait for the detached refresh to land the fresh value
         for _ in 0..<200 where (await store.value(forKey: cacheKey))?.data != body("fresh") {

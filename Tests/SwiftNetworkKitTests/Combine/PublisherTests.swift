@@ -47,7 +47,10 @@ struct PublisherTests {
         transport.enqueue(.status(500))
         let (values, completion) = await drain(client(transport).publisher(for: GetThing()))
         #expect(values.isEmpty)
-        guard case .failure(let error) = completion else { Issue.record("expected .failure"); return }
+        guard case .failure(let error) = completion else {
+            Issue.record("expected .failure")
+            return
+        }
         #expect(error.code == .server)
     }
 
@@ -62,7 +65,7 @@ struct PublisherTests {
         try? await Task.sleep(for: .milliseconds(30))
         cancellable.cancel()
         try? await Task.sleep(for: .milliseconds(50))
-        #expect(completed.value == false) // no completion delivered — the task was torn down
+        #expect(completed.value == false)  // no completion delivered — the task was torn down
     }
 
     @Test("paginatePublisher emits one value per page then finishes")

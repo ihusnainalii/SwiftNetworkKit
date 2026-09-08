@@ -45,9 +45,9 @@ public final class Paged<Item: Sendable & Identifiable> {
     /// Fetches the next page when `currentItem` is within 3 rows of the end of the loaded list.
     public func loadMoreIfNeeded(currentItem: Item?) async {
         guard canLoadMore, !isLoadingMore,
-              let currentItem,
-              let position = items.firstIndex(where: { $0.id == currentItem.id }),
-              position >= items.count - 3
+            let currentItem,
+            let position = items.firstIndex(where: { $0.id == currentItem.id }),
+            position >= items.count - 3
         else { return }
         await fetchNextPage()
     }

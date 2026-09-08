@@ -1,6 +1,6 @@
 import Foundation
 
-public extension NetworkClient {
+extension NetworkClient {
 
     /// Uploads `body` as the request body of `endpoint`, reporting byte progress, and decodes the
     /// response into `E.Response`.
@@ -15,7 +15,7 @@ public extension NetworkClient {
     ///     print(event.fraction ?? 0)
     /// }
     /// ```
-    func upload<E: Endpoint>(
+    public func upload<E: Endpoint>(
         _ endpoint: E,
         from body: UploadBody,
         progress: (@Sendable (ProgressEvent) -> Void)? = nil
@@ -71,7 +71,7 @@ public extension NetworkClient {
     /// - Parameter destination: where to place the file. `nil` returns the transport's temp file
     ///   (valid until deleted by the OS — move it if you need it to persist). A missing parent
     ///   directory is created.
-    func download<E: Endpoint>(
+    public func download<E: Endpoint>(
         _ endpoint: E,
         to destination: URL? = nil,
         progress: (@Sendable (ProgressEvent) -> Void)? = nil

@@ -1,6 +1,7 @@
 import Foundation
 import Security
 import Testing
+
 @testable import SwiftNetworkKit
 
 /// Self-signed fixture certificates generated once with openssl (RSA-2048 and EC-P256), plus their

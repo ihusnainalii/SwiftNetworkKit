@@ -1,7 +1,18 @@
 # SwiftNetworkKit
 
+[![CI](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml)
+[![Release](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/ihusnainalii/SwiftNetworkKit/branch/main/graph/badge.svg)](https://codecov.io/gh/ihusnainalii/SwiftNetworkKit)
+[![Swift 6](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%2016%20%7C%20macOS%2013%20%7C%20tvOS%2016%20%7C%20watchOS%209%20%7C%20visionOS%201-lightgrey.svg)](Package.swift)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
+
+Around 95% of the library is `async/await` + actors under Swift 6 strict concurrency; Combine and
+SwiftUI are optional `#if canImport` adapters over that core (see the
+[modernity analysis](.claude/PRPs/reports/swift-network-kit-modernity-analysis.md)).
 
 > **Status:** all 15 milestones (M0 to M14) are complete: core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
@@ -316,15 +327,45 @@ All three call styles are supported: `async/await`, completion handlers, and Com
 ## Tests
 
 ```bash
-swift test
+swift test                                    # 224 tests, 45 suites
 swift test --sanitize=thread
+bash scripts/coverage.sh                        # local coverage report -> .build/coverage/
 ```
 
-Test doubles ship in the library: `MockNetworkTransport` (FIFO queue **or** `stub(pathContains:with:)`
-matchers, plus `MockScenario` presets), `URLProtocolStub`, `TestClock`, `CapturingLogger`,
-`MockNetworkMonitor`, `InMemoryOfflineStore`. `ArchitectureTests` grep-guards the library's own layer
-discipline. CI (`.github/workflows/ci.yml`) runs build (`-warnings-as-errors`), tests, ThreadSanitizer
-and iOS builds.
+Coverage sits at ~87% line / ~79% region on the library target. Test doubles ship in the library:
+`MockNetworkTransport` (FIFO queue **or** `stub(pathContains:with:)` matchers, plus `MockScenario`
+presets), `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`,
+`InMemoryOfflineStore`. `ArchitectureTests` grep-guards the library's own layer discipline.
+
+## CI and releases
+
+`.github/workflows/ci.yml` runs on every push and pull request as parallel jobs:
+
+| Job | What it checks |
+|---|---|
+| Lint & format | SwiftLint `--strict`, swift-format `--strict` |
+| Build | `swift build --build-tests -Xswiftc -warnings-as-errors` |
+| Test + coverage | `swift test` + code coverage to Codecov and the job summary |
+| Sanitizers | ThreadSanitizer + AddressSanitizer |
+| iOS | `xcodebuild` the library and `SwiftUIDemo` for the iOS Simulator |
+| DocC | `xcodebuild docbuild` (catches broken symbol links) |
+| Secret scan | `gitleaks` over full history |
+
+`.github/workflows/release.yml` runs [release-please](https://github.com/googleapis/release-please):
+every merge to `main` updates a rolling release PR (version bump + `CHANGELOG.md` from the
+Conventional Commit history); merging that PR tags the commit and publishes a GitHub Release.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Documentation
+
+- [`ROADMAP.md`](ROADMAP.md) - milestone history (M0 through M14) and the path to 1.0.0
+- [`CHANGELOG.md`](CHANGELOG.md) - release notes
+- [`SECURITY.md`](SECURITY.md) - security posture and how to report a vulnerability
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) - dev loop, style, commit and release conventions
+- [`.claude/PRPs/reports/`](.claude/PRPs/reports/) - per-milestone implementation reports, the
+  [security audit](.claude/PRPs/reports/swift-network-kit-security-audit.md), and the
+  [modernity analysis](.claude/PRPs/reports/swift-network-kit-modernity-analysis.md)
+- DocC: `SwiftNetworkKit.docc` (build with `xcodebuild docbuild -scheme SwiftNetworkKit`)
 
 ## License
 

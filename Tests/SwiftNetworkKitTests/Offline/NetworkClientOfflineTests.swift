@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient offline queue")
@@ -40,7 +41,10 @@ struct NetworkClientOfflineTests {
         let error = await #expect(throws: NetworkError.self) {
             try await c.request(QueuedPost())
         }
-        guard case .offlineQueued(let id)? = error else { Issue.record("expected .offlineQueued"); return }
+        guard case .offlineQueued(let id)? = error else {
+            Issue.record("expected .offlineQueued")
+            return
+        }
         #expect(await store.count == 1)
         #expect(await store.all().first?.id == id)
     }

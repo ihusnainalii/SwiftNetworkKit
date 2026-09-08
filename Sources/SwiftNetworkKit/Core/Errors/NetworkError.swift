@@ -29,16 +29,16 @@ public enum NetworkError: Error, Sendable {
     case unknown(underlying: (any Error & Sendable)?)
 }
 
-public extension NetworkError {
+extension NetworkError {
     /// A stable, `Equatable` discriminant — handy for `switch`ing and for tests.
-    enum Code: String, Sendable, Hashable, CaseIterable {
+    public enum Code: String, Sendable, Hashable, CaseIterable {
         case invalidURL, noInternet, timeout, unauthorized, forbidden, notFound
         case validation, rateLimited, server, unacceptableStatusCode, decoding, encoding
         case sslPinningFailed, tokenRefreshFailed, sessionExpired, cancelled, offline, offlineQueued
         case transport, unknown
     }
 
-    var code: Code {
+    public var code: Code {
         switch self {
         case .invalidURL: .invalidURL
         case .noInternet: .noInternet
@@ -64,10 +64,10 @@ public extension NetworkError {
     }
 
     /// The response context, for the cases that carry one.
-    var responseContext: ResponseContext? {
+    public var responseContext: ResponseContext? {
         switch self {
         case .unauthorized(let context), .forbidden(let context), .notFound(let context),
-             .validation(let context), .server(let context):
+            .validation(let context), .server(let context):
             context
         case .rateLimited(_, let context), .unacceptableStatusCode(_, let context):
             context
@@ -79,20 +79,20 @@ public extension NetworkError {
     }
 
     /// HTTP status code, when the error originated from a response.
-    var statusCode: Int? { responseContext?.statusCode }
+    public var statusCode: Int? { responseContext?.statusCode }
 
     /// Response headers, when available.
-    var responseHeaders: HTTPHeaders? { responseContext?.headers }
+    public var responseHeaders: HTTPHeaders? { responseContext?.headers }
 
     /// Raw response body, when available.
-    var responseData: Data? { responseContext?.data }
+    public var responseData: Data? { responseContext?.data }
 
     /// Server-supplied message, when the body carried one.
-    var serverMessage: String? { responseContext?.serverMessage }
+    public var serverMessage: String? { responseContext?.serverMessage }
 
     /// Normalizes an arbitrary thrown error: passes ``NetworkError`` through untouched,
     /// maps `URLError` / cancellation, and wraps anything else as `.unknown`.
-    static func normalize(_ error: any Error) -> NetworkError {
+    public static func normalize(_ error: any Error) -> NetworkError {
         switch error {
         case let networkError as NetworkError:
             return networkError

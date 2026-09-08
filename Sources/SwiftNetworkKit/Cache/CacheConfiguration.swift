@@ -31,6 +31,7 @@ public struct CacheConfiguration: Sendable {
         limitBytes: Int = 20 * 1024 * 1024,
         defaultTTL: TimeInterval = 300
     ) -> CacheConfiguration {
-        CacheConfiguration(store: MemoryCacheStore(limitBytes: limitBytes), defaultPolicy: policy, defaultTTL: defaultTTL)
+        CacheConfiguration(
+            store: MemoryCacheStore(limitBytes: limitBytes), defaultPolicy: policy, defaultTTL: defaultTTL)
     }
 }

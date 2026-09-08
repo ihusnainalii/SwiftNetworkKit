@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("Cache stores")
@@ -27,8 +28,8 @@ struct CacheStoreTests {
         let store = MemoryCacheStore(limitBytes: 300)
         await store.setValue(entry(String(repeating: "x", count: 120)), forKey: "a")
         await store.setValue(entry(String(repeating: "y", count: 120)), forKey: "b")
-        _ = await store.value(forKey: "a")                       // 'a' now most-recently-used
-        await store.setValue(entry(String(repeating: "z", count: 120)), forKey: "c") // pushes over -> evict 'b'
+        _ = await store.value(forKey: "a")  // 'a' now most-recently-used
+        await store.setValue(entry(String(repeating: "z", count: 120)), forKey: "c")  // pushes over -> evict 'b'
         #expect(await store.value(forKey: "b") == nil)
         #expect(await store.value(forKey: "a") != nil)
         #expect(await store.value(forKey: "c") != nil)
@@ -53,9 +54,9 @@ struct CacheStoreTests {
         let old = Date().addingTimeInterval(-120)
         #expect(entry("x", maxAge: 60, storedAt: old).isFresh(ttl: 300) == false)
         #expect(entry("x", maxAge: 600, storedAt: old).isFresh(ttl: 10) == true)
-        #expect(entry("x", maxAge: nil, storedAt: old).isFresh(ttl: 300) == true)   // uses TTL 300
+        #expect(entry("x", maxAge: nil, storedAt: old).isFresh(ttl: 300) == true)  // uses TTL 300
         #expect(entry("x", maxAge: nil, storedAt: old).isFresh(ttl: 60) == false)
-        #expect(entry("x", maxAge: 0, storedAt: Date()).isFresh(ttl: 300) == false) // must-revalidate
+        #expect(entry("x", maxAge: 0, storedAt: Date()).isFresh(ttl: 300) == false)  // must-revalidate
     }
 
     @Test("CachedResponse survives a JSON round-trip")

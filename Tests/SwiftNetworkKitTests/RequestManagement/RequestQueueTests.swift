@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("RequestQueue")
@@ -8,7 +9,10 @@ struct RequestQueueTests {
     private actor Meter {
         private(set) var current = 0
         private(set) var peak = 0
-        func enter() { current += 1; peak = max(peak, current) }
+        func enter() {
+            current += 1
+            peak = max(peak, current)
+        }
         func exit() { current -= 1 }
     }
 
@@ -31,7 +35,7 @@ struct RequestQueueTests {
         }
 
         #expect(await meter.peak <= 3)
-        #expect(await meter.peak >= 2) // the limit was actually exercised
+        #expect(await meter.peak >= 2)  // the limit was actually exercised
         #expect(await queue.runningCount == 0)
     }
 

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("Pagination")
@@ -67,7 +68,7 @@ struct PaginationTests {
 
         let transport2 = MockNetworkTransport(default: .json(Data(#"{"values":[9,9]}"#.utf8)))
         #expect(try await client(transport2).collectAll(Runaway(), max: 3) == [9, 9, 9])
-        #expect(transport2.requestCount <= 3) // stops early (the stream may prefetch one page)
+        #expect(transport2.requestCount <= 3)  // stops early (the stream may prefetch one page)
     }
 
     @Test("a runaway server is capped at maxPages")

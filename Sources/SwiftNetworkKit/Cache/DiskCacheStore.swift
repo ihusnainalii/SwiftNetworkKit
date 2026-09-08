@@ -20,14 +20,15 @@ public actor DiskCacheStore: ResponseCache {
     public func value(forKey key: String) -> CachedResponse? {
         let url = fileURL(for: key)
         guard let data = try? Data(contentsOf: url),
-              let entry = try? JSONDecoder().decode(CachedResponse.self, from: data) else { return nil }
-        try? fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path) // LRU touch
+            let entry = try? JSONDecoder().decode(CachedResponse.self, from: data)
+        else { return nil }
+        try? fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)  // LRU touch
         return entry
     }
 
     public func setValue(_ value: CachedResponse, forKey key: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
-        try? data.write(to: fileURL(for: key), options: .atomic)
+        try? data.write(to: fileURL(for: key), options: [.atomic, .completeFileProtectionUnlessOpen])
         evictIfNeeded()
     }
 
@@ -54,22 +55,24 @@ public actor DiskCacheStore: ResponseCache {
     }
 
     private static func defaultDirectory() -> URL {
-        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        let base =
+            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent("SwiftNetworkKit", isDirectory: true)
     }
 
     private func evictIfNeeded() {
         let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey]
-        var files = ((try? fileManager.contentsOfDirectory(
-            at: directory, includingPropertiesForKeys: keys
-        )) ?? []).compactMap { url -> (url: URL, size: Int, date: Date)? in
-            let values = try? url.resourceValues(forKeys: Set(keys))
-            return (url, values?.fileSize ?? 0, values?.contentModificationDate ?? .distantPast)
-        }
+        var files =
+            ((try? fileManager.contentsOfDirectory(
+                at: directory, includingPropertiesForKeys: keys
+            )) ?? []).compactMap { url -> (url: URL, size: Int, date: Date)? in
+                let values = try? url.resourceValues(forKeys: Set(keys))
+                return (url, values?.fileSize ?? 0, values?.contentModificationDate ?? .distantPast)
+            }
         var total = files.reduce(0) { $0 + $1.size }
         guard total > limitBytes else { return }
-        files.sort { $0.date < $1.date } // oldest first
+        files.sort { $0.date < $1.date }  // oldest first
         for file in files where total > limitBytes {
             try? fileManager.removeItem(at: file.url)
             total -= file.size

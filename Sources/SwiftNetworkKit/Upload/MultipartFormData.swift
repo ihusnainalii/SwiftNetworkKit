@@ -37,12 +37,13 @@ public struct MultipartFormData: Sendable {
         fileName: String? = nil,
         mimeType: String? = nil
     ) {
-        parts.append(MultipartPart(
-            name: name,
-            fileName: fileName ?? fileURL.lastPathComponent,
-            mimeType: mimeType ?? Self.mimeType(for: fileURL),
-            source: .file(fileURL)
-        ))
+        parts.append(
+            MultipartPart(
+                name: name,
+                fileName: fileName ?? fileURL.lastPathComponent,
+                mimeType: mimeType ?? Self.mimeType(for: fileURL),
+                source: .file(fileURL)
+            ))
     }
 
     // MARK: Encoding

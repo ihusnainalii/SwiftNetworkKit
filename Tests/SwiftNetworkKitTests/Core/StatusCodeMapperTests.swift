@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("StatusCodeMapper")
@@ -21,21 +22,23 @@ struct StatusCodeMapperTests {
         #expect(StatusCodeMapper.map(context: context(304)) == nil)
     }
 
-    @Test("status code → error code", arguments: [
-        (400, NetworkError.Code.validation),
-        (401, .unauthorized),
-        (403, .forbidden),
-        (404, .notFound),
-        (408, .timeout),
-        (409, .unacceptableStatusCode),
-        (418, .unacceptableStatusCode),
-        (422, .validation),
-        (429, .rateLimited),
-        (500, .server),
-        (502, .server),
-        (503, .server),
-        (504, .server),
-    ])
+    @Test(
+        "status code → error code",
+        arguments: [
+            (400, NetworkError.Code.validation),
+            (401, .unauthorized),
+            (403, .forbidden),
+            (404, .notFound),
+            (408, .timeout),
+            (409, .unacceptableStatusCode),
+            (418, .unacceptableStatusCode),
+            (422, .validation),
+            (429, .rateLimited),
+            (500, .server),
+            (502, .server),
+            (503, .server),
+            (504, .server),
+        ])
     func mapping(status: Int, expected: NetworkError.Code) {
         #expect(StatusCodeMapper.map(context: context(status))?.code == expected)
     }

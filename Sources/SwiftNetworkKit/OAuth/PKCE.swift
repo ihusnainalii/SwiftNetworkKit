@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(CryptoKit)
 import CryptoKit
 #endif
@@ -47,8 +48,8 @@ public struct PKCE: Sendable, Hashable {
     }
 }
 
-private extension Data {
-    func sha256() -> Data {
+extension Data {
+    fileprivate func sha256() -> Data {
         #if canImport(CryptoKit)
         return Data(SHA256.hash(data: self))
         #else

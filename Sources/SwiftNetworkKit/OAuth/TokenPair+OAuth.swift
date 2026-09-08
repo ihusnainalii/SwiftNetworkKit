@@ -1,9 +1,9 @@
 import Foundation
 
-public extension TokenPair {
+extension TokenPair {
     /// Maps an ``OAuthTokenResponse`` into the pair ``TokenManager`` stores (carrying the absolute
     /// expiry so proactive refresh works).
-    init(oauth response: OAuthTokenResponse) {
+    public init(oauth response: OAuthTokenResponse) {
         self.init(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
@@ -12,7 +12,7 @@ public extension TokenPair {
     }
 }
 
-public extension AuthorizationCodeFlow {
+extension AuthorizationCodeFlow {
     /// A ``TokenManager`` refresh handler backed by this flow. Wire it into `NetworkClient(refresh:)`:
     ///
     /// ```swift
@@ -21,7 +21,7 @@ public extension AuthorizationCodeFlow {
     ///
     /// It reads the stored refresh token, exchanges it, and returns the new pair. If nothing is
     /// stored it throws ``NetworkError/sessionExpired``.
-    func tokenManagerRefreshHandler() -> TokenManager.RefreshHandler {
+    public func tokenManagerRefreshHandler() -> TokenManager.RefreshHandler {
         { storage in
             guard let refreshToken = try await storage.refreshToken() else {
                 throw NetworkError.sessionExpired

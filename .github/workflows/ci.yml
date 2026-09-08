@@ -2,35 +2,91 @@ name: CI
 
 on:
   push:
-    branches: [main, refectoring]
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+
 jobs:
-  test:
-    name: Build & test (SPM)
+  # 1 - Style: SwiftLint (strict) + swift-format (strict). Fast, no build.
+  lint:
+    name: Lint & format
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
-      - name: swift build
-        run: swift build -Xswiftc -warnings-as-errors
-      - name: swift test
-        run: swift test --parallel
-      - name: swift test (ThreadSanitizer)
-        run: swift test --sanitize=thread
+      - name: SwiftLint
+        run: |
+          brew list swiftlint >/dev/null 2>&1 || brew install swiftlint
+          swiftlint --version
+          swiftlint lint --strict --reporter github-actions-logging
+      - name: swift-format
+        run: swift format lint --recursive --strict --configuration .swift-format Sources Tests
 
-  ios-build:
+  # 2 - Compile the whole package with warnings promoted to errors.
+  build:
+    name: Build (SPM, -warnings-as-errors)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-build-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+      - run: swift build --build-tests -Xswiftc -warnings-as-errors
+
+  # 3 - Unit tests + code coverage. Coverage is published to the job summary and Codecov.
+  test:
+    name: Test + coverage
+    runs-on: macos-15
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-build-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}
+      - name: swift test
+        run: swift test --parallel --enable-code-coverage
+      - name: Export coverage (lcov + summary)
+        run: bash scripts/coverage.sh
+      - name: Coverage to job summary
+        run: cat .build/coverage/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: .build/coverage/coverage.lcov
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: .build/coverage/
+
+  # 4 - Data-race and memory checks. Slower, so it runs in parallel with `test`.
+  sanitizers:
+    name: Sanitizers (thread, address)
+    runs-on: macos-15
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: ThreadSanitizer
+        run: swift test --sanitize=thread
+      - name: AddressSanitizer
+        run: swift test --sanitize=address
+
+  # 5 - The library and the SwiftUI example app must build for a real Apple SDK.
+  ios:
     name: Build for iOS Simulator
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
       - name: xcodebuild (library)
         run: >
           xcodebuild build
@@ -43,3 +99,39 @@ jobs:
           -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj
           -scheme SwiftUIDemo
           -destination 'generic/platform=iOS Simulator'
+
+  # 6 - DocC must compile (catches broken symbol links in doc comments).
+  #     Uses xcodebuild so the package keeps its zero-dependency Package.swift.
+  docs:
+    name: DocC build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: >
+          xcodebuild docbuild
+          -scheme SwiftNetworkKit
+          -destination 'generic/platform=iOS Simulator'
+          -skipPackagePluginValidation
+
+  # 7 - Secret scan on the full history of the PR / push range.
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Single required status for branch protection.
+  ci-ok:
+    name: CI passed
+    runs-on: ubuntu-latest
+    needs: [lint, build, test, sanitizers, ios, docs, secrets]
+    if: always()
+    steps:
+      - run: |
+          echo "Results: ${{ toJSON(needs.*.result) }}"
+          [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "false" ]

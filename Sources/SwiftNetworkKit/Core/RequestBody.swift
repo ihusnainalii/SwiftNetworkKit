@@ -37,7 +37,8 @@ public enum RequestBody: Sendable {
 
         case .formURLEncoded(let fields):
             let allowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "+&="))
-            let encoded = fields
+            let encoded =
+                fields
                 .sorted { $0.key < $1.key }
                 .map { key, value -> String in
                     let name = key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key

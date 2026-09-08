@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("Batch & zip")
@@ -36,7 +37,7 @@ struct BatchTests {
     @Test("zip throws if either endpoint fails")
     func zipFailure() async {
         let transport = MockNetworkTransport(default: .json(Data(#"{"n":1}"#.utf8)))
-        transport.enqueue(.status(500)) // one of the two requests gets this
+        transport.enqueue(.status(500))  // one of the two requests gets this
         await #expect(throws: NetworkError.self) {
             _ = try await client(transport).zip(Get(path: "/a"), Get(path: "/b"))
         }
@@ -45,7 +46,7 @@ struct BatchTests {
     @Test("batch returns one result per input and isolates failures")
     func batchResults() async {
         let transport = MockNetworkTransport(default: .json(Data(#"{"n":1}"#.utf8)))
-        transport.enqueue(.status(404)) // exactly one of the three fails
+        transport.enqueue(.status(404))  // exactly one of the three fails
         let results = await client(transport).batch([Get(path: "/a"), Get(path: "/b"), Get(path: "/c")])
 
         #expect(results.count == 3)

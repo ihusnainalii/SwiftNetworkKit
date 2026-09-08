@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(Security)
 import Security
 #if canImport(CryptoKit)
@@ -19,7 +20,7 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
 
     public func evaluate(trust: SecTrust, host: String) -> Result<Void, NetworkError> {
         guard let pins = configuration.pins(matching: host) else {
-            return .success(()) // pinning does not apply to this host
+            return .success(())  // pinning does not apply to this host
         }
 
         let chain = Self.certificates(in: trust)

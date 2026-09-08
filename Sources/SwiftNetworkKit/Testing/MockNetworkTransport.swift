@@ -55,19 +55,22 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
 
     /// Requests captured so far, in order.
     public var recordedRequests: [URLRequest] {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return recorded
     }
 
     /// Number of requests received.
     public var requestCount: Int {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return recorded.count
     }
 
     @discardableResult
     public func enqueue(_ outcomes: Outcome...) -> Self {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         queue.append(contentsOf: outcomes)
         return self
     }
@@ -86,7 +89,8 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
         matching predicate: @escaping @Sendable (URLRequest) -> Bool,
         with outcomes: Outcome...
     ) -> Self {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         rules.append(Rule(matches: predicate, outcomes: outcomes))
         return self
     }
@@ -106,14 +110,16 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
             },
             outcomes: outcomes
         )
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         rules.append(rule)
         return self
     }
 
     public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let outcome: Outcome = {
-            lock.lock(); defer { lock.unlock() }
+            lock.lock()
+            defer { lock.unlock() }
             recorded.append(request)
             if let index = rules.firstIndex(where: { $0.matches(request) }) {
                 let outcomes = rules[index].outcomes

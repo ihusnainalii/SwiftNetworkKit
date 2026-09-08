@@ -119,8 +119,9 @@ public struct AuthorizationCodeFlow: Sendable {
 
     static func formEncoded(_ fields: [String: String]) -> Data {
         // application/x-www-form-urlencoded: only RFC 3986 unreserved characters pass through.
-        let allowed = CharacterSet(charactersIn:
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        let allowed = CharacterSet(
+            charactersIn:
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
         let pairs = fields.sorted { $0.key < $1.key }.map { key, value in
             let k = key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key
             let v = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value

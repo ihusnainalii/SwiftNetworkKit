@@ -67,26 +67,29 @@ public protocol Endpoint: Sendable {
     func decode(_ data: Data, response: HTTPURLResponse, using decoder: JSONDecoder) throws -> Response
 }
 
-public extension Endpoint {
-    var baseURL: URL? { nil }
-    var method: HTTPMethod { .get }
-    var headers: HTTPHeaders { [:] }
-    var queryParameters: QueryParameters? { nil }
-    var pathParameters: [String: String] { [:] }
-    var body: RequestBody? { nil }
-    var authentication: AuthRequirement { .none }
-    var timeout: TimeInterval? { nil }
-    var priority: RequestPriority { .normal }
-    var retryPolicy: RetryPolicy? { nil }
-    var cachePolicy: CachePolicy? { nil }
-    var deduplicate: Bool? { nil }
-    var skipRequestQueue: Bool { false }
-    var offlineBehavior: OfflineBehavior { .fail }
-    var decoder: JSONDecoder? { nil }
+extension Endpoint {
+    public var baseURL: URL? { nil }
+    public var method: HTTPMethod { .get }
+    public var headers: HTTPHeaders { [:] }
+    public var queryParameters: QueryParameters? { nil }
+    public var pathParameters: [String: String] { [:] }
+    public var body: RequestBody? { nil }
+    public var authentication: AuthRequirement { .none }
+    public var timeout: TimeInterval? { nil }
+    public var priority: RequestPriority { .normal }
+    public var retryPolicy: RetryPolicy? { nil }
+    public var cachePolicy: CachePolicy? { nil }
+    public var deduplicate: Bool? { nil }
+    public var skipRequestQueue: Bool { false }
+    public var offlineBehavior: OfflineBehavior { .fail }
+    public var decoder: JSONDecoder? { nil }
 }
 
-public extension Endpoint {
-    func decode(_ data: Data, response: HTTPURLResponse, using decoder: JSONDecoder) throws -> Response {
+extension Endpoint {
+    // Generic decode dispatch: each `as! Response` below is guarded by an exact
+    // `Response.self == X.self` check on the preceding line, so the cast cannot fail.
+    // swiftlint:disable force_cast
+    public func decode(_ data: Data, response: HTTPURLResponse, using decoder: JSONDecoder) throws -> Response {
         if Response.self == Data.self {
             return data as! Response
         }
@@ -112,10 +115,11 @@ public extension Endpoint {
             throw NetworkError.decoding(underlying: asSendableError(error), nil)
         }
     }
+    // swiftlint:enable force_cast
 }
 
-private extension Decodable {
-    static func decodeFromJSON(_ data: Data, using decoder: JSONDecoder) throws -> Self {
+extension Decodable {
+    fileprivate static func decodeFromJSON(_ data: Data, using decoder: JSONDecoder) throws -> Self {
         try decoder.decode(Self.self, from: data)
     }
 }

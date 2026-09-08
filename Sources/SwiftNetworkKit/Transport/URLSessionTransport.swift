@@ -89,9 +89,9 @@ public final class URLSessionTransport: NetworkTransport, @unchecked Sendable {
             }
             let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent("swiftnetworkkit-upload-\(UUID().uuidString)")
-            do { try form.writeEncoded(to: url) }
-            catch let error as NetworkError { throw error }
-            catch { throw NetworkError.encoding(underlying: asSendableError(error)) }
+            do { try form.writeEncoded(to: url) } catch let error as NetworkError { throw error } catch {
+                throw NetworkError.encoding(underlying: asSendableError(error))
+            }
             scratchFile = url
             sourceFile = url
             inlineData = nil

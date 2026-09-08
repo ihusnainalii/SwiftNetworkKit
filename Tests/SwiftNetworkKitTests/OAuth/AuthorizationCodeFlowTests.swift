@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("AuthorizationCodeFlow")
@@ -55,9 +56,12 @@ struct AuthorizationCodeFlowTests {
     @Test("exchange POSTs the correct form fields and decodes the token")
     func exchange() async throws {
         let transport = MockNetworkTransport()
-        transport.enqueue(.json(Data(#"""
-        {"access_token":"AT","refresh_token":"RT","expires_in":3600,"token_type":"Bearer","scope":"openid"}
-        """#.utf8)))
+        transport.enqueue(
+            .json(
+                Data(
+                    #"""
+                    {"access_token":"AT","refresh_token":"RT","expires_in":3600,"token_type":"Bearer","scope":"openid"}
+                    """#.utf8)))
         let flow = AuthorizationCodeFlow(configuration: config(), transport: transport)
         let pkce = PKCE(verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
 
@@ -115,7 +119,9 @@ struct AuthorizationCodeFlowTests {
     @Test("tokenManagerRefreshHandler exchanges the stored refresh token")
     func refreshHandlerIntegration() async throws {
         let transport = MockNetworkTransport()
-        transport.enqueue(.json(Data(#"{"access_token":"fresh","refresh_token":"RT2","token_type":"Bearer","expires_in":3600}"#.utf8)))
+        transport.enqueue(
+            .json(Data(#"{"access_token":"fresh","refresh_token":"RT2","token_type":"Bearer","expires_in":3600}"#.utf8))
+        )
         let flow = AuthorizationCodeFlow(configuration: config(), transport: transport)
         let storage = InMemoryTokenStorage(seed: TokenPair(accessToken: "old", refreshToken: "RT"))
 

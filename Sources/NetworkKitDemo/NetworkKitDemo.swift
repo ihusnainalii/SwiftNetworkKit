@@ -42,7 +42,8 @@ struct NetworkKitDemo {
         let logger = CapturingLogger()
         var configuration = NetworkConfiguration(baseURL: "https://jsonplaceholder.typicode.com")
         // recordOnly: never blocks, logs the computed sha256/… for the server's cert chain.
-        configuration.sslPinning = .development(.publicKeys([], hosts: ["jsonplaceholder.typicode.com"]))
+        configuration.sslPinning = .development(
+            .publicKeys([], hosts: ["jsonplaceholder.typicode.com"]))
         configuration.environment.logLevel = .error
         configuration.logger = logger
 
@@ -80,7 +81,8 @@ struct NetworkKitDemo {
 
         await section("3. POST — JSON body, decoded response") {
             let created = try await client.request(
-                CreatePostEndpoint(draft: DraftPost(title: "Hello", body: "from SwiftNetworkKit", userID: 1))
+                CreatePostEndpoint(
+                    draft: DraftPost(title: "Hello", body: "from SwiftNetworkKit", userID: 1))
             )
             print("   → created post id \(created.id): \"\(created.title)\"")
         }
@@ -156,7 +158,7 @@ struct NetworkKitDemo {
         let transport = MockNetworkTransport()
         transport.enqueue(.status(503), .status(503), .json(Data(#"{"value":"42"}"#.utf8)))
 
-        let clock = TestClock() // records backoff waits instead of really sleeping
+        let clock = TestClock()  // records backoff waits instead of really sleeping
 
         var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
         configuration.retry = RetryPolicy(maxAttempts: 3, jitter: .none)
@@ -187,9 +189,13 @@ struct NetworkKitDemo {
             }
         }
         struct FlagEnvelope: ResponseInterceptor {
-            func process(_ context: ResponseContext, for endpoint: AnyEndpoint) async throws -> InterceptOutcome {
+            func process(
+                _ context: ResponseContext, for endpoint: AnyEndpoint
+            ) async throws
+                -> InterceptOutcome
+            {
                 guard let data = context.data,
-                      String(data: data, encoding: .utf8)?.contains("NEEDS_2FA") == true
+                    String(data: data, encoding: .utf8)?.contains("NEEDS_2FA") == true
                 else { return .proceed }
                 return .fail(.forbidden(context))
             }
@@ -225,19 +231,27 @@ struct NetworkKitDemo {
 
         let client = NetworkClient(configuration: configuration, transport: transport)
 
-        _ = try? await client.request(SecretEndpoint())              // succeeds
-        do { _ = try await client.request(SecretEndpoint()) }        // interceptor fails it
-        catch { print("   ✗ second call rejected by response interceptor: .\(NetworkError.normalize(error).code)") }
+        _ = try? await client.request(SecretEndpoint())  // succeeds
+        do { _ = try await client.request(SecretEndpoint()) }  // interceptor fails it
+        catch {
+            print(
+                "   ✗ second call rejected by response interceptor: .\(NetworkError.normalize(error).code)")
+        }
 
-        let sentVersion = transport.recordedRequests.first?.value(forHTTPHeaderField: "X-App-Version") ?? "-"
+        let sentVersion =
+            transport.recordedRequests.first?.value(forHTTPHeaderField: "X-App-Version") ?? "-"
         print("   → X-App-Version sent by request interceptor: \(sentVersion)")
-        print("   → X-Request-ID auto-added: \(transport.recordedRequests.first?.value(forHTTPHeaderField: "X-Request-ID") ?? "-")")
+        print(
+            "   → X-Request-ID auto-added: \(transport.recordedRequests.first?.value(forHTTPHeaderField: "X-Request-ID") ?? "-")"
+        )
 
         print("   → captured log lines (Authorization/token redacted):")
         for line in logger.lines { print("       \(line)") }
 
         let snapshot = await metrics.snapshot()
-        print("   → metrics: \(snapshot.requestCount) requests, \(snapshot.successCount) ok, \(snapshot.failureCount) failed, histogram \(snapshot.statusCodeHistogram)")
+        print(
+            "   → metrics: \(snapshot.requestCount) requests, \(snapshot.successCount) ok, \(snapshot.failureCount) failed, histogram \(snapshot.statusCodeHistogram)"
+        )
     }
 
     // MARK: - Reachability (mock monitor)
@@ -296,12 +310,17 @@ struct NetworkKitDemo {
             .json(Data(#"{"id":101}"#.utf8), status: 201),
             .success(status: 200, headers: [:], body: Data(repeating: 0x2A, count: 8192))
         )
-        let client = NetworkClient(configuration: NetworkConfiguration(baseURL: "https://api.example.com"), transport: transport)
+        let client = NetworkClient(
+            configuration: NetworkConfiguration(baseURL: "https://api.example.com"), transport: transport)
 
         var form = MultipartFormData(boundary: "demo-boundary")
         form.append("a cat photo", name: "caption")
-        form.append(Data(repeating: 0xFF, count: 4096), name: "photo", fileName: "cat.jpg", mimeType: "image/jpeg")
-        print("   → multipart body is \(try! form.encoded().count) bytes, Content-Type: \(form.contentType)")
+        form.append(
+            Data(repeating: 0xFF, count: 4096), name: "photo", fileName: "cat.jpg", mimeType: "image/jpeg"
+        )
+        print(
+            "   → multipart body is \(try! form.encoded().count) bytes, Content-Type: \(form.contentType)"
+        )
 
         let created = try? await client.upload(Upload(), from: .multipart(form)) { event in
             print("     upload \(Int((event.fraction ?? 0) * 100))%")
@@ -330,9 +349,11 @@ struct NetworkKitDemo {
 
         let transport = MockNetworkTransport()
         transport.enqueue(
-            .json(Data(#"{"text":"v1"}"#.utf8), headers: ["ETag": "\"1\"", "Cache-Control": "max-age=0"]),
+            .json(
+                Data(#"{"text":"v1"}"#.utf8), headers: ["ETag": "\"1\"", "Cache-Control": "max-age=0"]),
             .status(304, headers: ["ETag": "\"1\""]),
-            .json(Data(#"{"text":"v2"}"#.utf8), headers: ["ETag": "\"2\"", "Cache-Control": "max-age=60"])
+            .json(
+                Data(#"{"text":"v2"}"#.utf8), headers: ["ETag": "\"2\"", "Cache-Control": "max-age=60"])
         )
 
         var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
@@ -343,8 +364,12 @@ struct NetworkKitDemo {
         print("   → 1st call: \"\(first?.text ?? "-")\" (from network, stored with ETag)")
 
         let second = try? await client.request(GetDoc())
-        print("   → 2nd call: \"\(second?.text ?? "-")\" (max-age=0 -> revalidated; server said 304, cached body reused)")
-        print("     If-None-Match sent: \(transport.recordedRequests.last?.value(forHTTPHeaderField: "If-None-Match") ?? "-")")
+        print(
+            "   → 2nd call: \"\(second?.text ?? "-")\" (max-age=0 -> revalidated; server said 304, cached body reused)"
+        )
+        print(
+            "     If-None-Match sent: \(transport.recordedRequests.last?.value(forHTTPHeaderField: "If-None-Match") ?? "-")"
+        )
         print("   → transport hit \(transport.requestCount)x for 2 logical requests")
     }
 
@@ -362,7 +387,8 @@ struct NetworkKitDemo {
         // Cancellation by id
         let slow = MockNetworkTransport(latency: .milliseconds(500))
         slow.enqueue(.json(Data(#"{"n":1}"#.utf8)))
-        let cancelClient = NetworkClient(configuration: NetworkConfiguration(baseURL: "https://api.example.com"), transport: slow)
+        let cancelClient = NetworkClient(
+            configuration: NetworkConfiguration(baseURL: "https://api.example.com"), transport: slow)
         let id = RequestID()
         let task = Task { try await cancelClient.request(GetDoc(), id: id) }
         try? await Task.sleep(for: .milliseconds(30))
@@ -381,10 +407,13 @@ struct NetworkKitDemo {
             for _ in 0..<5 { group.addTask { try await dedupClient.request(GetDoc()) } }
             return try await group.reduce(into: [Doc]()) { $0.append($1) }
         }
-        print("   → 5 concurrent identical GETs, enableDeduplication -> transport hit \(dedupTransport.requestCount)x")
+        print(
+            "   → 5 concurrent identical GETs, enableDeduplication -> transport hit \(dedupTransport.requestCount)x"
+        )
 
         // Concurrency limit
-        let limited = MockNetworkTransport(default: .json(Data(#"{"n":0}"#.utf8)), latency: .milliseconds(20))
+        let limited = MockNetworkTransport(
+            default: .json(Data(#"{"n":0}"#.utf8)), latency: .milliseconds(20))
         var limitConfig = NetworkConfiguration(baseURL: "https://api.example.com")
         limitConfig.maxConcurrentRequests = 2
         let limitClient = NetworkClient(configuration: limitConfig, transport: limited)
@@ -392,7 +421,9 @@ struct NetworkKitDemo {
             for _ in 0..<10 { group.addTask { _ = try await limitClient.request(GetDoc()) } }
             try await group.waitForAll()
         }
-        print("   → 10 requests through maxConcurrentRequests=2 -> all \(limited.requestCount) completed, never >2 in flight")
+        print(
+            "   → 10 requests through maxConcurrentRequests=2 -> all \(limited.requestCount) completed, never >2 in flight"
+        )
     }
 
     // MARK: - OAuth 2.0 + PKCE (URL building + token exchange via mock transport)
@@ -409,9 +440,12 @@ struct NetworkKitDemo {
         )
 
         let transport = MockNetworkTransport()
-        transport.enqueue(.json(Data(#"""
-        {"access_token":"AT-123","refresh_token":"RT-456","expires_in":3600,"token_type":"Bearer"}
-        """#.utf8)))
+        transport.enqueue(
+            .json(
+                Data(
+                    #"""
+                    {"access_token":"AT-123","refresh_token":"RT-456","expires_in":3600,"token_type":"Bearer"}
+                    """#.utf8)))
         let flow = AuthorizationCodeFlow(configuration: config, transport: transport)
 
         let state = AuthorizationCodeFlow.makeState()
@@ -425,8 +459,12 @@ struct NetworkKitDemo {
         do {
             let code = try flow.authorizationCode(fromRedirect: redirect, expectedState: state)
             let tokens = try await flow.exchange(code: code, pkce: pkce)
-            print("   → exchanged code for access token \"\(tokens.accessToken)\", expires \(tokens.expiryDate.map { "\(Int($0.timeIntervalSinceNow))s" } ?? "n/a")")
-            print("   → wire flow.tokenManagerRefreshHandler() into NetworkClient(refresh:) for automatic refresh")
+            print(
+                "   → exchanged code for access token \"\(tokens.accessToken)\", expires \(tokens.expiryDate.map { "\(Int($0.timeIntervalSinceNow))s" } ?? "n/a")"
+            )
+            print(
+                "   → wire flow.tokenManagerRefreshHandler() into NetworkClient(refresh:) for automatic refresh"
+            )
         } catch {
             print("   → \(error)")
         }
@@ -469,7 +507,7 @@ struct NetworkKitDemo {
         print("   → \(await store.count) request(s) waiting in the queue")
 
         let events = await client.offlineReplayEvents()
-        await monitor.send(.satisfied(.wifi)) // ...connectivity returns
+        await monitor.send(.satisfied(.wifi))  // ...connectivity returns
 
         for await event in events {
             if case .replayed(let id, let status) = event {
@@ -485,7 +523,10 @@ struct NetworkKitDemo {
     private static func paginationAndBatchTour() async {
         print("\n── 16. Pagination (AsyncSequence) + parallel batch ──")
 
-        struct User: Codable, Sendable { let id: Int; let name: String }
+        struct User: Codable, Sendable {
+            let id: Int
+            let name: String
+        }
         struct UsersPage: PaginatedEndpoint {
             typealias Response = [User]
             var page = 1
@@ -504,7 +545,8 @@ struct NetworkKitDemo {
             var queryParameters: QueryParameters? { ["userId": .int(userID)] }
         }
 
-        let client = NetworkClient(configuration: NetworkConfiguration(baseURL: "https://jsonplaceholder.typicode.com"))
+        let client = NetworkClient(
+            configuration: NetworkConfiguration(baseURL: "https://jsonplaceholder.typicode.com"))
 
         do {
             var pageIndex = 0
@@ -516,8 +558,11 @@ struct NetworkKitDemo {
             let all = try await client.collectAll(UsersPage())
             print("   → collectAll: \(all.count) users total")
 
-            let (p1, p2, p3) = try await client.zip(PostsByUser(userID: 1), PostsByUser(userID: 2), PostsByUser(userID: 3))
-            print("   → zip: users 1/2/3 have \(p1.count)/\(p2.count)/\(p3.count) posts (fetched in parallel)")
+            let (p1, p2, p3) = try await client.zip(
+                PostsByUser(userID: 1), PostsByUser(userID: 2), PostsByUser(userID: 3))
+            print(
+                "   → zip: users 1/2/3 have \(p1.count)/\(p2.count)/\(p3.count) posts (fetched in parallel)"
+            )
 
             let results = await client.batch((1...5).map { PostsByUser(userID: $0) })
             let counts = results.map { (try? $0.get())?.count ?? -1 }

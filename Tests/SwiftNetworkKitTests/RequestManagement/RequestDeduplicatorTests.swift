@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("RequestDeduplicator")
@@ -36,8 +37,14 @@ struct RequestDeduplicatorTests {
     func differentKeys() async throws {
         let dedup = RequestDeduplicator()
         let calls = Calls()
-        async let a = dedup.result(for: "GET /a") { await calls.bump(); return 1 }
-        async let b = dedup.result(for: "GET /b") { await calls.bump(); return 2 }
+        async let a = dedup.result(for: "GET /a") {
+            await calls.bump()
+            return 1
+        }
+        async let b = dedup.result(for: "GET /b") {
+            await calls.bump()
+            return 2
+        }
         _ = try await (a, b)
         #expect(await calls.count == 2)
     }
@@ -47,12 +54,18 @@ struct RequestDeduplicatorTests {
         let dedup = RequestDeduplicator()
         struct Boom: Error {}
 
-        let first = Task { try await dedup.result(for: "k") {
-            try await Task.sleep(for: .milliseconds(5)); throw Boom()
-        } as Int }
-        let second = Task { try await dedup.result(for: "k") {
-            try await Task.sleep(for: .milliseconds(5)); throw Boom()
-        } as Int }
+        let first = Task {
+            try await dedup.result(for: "k") {
+                try await Task.sleep(for: .milliseconds(5))
+                throw Boom()
+            } as Int
+        }
+        let second = Task {
+            try await dedup.result(for: "k") {
+                try await Task.sleep(for: .milliseconds(5))
+                throw Boom()
+            } as Int
+        }
 
         var thrown = 0
         for task in [first, second] {

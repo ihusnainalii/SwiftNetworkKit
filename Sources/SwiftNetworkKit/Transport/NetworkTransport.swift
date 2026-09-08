@@ -27,9 +27,9 @@ public protocol NetworkTransport: Sendable {
     ) async throws -> (URL, HTTPURLResponse)
 }
 
-public extension NetworkTransport {
+extension NetworkTransport {
 
-    func upload(
+    public func upload(
         _ request: URLRequest,
         from body: UploadBody,
         progress: (@Sendable (ProgressEvent) -> Void)?
@@ -40,12 +40,13 @@ public extension NetworkTransport {
         case .data(let data):
             payload = data
         case .file(let url):
-            do { payload = try Data(contentsOf: url) }
-            catch { throw NetworkError.transport(underlying: asSendableError(error)) }
+            do { payload = try Data(contentsOf: url) } catch {
+                throw NetworkError.transport(underlying: asSendableError(error))
+            }
         case .multipart(let form):
-            do { payload = try form.encoded() }
-            catch let error as NetworkError { throw error }
-            catch { throw NetworkError.encoding(underlying: asSendableError(error)) }
+            do { payload = try form.encoded() } catch let error as NetworkError { throw error } catch {
+                throw NetworkError.encoding(underlying: asSendableError(error))
+            }
             if request.value(forHTTPHeaderField: "Content-Type") == nil {
                 request.setValue(form.contentType, forHTTPHeaderField: "Content-Type")
             }
@@ -58,15 +59,14 @@ public extension NetworkTransport {
         return result
     }
 
-    func download(
+    public func download(
         _ request: URLRequest,
         progress: (@Sendable (ProgressEvent) -> Void)?
     ) async throws -> (URL, HTTPURLResponse) {
         let (data, response) = try await data(for: request)
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("swiftnetworkkit-download-\(UUID().uuidString)")
-        do { try data.write(to: url) }
-        catch { throw NetworkError.transport(underlying: asSendableError(error)) }
+        do { try data.write(to: url) } catch { throw NetworkError.transport(underlying: asSendableError(error)) }
         progress?(ProgressEvent(completed: Int64(data.count), total: Int64(data.count)))
         return (url, response)
     }

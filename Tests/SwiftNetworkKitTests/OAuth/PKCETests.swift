@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("PKCE")
@@ -17,7 +18,7 @@ struct PKCETests {
         let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
         for _ in 0..<50 {
             let verifier = PKCE().verifier
-            #expect(verifier.count == 43) // 32 bytes -> 43 unpadded base64url chars
+            #expect(verifier.count == 43)  // 32 bytes -> 43 unpadded base64url chars
             #expect(verifier.unicodeScalars.allSatisfy { allowed.contains($0) })
             #expect(!verifier.contains("="))
         }

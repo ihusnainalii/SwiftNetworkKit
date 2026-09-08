@@ -37,7 +37,8 @@ public enum RetryDecision: Sendable, Equatable {
             return policy.retryableStatusCodes.contains(code) ? backoff() : .stop
 
         case .timeout:
-            let retryable = policy.retryableStatusCodes.contains(408)
+            let retryable =
+                policy.retryableStatusCodes.contains(408)
                 || policy.retryableURLErrorCodes.contains(.timedOut)
             return retryable ? backoff() : .stop
 
@@ -50,7 +51,8 @@ public enum RetryDecision: Sendable, Equatable {
 
         case .transport(let underlying):
             guard let urlError = underlying as? URLError,
-                  policy.retryableURLErrorCodes.contains(urlError.code) else { return .stop }
+                policy.retryableURLErrorCodes.contains(urlError.code)
+            else { return .stop }
             return backoff()
 
         default:

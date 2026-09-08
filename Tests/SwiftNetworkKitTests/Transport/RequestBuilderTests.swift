@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("RequestBuilder")
@@ -12,7 +13,7 @@ struct RequestBuilderTests {
         NetworkConfiguration(baseURL: baseURL, headers: headers)
     }
 
-    private struct Endpoint_: Endpoint {
+    private struct StubEndpoint: Endpoint {
         typealias Response = Data
         var path: String
         var method: HTTPMethod = .get
@@ -23,7 +24,7 @@ struct RequestBuilderTests {
         var timeout: TimeInterval?
     }
 
-    private func build(_ endpoint: Endpoint_, _ configuration: NetworkConfiguration) throws -> URLRequest {
+    private func build(_ endpoint: StubEndpoint, _ configuration: NetworkConfiguration) throws -> URLRequest {
         try RequestBuilder.build(
             endpoint: endpoint,
             environment: configuration.environment,
@@ -34,7 +35,7 @@ struct RequestBuilderTests {
     @Test("path parameters are substituted")
     func pathParameters() throws {
         let request = try build(
-            Endpoint_(path: "/users/:id/posts/:postID", pathParameters: ["id": "42", "postID": "7"]),
+            StubEndpoint(path: "/users/:id/posts/:postID", pathParameters: ["id": "42", "postID": "7"]),
             config()
         )
         #expect(request.url?.path == "/users/42/posts/7")
@@ -49,7 +50,7 @@ struct RequestBuilderTests {
             ("https://api.example.com", "v1/me"),
         ]
         for c in cases {
-            let request = try build(Endpoint_(path: c.path), config(baseURL: c.base))
+            let request = try build(StubEndpoint(path: c.path), config(baseURL: c.base))
             #expect(request.url?.absoluteString == "https://api.example.com/v1/me", "\(c)")
         }
     }
@@ -59,7 +60,7 @@ struct RequestBuilderTests {
         var query = QueryParameters()
         query.append("q", .string("a+b"))
         query.append("tag", .list(["x", "y"]))
-        let request = try build(Endpoint_(path: "/search", queryParameters: query), config())
+        let request = try build(StubEndpoint(path: "/search", queryParameters: query), config())
         let url = try #require(request.url?.absoluteString)
         #expect(url.contains("q=a%2Bb"))
         #expect(url.contains("tag=x&tag=y"))
@@ -69,7 +70,7 @@ struct RequestBuilderTests {
     func headerPrecedence() throws {
         let configuration = config(headers: ["X-App": "1", "Accept": "application/json"])
         let request = try build(
-            Endpoint_(path: "/x", headers: ["Accept": "text/plain", "X-Extra": "y"]),
+            StubEndpoint(path: "/x", headers: ["Accept": "text/plain", "X-Extra": "y"]),
             configuration
         )
         #expect(request.value(forHTTPHeaderField: "X-App") == "1")
@@ -79,21 +80,23 @@ struct RequestBuilderTests {
 
     @Test("body encodes and sets Content-Type per kind")
     func bodyContentType() throws {
-        let json = try build(Endpoint_(path: "/x", method: .post, body: .data(Data("{}".utf8))), config())
+        let json = try build(StubEndpoint(path: "/x", method: .post, body: .data(Data("{}".utf8))), config())
         #expect(json.httpBody == Data("{}".utf8))
 
         let jsonValue = try build(
-            Endpoint_(path: "/x", method: .post, body: .formURLEncoded(["a": "1"])),
+            StubEndpoint(path: "/x", method: .post, body: .formURLEncoded(["a": "1"])),
             config()
         )
-        #expect(jsonValue.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("application/x-www-form-urlencoded") == true)
+        #expect(
+            jsonValue.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("application/x-www-form-urlencoded") == true)
     }
 
     @Test("explicit Content-Type header is not overridden by the body")
     func explicitContentType() throws {
         let request = try build(
-            Endpoint_(path: "/x", method: .post, headers: ["Content-Type": "application/vnd.api+json"],
-                      body: .formURLEncoded(["a": "1"])),
+            StubEndpoint(
+                path: "/x", method: .post, headers: ["Content-Type": "application/vnd.api+json"],
+                body: .formURLEncoded(["a": "1"])),
             config()
         )
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/vnd.api+json")
@@ -103,8 +106,8 @@ struct RequestBuilderTests {
     func timeout() throws {
         var configuration = config()
         configuration.environment.timeout = 30
-        #expect(try build(Endpoint_(path: "/x"), configuration).timeoutInterval == 30)
-        #expect(try build(Endpoint_(path: "/x", timeout: 5), configuration).timeoutInterval == 5)
+        #expect(try build(StubEndpoint(path: "/x"), configuration).timeoutInterval == 30)
+        #expect(try build(StubEndpoint(path: "/x", timeout: 5), configuration).timeoutInterval == 5)
     }
 
     @Test("weird-but-parseable paths still produce a percent-encoded URL")
@@ -112,7 +115,7 @@ struct RequestBuilderTests {
         // Foundation's `URL(string:)` is lenient and encodes spaces/control chars rather than
         // returning nil, so `.invalidURL` is a rare defensive path. Here we just confirm the
         // builder yields a usable URL.
-        let request = try build(Endpoint_(path: "/a b/c"), config())
+        let request = try build(StubEndpoint(path: "/a b/c"), config())
         #expect(request.url?.absoluteString == "https://api.example.com/a%20b/c")
     }
 }

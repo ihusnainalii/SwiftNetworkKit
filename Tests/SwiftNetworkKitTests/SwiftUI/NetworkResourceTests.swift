@@ -6,7 +6,7 @@ import Testing
 @Suite("NetworkResource & Paged")
 struct NetworkResourceTests {
 
-    private typealias Availability = Void // marker; each @Test carries the @available below
+    private typealias Availability = Void  // marker; each @Test carries the @available below
 
     private struct Thing: Codable, Equatable, Sendable { let v: Int }
     private struct GetThing: Endpoint {
@@ -89,7 +89,7 @@ struct NetworkResourceTests {
         #expect(paged.items.map(\.id) == [1, 2, 3, 4])
 
         await paged.loadMoreIfNeeded(currentItem: Row(id: 4))
-        #expect(paged.canLoadMore == false) // empty page ended it
+        #expect(paged.canLoadMore == false)  // empty page ended it
     }
 }
 #endif

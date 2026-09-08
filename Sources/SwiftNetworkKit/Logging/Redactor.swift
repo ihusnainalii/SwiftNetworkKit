@@ -26,7 +26,8 @@ public struct Redactor: Sendable {
     public func redact(headers: HTTPHeaders) -> HTTPHeaders {
         var out = HTTPHeaders()
         for element in headers {
-            out[element.name] = headerDenylist.contains(element.name.lowercased())
+            out[element.name] =
+                headerDenylist.contains(element.name.lowercased())
                 ? Self.placeholder
                 : element.value
         }

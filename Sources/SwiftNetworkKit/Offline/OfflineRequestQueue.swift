@@ -33,8 +33,8 @@ public actor OfflineRequestQueue {
     private func beginWatching(_ monitor: any NetworkMonitor) {
         guard monitorTask == nil else { return }
         monitorTask = Task { [weak self] in
-            for await status in await monitor.statusUpdates() {
-                if status.isOnline { await self?.replayNow() }
+            for await status in await monitor.statusUpdates() where status.isOnline {
+                await self?.replayNow()
             }
         }
     }

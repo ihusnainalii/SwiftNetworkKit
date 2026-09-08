@@ -19,7 +19,8 @@ struct ArchitectureTests {
             guard url.pathExtension == "swift" else { continue }
             let text = try String(contentsOf: url, encoding: .utf8)
             let name = url.path.replacingOccurrences(of: Self.sourceRoot.path + "/", with: "")
-            let code = text
+            let code =
+                text
                 .split(separator: "\n", omittingEmptySubsequences: false)
                 .map(String.init)
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -30,7 +31,8 @@ struct ArchitectureTests {
 
     @Test("the library never imports SwiftUI (that belongs in a consuming app)")
     func noSwiftUI() throws {
-        for file in try sources() where file.codeLines.contains(where: { $0.trimmingCharacters(in: .whitespaces) == "import SwiftUI" }) {
+        for file in try sources()
+        where file.codeLines.contains(where: { $0.trimmingCharacters(in: .whitespaces) == "import SwiftUI" }) {
             Issue.record("\(file.name) imports SwiftUI")
         }
     }
@@ -41,7 +43,9 @@ struct ArchitectureTests {
         for file in try sources() {
             let joined = file.codeLines.joined(separator: "\n")
             for framework in guarded {
-                let importsIt = file.codeLines.contains { $0.trimmingCharacters(in: .whitespaces) == "import \(framework)" }
+                let importsIt = file.codeLines.contains {
+                    $0.trimmingCharacters(in: .whitespaces) == "import \(framework)"
+                }
                 guard importsIt else { continue }
                 if !joined.contains("#if canImport(\(framework))") {
                     Issue.record("\(file.name): `import \(framework)` without a `#if canImport(\(framework))` guard")
@@ -62,8 +66,10 @@ struct ArchitectureTests {
 
     @Test("no try! in the request pipeline")
     func noForceTryInPipeline() throws {
-        let pipeline: Set = ["Core/NetworkClient.swift", "Core/NetworkClient+Upload.swift",
-                             "Core/NetworkClient+Pagination.swift", "HTTP/RequestBuilder.swift"]
+        let pipeline: Set = [
+            "Core/NetworkClient.swift", "Core/NetworkClient+Upload.swift",
+            "Core/NetworkClient+Pagination.swift", "HTTP/RequestBuilder.swift",
+        ]
         for file in try sources() where pipeline.contains(file.name) {
             for line in file.codeLines where line.contains("try!") {
                 Issue.record("\(file.name) uses try!")

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("MockNetworkTransport rules & scenarios")
@@ -26,9 +27,13 @@ struct MockNetworkTransportTests {
 
         let c = client(transport)
         #expect(try await c.request(GetThing(path: "/users")) == Thing(v: 1))
-        #expect(try await c.request(GetThing(path: "/users")) == Thing(v: 1)) // reusable
+        #expect(try await c.request(GetThing(path: "/users")) == Thing(v: 1))  // reusable
 
-        struct PostOrder: Endpoint { typealias Response = Thing; let path = "/orders"; let method = HTTPMethod.post }
+        struct PostOrder: Endpoint {
+            typealias Response = Thing
+            let path = "/orders"
+            let method = HTTPMethod.post
+        }
         #expect(try await c.request(PostOrder()) == Thing(v: 2))
 
         // unmatched -> default 404
@@ -54,11 +59,20 @@ struct MockNetworkTransportTests {
         let transport = MockScenario.tokenExpired(body: Data(#"{"v":7}"#.utf8)).transport()
         let refreshed = Counter()
         let client = NetworkClient(
-            configuration: NetworkConfiguration(baseURL: "https://api.example.com", tokenStorage: InMemoryTokenStorage(seed: TokenPair(accessToken: "old"))),
+            configuration: NetworkConfiguration(
+                baseURL: "https://api.example.com",
+                tokenStorage: InMemoryTokenStorage(seed: TokenPair(accessToken: "old"))),
             transport: transport,
-            refresh: { _ in await refreshed.increment(); return TokenPair(accessToken: "new") }
+            refresh: { _ in
+                await refreshed.increment()
+                return TokenPair(accessToken: "new")
+            }
         )
-        struct Secured: Endpoint { typealias Response = Thing; let path = "/me"; var authentication: AuthRequirement { .required } }
+        struct Secured: Endpoint {
+            typealias Response = Thing
+            let path = "/me"
+            var authentication: AuthRequirement { .required }
+        }
         #expect(try await client.request(Secured()) == Thing(v: 7))
         #expect(await refreshed.value == 1)
     }

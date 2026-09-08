@@ -1,6 +1,6 @@
 import Foundation
 
-public extension NetworkClient {
+extension NetworkClient {
 
     /// Streams a paginated endpoint page by page. Each element is one page's items; the stream
     /// finishes when ``PaginatedEndpoint/nextPage(after:)`` returns `nil`, and honors task
@@ -8,7 +8,7 @@ public extension NetworkClient {
     ///
     /// - Parameter maxPages: a safety cap against a server that always returns a next page.
     ///   Exceeding it finishes the stream (with a `.error`-level log line) rather than looping forever.
-    func paginate<E: PaginatedEndpoint>(
+    public func paginate<E: PaginatedEndpoint>(
         _ endpoint: E,
         maxPages: Int = 1000
     ) -> AsyncThrowingStream<[E.Item], any Error> {
@@ -20,7 +20,8 @@ public extension NetworkClient {
                     while let page = current {
                         if Task.isCancelled { break }
                         if pageCount >= maxPages {
-                            emit(["\u{2190} pagination stopped at maxPages=\(maxPages) for \(page.path)"], level: .error)
+                            emit(
+                                ["\u{2190} pagination stopped at maxPages=\(maxPages) for \(page.path)"], level: .error)
                             break
                         }
                         let response = try await request(page)
@@ -39,7 +40,7 @@ public extension NetworkClient {
 
     /// Drains ``paginate(_:maxPages:)`` into one array, optionally stopping once `max` items are
     /// collected.
-    func collectAll<E: PaginatedEndpoint>(
+    public func collectAll<E: PaginatedEndpoint>(
         _ endpoint: E,
         max: Int? = nil
     ) async throws -> [E.Item] {

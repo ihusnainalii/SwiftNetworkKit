@@ -1,6 +1,6 @@
 import Foundation
 
-public extension NetworkClient {
+extension NetworkClient {
 
     // MARK: Completion-handler bridge
 
@@ -8,7 +8,7 @@ public extension NetworkClient {
     ///
     /// The completion may be invoked on any executor — hop to the main actor yourself for UI.
     @discardableResult
-    func request<E: Endpoint>(
+    public func request<E: Endpoint>(
         _ endpoint: E,
         completion: @escaping @Sendable (Result<E.Response, NetworkError>) -> Void
     ) -> NetworkCancellable {
@@ -25,14 +25,14 @@ public extension NetworkClient {
     // MARK: Response-shape helpers
 
     /// Sends the endpoint and returns the raw response body.
-    func data<E: Endpoint>(for endpoint: E) async throws -> Data {
+    public func data<E: Endpoint>(for endpoint: E) async throws -> Data {
         try await queued(priority: endpoint.priority, skipQueue: endpoint.skipRequestQueue) { [self] in
             try await perform(endpoint) { data, _, _ in data }
         }
     }
 
     /// Sends the endpoint and returns the response body decoded as a UTF-8 string.
-    func string<E: Endpoint>(for endpoint: E) async throws -> String {
+    public func string<E: Endpoint>(for endpoint: E) async throws -> String {
         try await queued(priority: endpoint.priority, skipQueue: endpoint.skipRequestQueue) { [self] in
             try await perform(endpoint) { data, _, _ in
                 guard let string = String(data: data, encoding: .utf8) else {
@@ -44,7 +44,7 @@ public extension NetworkClient {
     }
 
     /// Sends the endpoint and discards the body (for writes whose response you don't need).
-    func send<E: Endpoint>(_ endpoint: E) async throws {
+    public func send<E: Endpoint>(_ endpoint: E) async throws {
         _ = try await queued(priority: endpoint.priority, skipQueue: endpoint.skipRequestQueue) { [self] in
             try await perform(endpoint) { _, _, _ in EmptyResponse() }
         }

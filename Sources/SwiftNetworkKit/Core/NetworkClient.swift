@@ -84,7 +84,10 @@ public final class NetworkClient: Sendable {
     ) async throws -> E.Response {
         let work = Task { try await self.dispatch(endpoint) }
         await registry.register(id) { work.cancel() }
-        defer { let registry = registry; Task { await registry.deregister(id) } }
+        defer {
+            let registry = registry
+            Task { await registry.deregister(id) }
+        }
 
         return try await withTaskCancellationHandler {
             do {
@@ -131,7 +134,7 @@ public final class NetworkClient: Sendable {
     /// Persists `request` for later replay if the endpoint opted in and the body can be archived.
     private func offlineQueueID<E: Endpoint>(for endpoint: E, request: URLRequest) async throws -> RequestID? {
         guard let offlineQueue, case .queue(let expiresAfter) = endpoint.offlineBehavior else { return nil }
-        if case .multipart = endpoint.body { return nil } // multipart bodies don't survive archiving
+        if case .multipart = endpoint.body { return nil }  // multipart bodies don't survive archiving
         return try? await offlineQueue.enqueue(request, expiresAfter: expiresAfter)
     }
 
@@ -221,6 +224,10 @@ public final class NetworkClient: Sendable {
         }
     }
 
+    // The composition root: one linear pass through build -> cache-read -> auth -> request
+    // interceptors -> transport -> status map -> 304 handling -> response interceptors ->
+    // cache-write -> decode. Splitting it hides that pipeline across call sites for no real gain.
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func execute<E: Endpoint, T: Sendable>(
         _ endpoint: E,
         requestID: RequestID,
@@ -261,7 +268,8 @@ public final class NetworkClient: Sendable {
                     return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
                 }
                 if storedEntry.isFresh(ttl: configuration.cache.defaultTTL),
-                   policy == .cacheFirst || policy == .cacheOnly {
+                    policy == .cacheFirst || policy == .cacheOnly
+                {
                     return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
                 }
                 if let etag = storedEntry.etag {
@@ -327,7 +335,7 @@ public final class NetworkClient: Sendable {
                 bypassCacheRead: true, decode: decode
             )
         case .retry:
-            break // interceptor-retry cap reached — proceed with the response we have
+            break  // interceptor-retry cap reached — proceed with the response we have
         }
 
         if let error = StatusCodeMapper.map(context: context, errorMapper: configuration.errorMapper) {
@@ -416,7 +424,8 @@ public final class NetworkClient: Sendable {
         } catch {
             throw NetworkError.decoding(
                 underlying: asSendableError(error),
-                ResponseContext(statusCode: entry.statusCode, headers: entry.headers, data: entry.data, request: request)
+                ResponseContext(
+                    statusCode: entry.statusCode, headers: entry.headers, data: entry.data, request: request)
             )
         }
     }

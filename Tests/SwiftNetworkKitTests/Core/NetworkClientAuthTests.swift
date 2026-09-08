@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient authentication")
@@ -135,7 +136,10 @@ struct NetworkClientAuthTests {
         let client = NetworkClient(
             configuration: NetworkConfiguration(baseURL: "https://api.example.com"),
             transport: transport,
-            refresh: { _ in await refreshCount.increment(); return TokenPair(accessToken: "x") }
+            refresh: { _ in
+                await refreshCount.increment()
+                return TokenPair(accessToken: "x")
+            }
         )
 
         let error = await #expect(throws: NetworkError.self) {

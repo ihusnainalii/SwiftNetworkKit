@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import SwiftNetworkKit
 
 @Suite("NetworkClient request management")
@@ -38,7 +39,10 @@ struct NetworkClientManagementTests {
         await c.cancel(id)
 
         let result = await task.result
-        guard case .failure(let error) = result else { Issue.record("expected cancellation"); return }
+        guard case .failure(let error) = result else {
+            Issue.record("expected cancellation")
+            return
+        }
         #expect(NetworkError.normalize(error).code == .cancelled)
     }
 
@@ -54,7 +58,8 @@ struct NetworkClientManagementTests {
         var cancelledCount = 0
         for task in tasks {
             if case .failure(let error) = await task.result,
-               NetworkError.normalize(error).code == .cancelled {
+                NetworkError.normalize(error).code == .cancelled
+            {
                 cancelledCount += 1
             }
         }
@@ -70,7 +75,10 @@ struct NetworkClientManagementTests {
         let task = Task { try await c.request(GetThing()) }
         try await Task.sleep(for: .milliseconds(20))
         task.cancel()
-        guard case .failure(let error) = await task.result else { Issue.record("expected failure"); return }
+        guard case .failure(let error) = await task.result else {
+            Issue.record("expected failure")
+            return
+        }
         #expect(NetworkError.normalize(error).code == .cancelled)
     }
 

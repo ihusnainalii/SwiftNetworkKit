@@ -2,28 +2,28 @@
 import Foundation
 import Combine
 
-public extension NetworkClient {
+extension NetworkClient {
 
     /// A publisher for one request: emits the decoded response then completes, or completes with a
     /// ``NetworkError``. Cancelling the subscription cancels the underlying `Task`.
     ///
     /// Values arrive on whatever executor the request finished on — call `.receive(on: RunLoop.main)`
     /// (or `DispatchQueue.main`) yourself before binding to UI.
-    func publisher<E: Endpoint>(for endpoint: E) -> AnyPublisher<E.Response, NetworkError> {
+    public func publisher<E: Endpoint>(for endpoint: E) -> AnyPublisher<E.Response, NetworkError> {
         makePublisher { send in
             send(try await self.request(endpoint))
         }
     }
 
     /// A publisher that emits each page's items, then completes.
-    func paginatePublisher<E: PaginatedEndpoint>(_ endpoint: E) -> AnyPublisher<[E.Item], NetworkError> {
+    public func paginatePublisher<E: PaginatedEndpoint>(_ endpoint: E) -> AnyPublisher<[E.Item], NetworkError> {
         makePublisher { send in
             for try await page in self.paginate(endpoint) { send(page) }
         }
     }
 
     /// A publisher that emits ascending ``UploadState/progress(_:)`` then ``UploadState/finished(_:)``.
-    func uploadPublisher<E: Endpoint>(
+    public func uploadPublisher<E: Endpoint>(
         _ endpoint: E,
         from body: UploadBody
     ) -> AnyPublisher<UploadState<E.Response>, NetworkError> {
@@ -34,7 +34,7 @@ public extension NetworkClient {
     }
 
     /// A publisher that emits ascending ``DownloadState/progress(_:)`` then ``DownloadState/finished(_:)``.
-    func downloadPublisher<E: Endpoint>(
+    public func downloadPublisher<E: Endpoint>(
         _ endpoint: E,
         to destination: URL? = nil
     ) -> AnyPublisher<DownloadState, NetworkError> {

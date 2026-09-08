@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(Security)
 import Security
 #endif
@@ -35,7 +36,8 @@ final class TransportTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked 
     ) {
         #if canImport(Security)
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let evaluator else {
+            let evaluator
+        else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
