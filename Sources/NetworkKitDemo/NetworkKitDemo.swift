@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M11.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M12.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M11) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M12) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -29,6 +29,7 @@ struct NetworkKitDemo {
         await requestManagementTour()
         await oauthTour()
         await offlineQueueTour()
+        if !offline { await paginationAndBatchTour() }
 
         print("\n═══ done ═══")
     }
@@ -477,6 +478,53 @@ struct NetworkKitDemo {
             break
         }
         print("   → \(await store.count) request(s) left in the queue")
+    }
+
+    // MARK: - Pagination + batch (live jsonplaceholder API)
+
+    private static func paginationAndBatchTour() async {
+        print("\n── 16. Pagination (AsyncSequence) + parallel batch ──")
+
+        struct User: Codable, Sendable { let id: Int; let name: String }
+        struct UsersPage: PaginatedEndpoint {
+            typealias Response = [User]
+            var page = 1
+            var path: String { "/users" }
+            var queryParameters: QueryParameters? { ["_page": .int(page), "_limit": .int(4)] }
+            func items(from response: [User]) -> [User] { response }
+            func nextPage(after response: [User]) -> UsersPage? {
+                response.isEmpty ? nil : UsersPage(page: page + 1)
+            }
+        }
+        struct Post: Codable, Sendable { let id: Int }
+        struct PostsByUser: Endpoint {
+            typealias Response = [Post]
+            let userID: Int
+            var path: String { "/posts" }
+            var queryParameters: QueryParameters? { ["userId": .int(userID)] }
+        }
+
+        let client = NetworkClient(configuration: NetworkConfiguration(baseURL: "https://jsonplaceholder.typicode.com"))
+
+        do {
+            var pageIndex = 0
+            for try await users in client.paginate(UsersPage()) {
+                pageIndex += 1
+                print("   → page \(pageIndex): \(users.map(\.name).joined(separator: ", "))")
+            }
+
+            let all = try await client.collectAll(UsersPage())
+            print("   → collectAll: \(all.count) users total")
+
+            let (p1, p2, p3) = try await client.zip(PostsByUser(userID: 1), PostsByUser(userID: 2), PostsByUser(userID: 3))
+            print("   → zip: users 1/2/3 have \(p1.count)/\(p2.count)/\(p3.count) posts (fetched in parallel)")
+
+            let results = await client.batch((1...5).map { PostsByUser(userID: $0) })
+            let counts = results.map { (try? $0.get())?.count ?? -1 }
+            print("   → batch of 5: post counts \(counts)")
+        } catch {
+            print("   → \(error)")
+        }
     }
 
     // MARK: - Helpers

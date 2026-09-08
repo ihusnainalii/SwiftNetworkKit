@@ -12,8 +12,19 @@ struct UsersListView: View {
     var body: some View {
         NavigationStack {
             PhaseView(phase: model.phase, retry: { Task { await model.load() } }) { _ in
-                List(model.visibleUsers) { user in
-                    NavigationLink(value: user) { UserRow(user: user) }
+                List {
+                    ForEach(model.visibleUsers) { user in
+                        NavigationLink(value: user) { UserRow(user: user) }
+                    }
+                    if model.canLoadMore && model.search.isEmpty {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                        .listRowSeparator(.hidden)
+                        .task { await model.loadMore() }
+                    }
                 }
                 .refreshable { await model.load() }
                 .overlay {

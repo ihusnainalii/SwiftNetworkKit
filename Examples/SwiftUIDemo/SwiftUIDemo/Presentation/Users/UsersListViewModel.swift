@@ -6,8 +6,13 @@ import Observation
 final class UsersListViewModel {
     private let repository: any UsersRepository
 
+    /// The accumulated list, page by page.
     private(set) var phase: LoadPhase<[User]> = .idle
+    private(set) var isLoadingMore = false
+    private(set) var canLoadMore = false
     var search = ""
+
+    private var loadedPages = 0
 
     init(repository: any UsersRepository) {
         self.repository = repository
@@ -29,10 +34,32 @@ final class UsersListViewModel {
         await load()
     }
 
+    /// Fresh load: page 1.
     func load() async {
         if phase.value == nil { phase = .loading }
+        loadedPages = 0
         phase = await .run(previousValue: phase.value) {
-            try await repository.fetchUsers()
+            let first = try await repository.fetchUsers(page: 1)
+            return first
+        }
+        if case .loaded(let users) = phase {
+            loadedPages = 1
+            canLoadMore = users.count == repository.pageSize
+        }
+    }
+
+    /// Appends the next page. Called when the list scrolls near the end.
+    func loadMore() async {
+        guard canLoadMore, !isLoadingMore, case .loaded(let current) = phase, search.isEmpty else { return }
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+        do {
+            let next = try await repository.fetchUsers(page: loadedPages + 1)
+            loadedPages += 1
+            phase = .loaded(current + next)
+            canLoadMore = next.count == repository.pageSize
+        } catch {
+            canLoadMore = false // stop trying; the visible list stays intact
         }
     }
 }

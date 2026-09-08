@@ -3,11 +3,11 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M11 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M12 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
 > and downloads with progress, HTTP response caching, request cancellation / deduplication /
-> concurrency queue, OAuth 2.0 + PKCE, offline request queue). See
+> concurrency queue, OAuth 2.0 + PKCE, offline request queue, pagination + batch). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -212,6 +212,31 @@ for await event in await client.offlineReplayEvents() {
 
 Multipart bodies can't be archived, so a multipart endpoint always fails fast instead.
 
+### Pagination and batch
+
+```swift
+struct ListUsers: PaginatedEndpoint {
+    typealias Response = [User]
+    var page = 1
+    var path: String { "/users" }
+    var queryParameters: QueryParameters? { ["_page": .int(page), "_limit": .int(20)] }
+    func items(from response: [User]) -> [User] { response }
+    func nextPage(after response: [User]) -> Self? {
+        response.isEmpty ? nil : { var next = self; next.page += 1; return next }()
+    }
+}
+
+for try await pageOfUsers in client.paginate(ListUsers()) { ... }   // one array per page
+let all = try await client.collectAll(ListUsers(), max: 200)        // flattened, capped
+
+// parallel:
+let (profile, feed) = try await client.zip(GetProfile(), GetFeed())
+let results = await client.batch(ids.map { GetItem(id: $0) })       // [Result<Item, NetworkError>]
+```
+
+`paginate` honors task cancellation and caps at `maxPages` (default 1000) against a runaway server.
+The endpoint owns the scheme entirely via `nextPage(after:)` (page number, cursor, `Link:` header).
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -260,9 +285,10 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | Request management: cancel by id / `cancelAll`, GET dedup, concurrency limit + priority, pause / resume |
 | OAuth 2.0 Authorization Code + PKCE (`PKCE`, `AuthorizationCodeFlow`, auto-refresh adapter) |
 | Offline request queue (opt-in per endpoint, persisted, replays FIFO on reconnect) |
+| Pagination as an `AsyncSequence` (`client.paginate` / `collectAll`) + parallel `zip` / `batch` |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`, `InMemoryOfflineStore`) |
 
-Not yet: pagination, batch, Combine/SwiftUI helpers. See the roadmap for the milestone order.
+Not yet: Combine / SwiftUI helpers. See the roadmap for the milestone order.
 
 ## Tests
 
