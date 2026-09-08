@@ -3,10 +3,11 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M8 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M9 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
-> and downloads with progress, HTTP response caching). See
+> and downloads with progress, HTTP response caching, request cancellation / deduplication /
+> concurrency queue). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -145,6 +146,25 @@ Only `GET` / `HEAD` are cached. `ETag` responses are revalidated with `If-None-M
 reuses the stored body); `Cache-Control: no-store` is never persisted; `networkFirst` / `cacheFirst`
 fall back to a cached response when the network fails.
 
+### Cancellation, deduplication, concurrency
+
+```swift
+var config = NetworkConfiguration(baseURL: "https://api.example.com")
+config.maxConcurrentRequests = 4          // extra requests queue, ordered by Endpoint.priority
+config.enableDeduplication = true         // concurrent identical GETs share one in-flight call
+
+let id = RequestID()
+async let profile = client.request(GetProfile(), id: id)
+// ...later, from anywhere:
+await client.cancel(id)                   // or client.cancelAll()
+
+await client.pauseQueue()                 // hold the queue (e.g. while offline)
+await client.resumeQueue()
+```
+
+Cancelling the calling task also cancels the request. A token-refresh endpoint should set
+`var skipRequestQueue: Bool { true }` so a full queue plus an expired token can't deadlock.
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -190,6 +210,7 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | Multipart form data (`MultipartFormData`, RFC 7578, streams large file parts from disk) |
 | Uploads and downloads with byte progress (`client.upload` / `client.download`) |
 | HTTP response caching (`CachePolicy`, memory + disk stores, ETag / 304, stale-while-revalidate) |
+| Request management: cancel by id / `cancelAll`, GET dedup, concurrency limit + priority, pause / resume |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
 
 Not yet: OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the

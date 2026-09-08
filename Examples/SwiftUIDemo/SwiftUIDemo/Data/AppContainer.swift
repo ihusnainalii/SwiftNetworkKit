@@ -24,6 +24,8 @@ struct AppContainer: Sendable {
             defaultPolicy: .cacheFirst,
             defaultTTL: 120
         )
+        configuration.maxConcurrentRequests = 4
+        configuration.enableDeduplication = true
         let client = NetworkClient(configuration: configuration)
         let monitor = PathNetworkMonitor()
         return AppContainer(

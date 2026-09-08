@@ -8,6 +8,7 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let retryPolicySummary: String
     let sslPinningSummary: String
     let cacheSummary: String
+    let requestManagementSummary: String
     private let metrics: InMemoryMetrics
     private let monitor: any NetworkMonitor
 
@@ -38,6 +39,9 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
         } else {
             self.cacheSummary = "\(cache.defaultPolicy), TTL \(Int(cache.defaultTTL))s"
         }
+
+        let dedup = client.configuration.enableDeduplication ? "dedup on" : "dedup off"
+        self.requestManagementSummary = "max \(client.configuration.maxConcurrentRequests) concurrent, \(dedup)"
     }
 
     func connectivitySummary() async -> [MetricsRow] {

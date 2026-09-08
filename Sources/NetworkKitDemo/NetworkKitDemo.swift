@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M8.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M9.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M8) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M9) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -26,6 +26,7 @@ struct NetworkKitDemo {
         await reachabilityTour()
         await uploadDownloadTour()
         await cachingTour()
+        await requestManagementTour()
 
         print("\n═══ done ═══")
     }
@@ -342,6 +343,53 @@ struct NetworkKitDemo {
         print("   → 2nd call: \"\(second?.text ?? "-")\" (max-age=0 -> revalidated; server said 304, cached body reused)")
         print("     If-None-Match sent: \(transport.recordedRequests.last?.value(forHTTPHeaderField: "If-None-Match") ?? "-")")
         print("   → transport hit \(transport.requestCount)x for 2 logical requests")
+    }
+
+    // MARK: - Request management: cancellation, dedup, concurrency limit (mock transport)
+
+    private static func requestManagementTour() async {
+        print("\n── 13. Request management — cancel by id, deduplication, concurrency limit ──")
+
+        struct Doc: Codable, Sendable { let n: Int }
+        struct GetDoc: Endpoint {
+            typealias Response = Doc
+            let path = "/doc"
+        }
+
+        // Cancellation by id
+        let slow = MockNetworkTransport(latency: .milliseconds(500))
+        slow.enqueue(.json(Data(#"{"n":1}"#.utf8)))
+        let cancelClient = NetworkClient(configuration: NetworkConfiguration(baseURL: "https://api.example.com"), transport: slow)
+        let id = RequestID()
+        let task = Task { try await cancelClient.request(GetDoc(), id: id) }
+        try? await Task.sleep(for: .milliseconds(30))
+        await cancelClient.cancel(id)
+        if case .failure(let error) = await task.result {
+            print("   → cancel(id:) -> .\(NetworkError.normalize(error).code)")
+        }
+
+        // Deduplication: 5 concurrent identical GETs, one network call
+        let dedupTransport = MockNetworkTransport(latency: .milliseconds(40))
+        for _ in 0..<5 { dedupTransport.enqueue(.json(Data(#"{"n":7}"#.utf8))) }
+        var dedupConfig = NetworkConfiguration(baseURL: "https://api.example.com")
+        dedupConfig.enableDeduplication = true
+        let dedupClient = NetworkClient(configuration: dedupConfig, transport: dedupTransport)
+        _ = try? await withThrowingTaskGroup(of: Doc.self) { group in
+            for _ in 0..<5 { group.addTask { try await dedupClient.request(GetDoc()) } }
+            return try await group.reduce(into: [Doc]()) { $0.append($1) }
+        }
+        print("   → 5 concurrent identical GETs, enableDeduplication -> transport hit \(dedupTransport.requestCount)x")
+
+        // Concurrency limit
+        let limited = MockNetworkTransport(default: .json(Data(#"{"n":0}"#.utf8)), latency: .milliseconds(20))
+        var limitConfig = NetworkConfiguration(baseURL: "https://api.example.com")
+        limitConfig.maxConcurrentRequests = 2
+        let limitClient = NetworkClient(configuration: limitConfig, transport: limited)
+        _ = try? await withThrowingTaskGroup(of: Void.self) { group in
+            for _ in 0..<10 { group.addTask { _ = try await limitClient.request(GetDoc()) } }
+            try await group.waitForAll()
+        }
+        print("   → 10 requests through maxConcurrentRequests=2 -> all \(limited.requestCount) completed, never >2 in flight")
     }
 
     // MARK: - Helpers

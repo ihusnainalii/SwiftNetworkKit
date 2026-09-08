@@ -17,6 +17,10 @@ public final class NetworkClient: Sendable {
     let interceptors: InterceptorChain
     let logFormatter: NetworkLogFormatter
 
+    let registry = RequestRegistry()
+    let queue: RequestQueue
+    let deduplicator = RequestDeduplicator()
+
     /// Present only when a `refresh` handler was supplied; `nil` disables automatic token refresh.
     let tokenManager: TokenManager?
 
@@ -35,6 +39,7 @@ public final class NetworkClient: Sendable {
     ) {
         self.configuration = configuration
         self.transport = transport ?? Self.defaultTransport(for: configuration)
+        self.queue = RequestQueue(maxConcurrent: configuration.maxConcurrentRequests)
         self.interceptors = InterceptorChain(
             requestInterceptors: [TracingInterceptor(configuration.tracing)] + configuration.requestInterceptors,
             responseInterceptors: configuration.responseInterceptors
@@ -58,9 +63,87 @@ public final class NetworkClient: Sendable {
     }
 
     /// Sends the endpoint and decodes its ``Endpoint/Response``.
-    public func request<E: Endpoint>(_ endpoint: E) async throws -> E.Response {
-        try await perform(endpoint) { data, response, decoder in
+    ///
+    /// The request runs through the concurrency queue (``NetworkConfiguration/maxConcurrentRequests``),
+    /// is de-duplicated when enabled, and is registered so it can be cancelled — by cancelling the
+    /// calling task, or via ``cancel(_:)`` / ``cancelAll()`` using the supplied `id`.
+    @discardableResult
+    public func request<E: Endpoint>(
+        _ endpoint: E,
+        id: RequestID = RequestID()
+    ) async throws -> E.Response {
+        let work = Task { try await self.dispatch(endpoint) }
+        await registry.register(id) { work.cancel() }
+        defer { let registry = registry; Task { await registry.deregister(id) } }
+
+        return try await withTaskCancellationHandler {
+            do {
+                return try await work.value
+            } catch {
+                throw NetworkError.normalize(error)
+            }
+        } onCancel: {
+            work.cancel()
+        }
+    }
+
+    /// Cancels a specific in-flight request. No-op if it already finished.
+    public func cancel(_ id: RequestID) async {
+        await registry.cancel(id)
+    }
+
+    /// Cancels every in-flight request.
+    public func cancelAll() async {
+        await registry.cancelAll()
+    }
+
+    /// Stops admitting queued requests. Running requests continue; new ones wait for ``resumeQueue()``.
+    public func pauseQueue() async {
+        await queue.pause()
+    }
+
+    /// Resumes admitting queued requests.
+    public func resumeQueue() async {
+        await queue.resume()
+    }
+
+    /// Runs `operation` through the concurrency queue unless the endpoint opts out. Used by the
+    /// response-shape helpers in `NetworkClient+Convenience`.
+    func queued<T: Sendable>(
+        priority: RequestPriority,
+        skipQueue: Bool,
+        _ operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        if skipQueue { return try await operation() }
+        return try await queue.enqueue(priority: priority, operation)
+    }
+
+    private func dispatch<E: Endpoint>(_ endpoint: E) async throws -> E.Response {
+        let run: @Sendable () async throws -> E.Response = { [self] in
+            try await deduplicatedPerform(endpoint)
+        }
+        if endpoint.skipRequestQueue {
+            return try await run()
+        }
+        return try await queue.enqueue(priority: endpoint.priority, run)
+    }
+
+    private func deduplicatedPerform<E: Endpoint>(_ endpoint: E) async throws -> E.Response {
+        let wantsDedup = (endpoint.deduplicate ?? configuration.enableDeduplication) && endpoint.method.isCacheable
+        let decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> E.Response = { data, response, decoder in
             try endpoint.decode(data, response: response, using: decoder)
+        }
+        guard wantsDedup else {
+            return try await perform(endpoint, decode: decode)
+        }
+        let request = try? RequestBuilder.build(
+            endpoint: endpoint, environment: configuration.environment, configuration: configuration
+        )
+        guard let request else {
+            return try await perform(endpoint, decode: decode)
+        }
+        return try await deduplicator.result(for: DeduplicationKey.make(request)) { [self] in
+            try await perform(endpoint, decode: decode)
         }
     }
 

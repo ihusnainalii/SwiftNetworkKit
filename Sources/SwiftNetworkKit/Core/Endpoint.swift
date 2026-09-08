@@ -47,6 +47,14 @@ public protocol Endpoint: Sendable {
     /// and `HEAD` responses are cached.
     var cachePolicy: CachePolicy? { get }
 
+    /// Share one in-flight operation among concurrent identical requests. `nil` = use
+    /// ``NetworkConfiguration/enableDeduplication``. Only ever applied to `GET`/`HEAD`.
+    var deduplicate: Bool? { get }
+
+    /// Bypass the concurrency queue (``NetworkConfiguration/maxConcurrentRequests``). Set this on a
+    /// token-refresh endpoint so a full queue plus an expired token can't deadlock.
+    var skipRequestQueue: Bool { get }
+
     /// Per-endpoint decoder override. `nil` = use the client's default.
     var decoder: JSONDecoder? { get }
 
@@ -67,6 +75,8 @@ public extension Endpoint {
     var priority: RequestPriority { .normal }
     var retryPolicy: RetryPolicy? { nil }
     var cachePolicy: CachePolicy? { nil }
+    var deduplicate: Bool? { nil }
+    var skipRequestQueue: Bool { false }
     var decoder: JSONDecoder? { nil }
 }
 

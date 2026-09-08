@@ -25,22 +25,28 @@ public extension NetworkClient {
     // MARK: Response-shape helpers
 
     /// Sends the endpoint and returns the raw response body.
-    func data(for endpoint: some Endpoint) async throws -> Data {
-        try await perform(endpoint) { data, _, _ in data }
+    func data<E: Endpoint>(for endpoint: E) async throws -> Data {
+        try await queued(priority: endpoint.priority, skipQueue: endpoint.skipRequestQueue) { [self] in
+            try await perform(endpoint) { data, _, _ in data }
+        }
     }
 
     /// Sends the endpoint and returns the response body decoded as a UTF-8 string.
-    func string(for endpoint: some Endpoint) async throws -> String {
-        try await perform(endpoint) { data, _, _ in
-            guard let string = String(data: data, encoding: .utf8) else {
-                throw NetworkError.decoding(underlying: EndpointDecodingFailure.responseNotUTF8, nil)
+    func string<E: Endpoint>(for endpoint: E) async throws -> String {
+        try await queued(priority: endpoint.priority, skipQueue: endpoint.skipRequestQueue) { [self] in
+            try await perform(endpoint) { data, _, _ in
+                guard let string = String(data: data, encoding: .utf8) else {
+                    throw NetworkError.decoding(underlying: EndpointDecodingFailure.responseNotUTF8, nil)
+                }
+                return string
             }
-            return string
         }
     }
 
     /// Sends the endpoint and discards the body (for writes whose response you don't need).
-    func send(_ endpoint: some Endpoint) async throws {
-        _ = try await perform(endpoint) { _, _, _ in EmptyResponse() }
+    func send<E: Endpoint>(_ endpoint: E) async throws {
+        _ = try await queued(priority: endpoint.priority, skipQueue: endpoint.skipRequestQueue) { [self] in
+            try await perform(endpoint) { _, _, _ in EmptyResponse() }
+        }
     }
 }
