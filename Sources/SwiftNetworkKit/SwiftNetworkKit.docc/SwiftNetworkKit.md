@@ -72,6 +72,7 @@ let user = try await client.request(GetProfile())
 
 - ``SSLPinning``
 - ``ServerTrustEvaluating``
+- ``ServerTrustDecision``
 
 ### Testing
 

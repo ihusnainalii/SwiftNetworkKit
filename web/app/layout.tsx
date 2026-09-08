@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://ihusnainalii.github.io/SwiftNetworkKit/"),
   title: {
-    default: "SwiftNetworkKit — Modern Protocol-Oriented Networking for Swift 6",
+    default: "SwiftNetworkKit - Modern Protocol-Oriented Networking for Swift 6",
     template: "%s | SwiftNetworkKit",
   },
   description:
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     canonical: "https://ihusnainalii.github.io/SwiftNetworkKit/",
   },
   openGraph: {
-    title: "SwiftNetworkKit — Swift 6 Protocol-Oriented Networking Engine",
+    title: "SwiftNetworkKit - Swift 6 Protocol-Oriented Networking Engine",
     description:
       "Zero external dependencies. 13 isolated Swift actors. SPKI public key pinning. OAuth 2.0 PKCE. Offline request spooling. Built natively for Swift 6 strict concurrency.",
     url: "https://ihusnainalii.github.io/SwiftNetworkKit/",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SwiftNetworkKit — Modern Networking for Swift 6",
+    title: "SwiftNetworkKit - Modern Networking for Swift 6",
     description:
       "Zero external dependencies. 13 isolated Swift actors. SPKI public key pinning. Built natively for Swift 6 strict concurrency.",
     creator: "@ihusnainalii",

@@ -82,10 +82,10 @@ const INTERACTIVE_LABS: DropdownItem[] = [
   },
   {
     id: "graphs",
-    title: "Caching & Concurrency Graphs",
-    desc: "Two-tier latency waterfall, jitter curves & ROI calculator",
+    title: "Visual Performance Benchmarks",
+    desc: "Simple caching speed, retry backoff & concurrency comparisons",
     href: "#graphs",
-    badge: "Interactive",
+    badge: "Benchmarks",
   },
   {
     id: "metrics",
@@ -98,14 +98,14 @@ const INTERACTIVE_LABS: DropdownItem[] = [
 const ARCHITECTURE_ITEMS: DropdownItem[] = [
   {
     id: "milestones",
-    title: "14 Milestones (M0-M14)",
-    desc: "Complete architectural progression from scaffold to SwiftUI",
-    href: "#milestones",
-    badge: "M0-M14",
+    title: "15 Engine Subsystems",
+    desc: "Decoupled, actor-isolated architectural modules",
+    href: "#architecture",
+    badge: "Blueprint",
   },
   {
     id: "features",
-    title: "12 Core Modules",
+    title: "12 Core Capabilities",
     desc: "Zero-dependency bento feature matrix",
     href: "#features",
   },
@@ -199,22 +199,29 @@ export function Navbar() {
             </button>
 
             {activeDropdown === "labs" && (
-              <div className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full left-0 mt-2 w-96 p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
                 {INTERACTIVE_LABS.map((item) => (
                   <a
                     key={item.id}
                     href={item.href}
                     onClick={() => setActiveDropdown(null)}
-                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
+                    className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                       <NavIcon id={item.id} className="w-4 h-4" />
                     </div>
-                    <div className="truncate">
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                        {item.title}
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate font-mono mt-0.5">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors leading-snug">
+                          {item.title}
+                        </span>
+                        {item.badge && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold shrink-0">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono mt-0.5 leading-relaxed">
                         {item.desc}
                       </span>
                     </div>
@@ -243,29 +250,29 @@ export function Navbar() {
             </button>
 
             {activeDropdown === "arch" && (
-              <div className="absolute top-full left-0 mt-2 w-84 p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full left-0 mt-2 w-96 p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
                 {ARCHITECTURE_ITEMS.map((item) => (
                   <a
                     key={item.id}
                     href={item.href}
                     onClick={() => setActiveDropdown(null)}
-                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
+                    className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                       <NavIcon id={item.id} className="w-4 h-4" />
                     </div>
-                    <div className="truncate flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors leading-snug">
                           {item.title}
                         </span>
                         {item.badge && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold">
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold shrink-0">
                             {item.badge}
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate font-mono mt-0.5">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono mt-0.5 leading-relaxed">
                         {item.desc}
                       </span>
                     </div>
@@ -294,29 +301,29 @@ export function Navbar() {
             </button>
 
             {activeDropdown === "docs" && (
-              <div className="absolute top-full left-0 mt-2 w-80 p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full left-0 mt-2 w-96 p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-2xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
                 {DOCS_ITEMS.map((item) => (
                   <a
                     key={item.id}
                     href={item.href}
                     onClick={() => setActiveDropdown(null)}
-                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
+                    className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                       <NavIcon id={item.id} className="w-4 h-4" />
                     </div>
-                    <div className="truncate flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
                           {item.title}
                         </span>
                         {item.badge && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
                             {item.badge}
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate font-mono mt-0.5">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono mt-0.5 leading-relaxed">
                         {item.desc}
                       </span>
                     </div>
@@ -326,13 +333,13 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Direct Highlight Link to 14 Milestones */}
+          {/* Direct Highlight Link to Architecture Blueprint */}
           <a
-            href="#milestones"
+            href="#architecture"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-all font-mono ml-2"
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>14 Milestones</span>
+            <span>Architecture</span>
           </a>
 
           {/* Direct Highlight Link to API Reference */}
@@ -391,16 +398,32 @@ export function Navbar() {
             <span className="text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider block mb-2.5">
               Interactive Labs
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2.5">
               {INTERACTIVE_LABS.map((item) => (
                 <a
                   key={item.id}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5"
                 >
-                  <NavIcon id={item.id} className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                  <span>{item.title}</span>
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <NavIcon id={item.id} className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {item.title}
+                      </span>
+                      {item.badge && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold shrink-0">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono mt-0.5 leading-relaxed">
+                      {item.desc}
+                    </span>
+                  </div>
                 </a>
               ))}
             </div>
@@ -409,25 +432,34 @@ export function Navbar() {
           {/* Group: Architecture */}
           <div>
             <span className="text-[10px] font-mono font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider block mb-2.5">
-              Architecture & Chronology
+              Engine Architecture &amp; Subsystems
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2.5">
               {ARCHITECTURE_ITEMS.map((item) => (
                 <a
                   key={item.id}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <NavIcon id={item.id} className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                    <span>{item.title}</span>
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <NavIcon id={item.id} className="w-4 h-4" />
                   </div>
-                  {item.badge && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold">
-                      {item.badge}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {item.title}
+                      </span>
+                      {item.badge && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold shrink-0">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono mt-0.5 leading-relaxed">
+                      {item.desc}
                     </span>
-                  )}
+                  </div>
                 </a>
               ))}
             </div>
@@ -436,25 +468,34 @@ export function Navbar() {
           {/* Group: Documentation */}
           <div>
             <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-2.5">
-              Documentation & Guides
+              Documentation &amp; Guides
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2.5">
               {DOCS_ITEMS.map((item) => (
                 <a
                   key={item.id}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <NavIcon id={item.id} className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>{item.title}</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <NavIcon id={item.id} className="w-4 h-4" />
                   </div>
-                  {item.badge && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
-                      {item.badge}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {item.title}
+                      </span>
+                      {item.badge && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono mt-0.5 leading-relaxed">
+                      {item.desc}
                     </span>
-                  )}
+                  </div>
                 </a>
               ))}
             </div>

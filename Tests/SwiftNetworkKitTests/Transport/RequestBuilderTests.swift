@@ -41,6 +41,23 @@ struct RequestBuilderTests {
         #expect(request.url?.path == "/users/42/posts/7")
     }
 
+    @Test("a path parameter cannot escape its segment")
+    func pathParameterSegmentInjection() throws {
+        // Values that would otherwise inject a path separator or a bare-dot segment.
+        for value in ["../admin", "1/delete", "..", ".", "a/b/c", "x/../y"] {
+            let request = try build(StubEndpoint(path: "/users/:id", pathParameters: ["id": value]), config())
+            let absolute = try #require(request.url?.absoluteString)
+            // The base path is intact and the value stayed one (opaque) segment.
+            #expect(absolute.hasPrefix("https://api.example.com/users/"), "\(value) -> \(absolute)")
+            let segment = String(absolute.dropFirst("https://api.example.com/users/".count))
+            #expect(!segment.contains("/"), "\(value) leaked a '/' -> \(absolute)")
+            #expect(segment != "." && segment != "..", "\(value) stayed a dot segment -> \(absolute)")
+        }
+        // Normalization does not collapse it to the parent.
+        let request = try build(StubEndpoint(path: "/users/:id", pathParameters: ["id": "../admin"]), config())
+        #expect(request.url?.standardized.absoluteString.contains("/admin") != true)
+    }
+
     @Test("slash between base and path is normalized to exactly one")
     func slashNormalization() throws {
         let cases: [(base: String, path: String)] = [

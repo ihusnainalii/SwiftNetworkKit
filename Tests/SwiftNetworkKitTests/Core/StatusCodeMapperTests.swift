@@ -53,6 +53,24 @@ struct StatusCodeMapperTests {
         #expect(retryAfter == 2)
     }
 
+    @Test(
+        "a hostile Retry-After is clamped and its description never traps",
+        arguments: ["1e30", "99999999999999999999", "1E40", "-5", "inf", "nan", "not-a-number"])
+    func retryAfterIsClamped(raw: String) throws {
+        let mapped = StatusCodeMapper.map(context: context(429, headers: ["Retry-After": raw]))
+        guard case .rateLimited(let retryAfter, _) = try #require(mapped) else {
+            Issue.record("expected .rateLimited")
+            return
+        }
+        if let retryAfter {
+            #expect(retryAfter >= 0)
+            #expect(retryAfter <= StatusCodeMapper.maxRetryAfter)
+        }
+        // errorDescription force-converted an unbounded Double to Int -> Fatal error. Must not now.
+        _ = mapped?.localizedDescription
+        _ = NetworkError.rateLimited(retryAfter: .infinity, context(429)).localizedDescription
+    }
+
     @Test("custom error mapper wins")
     func customMapper() {
         let mapper: @Sendable (ResponseContext) -> NetworkError? = { _ in .sessionExpired }

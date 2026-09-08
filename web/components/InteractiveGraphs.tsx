@@ -7,15 +7,12 @@ import {
   Zap,
   Database,
   BatteryCharging,
-  Layers,
-  ArrowRight,
   TrendingUp,
   Activity,
   Cpu,
   Clock,
   ShieldCheck,
   RefreshCw,
-  Sparkles,
   Wifi,
   WifiOff,
   Copy,
@@ -97,8 +94,8 @@ export function InteractiveGraphs() {
   const totalMonthlyRequests = dauCount * reqsPerUser * 30;
   const cachedMonthlyRequests = totalMonthlyRequests * (cacheHitPercent / 100);
   const bandwidthSavedGB = (cachedMonthlyRequests * avgPayloadKB) / (1024 * 1024);
-  const monthlyCostSavedUSD = bandwidthSavedGB * 0.09; // Approx $0.09/GB egress
-  const batteryJoulesSaved = (cachedMonthlyRequests * 0.045).toFixed(0); // Approx 0.045 Joules saved per radio wake cycle avoided
+  const monthlyCostSavedUSD = bandwidthSavedGB * 0.09;
+  const batteryJoulesSaved = (cachedMonthlyRequests * 0.045).toFixed(0);
 
   return (
     <section id="graphs" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200 dark:border-white/5">
@@ -191,7 +188,7 @@ export function InteractiveGraphs() {
             <div className="glass-panel p-5 bg-white/90 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">CACHING ACCELERATION</span>
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-extrabold font-mono text-emerald-500">{l1Speedup}×</span>
+                <span className="text-3xl font-extrabold font-mono text-emerald-500">{l1Speedup}x</span>
                 <span className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
                   Faster than raw {networkType.toUpperCase()} network request
                 </span>
@@ -225,7 +222,7 @@ export function InteractiveGraphs() {
                     <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                       <Cpu className="w-3.5 h-3.5" /> L1 In-Memory NSCache
                     </span>
-                    <span className="font-bold text-slate-900 dark:text-white">{l1MemoryLatency} ms ({l1Speedup}× speedup)</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{l1MemoryLatency} ms ({l1Speedup}x speedup)</span>
                   </div>
                   <div className="h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex items-center p-1">
                     <div
@@ -246,7 +243,7 @@ export function InteractiveGraphs() {
                     <span className="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
                       <HardDrive className="w-3.5 h-3.5" /> L2 Encrypted Disk Cache (SHA-256 Keyed)
                     </span>
-                    <span className="font-bold text-slate-900 dark:text-white">{l2DiskLatency} ms ({l2Speedup}× speedup)</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{l2DiskLatency} ms ({l2Speedup}x speedup)</span>
                   </div>
                   <div className="h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex items-center p-1">
                     <div
@@ -455,7 +452,7 @@ struct FeedEndpoint: Endpoint {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-sky-600 dark:text-sky-400">
-                      STATUS: STALE-WHILE-REVALIDATE ACTIVE (30s – 90s)
+                      STATUS: STALE-WHILE-REVALIDATE ACTIVE (30s to 90s)
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-slate-300">
                       Instantly yields cached data to UI (0.4ms) + launches asynchronous Swift actor task in background to update cache without UI latency!
@@ -656,15 +653,15 @@ struct FeedEndpoint: Endpoint {
             {/* Explanatory Callout */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 text-xs">
               <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300">
-                <strong className="block font-bold mb-1">❌ Flat / Fixed Retry</strong>
+                <strong className="block font-bold mb-1">Flat / Fixed Retry</strong>
                 If 1,000 devices fail at t=0, exactly 1,000 requests hit the server at t=2.0s, creating a recurring wave that crashes the recovering backend.
               </div>
               <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
-                <strong className="block font-bold mb-1">⚠️ Pure Exponential</strong>
+                <strong className="block font-bold mb-1">Pure Exponential</strong>
                 Delays increase (2s, 4s, 8s, 16s), but synchronized clients still attack the server simultaneously in concentrated harmonic spikes.
               </div>
               <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                <strong className="block font-bold mb-1">✅ SwiftNetworkKit Full Jitter</strong>
+                <strong className="block font-bold mb-1">SwiftNetworkKit Full Jitter</strong>
                 Applies decorrelated uniform jitter. Requests are evenly smoothed across time, guaranteeing smooth server load during outages.
               </div>
             </div>
@@ -742,10 +739,10 @@ struct FeedEndpoint: Endpoint {
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-slate-300 text-[11px]">
-                  <div className="text-rose-400 font-bold">⚠️ Race Condition Cascade:</div>
-                  <div>• Thread 1 fires POST /auth/refresh &rarr; rotates refreshToken</div>
-                  <div>• Thread 2 fires POST /auth/refresh with old token &rarr; 401 INVALID</div>
-                  <div>• App logs user out involuntarily (Session Lost)</div>
+                  <div className="text-rose-400 font-bold">Race Condition Cascade:</div>
+                  <div>- Thread 1 fires POST /auth/refresh and rotates refreshToken</div>
+                  <div>- Thread 2 fires POST /auth/refresh with old token and gets 401 INVALID</div>
+                  <div>- App logs user out involuntarily (Session Lost)</div>
                 </div>
               </div>
             </div>
@@ -769,10 +766,10 @@ struct FeedEndpoint: Endpoint {
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-slate-300 text-[11px]">
-                  <div className="text-emerald-400 font-bold">🛡️ Actor Single-Flight Queue:</div>
-                  <div>• Thread 1 spawns actor-isolated `Task&lt;TokenPair, Error&gt;`</div>
-                  <div>• Threads 2..{concurrentRequests} safely suspend awaiting the single task</div>
-                  <div>• All {concurrentRequests} requests resume in parallel with fresh token</div>
+                  <div className="text-emerald-400 font-bold">Actor Single-Flight Queue:</div>
+                  <div>- Thread 1 spawns actor-isolated Task&lt;TokenPair, Error&gt;</div>
+                  <div>- Threads 2..{concurrentRequests} safely suspend awaiting the single task</div>
+                  <div>- All {concurrentRequests} requests resume in parallel with fresh token</div>
                 </div>
               </div>
             </div>
@@ -850,7 +847,7 @@ struct FeedEndpoint: Endpoint {
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="text-slate-500 text-[10px] block mb-1">CURRENT STATUS</span>
                 <span className={isNetworkOnline ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
-                  {isNetworkOnline ? "⚡ Replaying Spool" : "📦 Spooling to Disk"}
+                  {isNetworkOnline ? "Replaying Spool" : "Spooling to Disk"}
                 </span>
               </div>
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">

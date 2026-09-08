@@ -38,13 +38,19 @@ for awareness.
 - Pinning is opt-in (`NetworkConfiguration.sslPinning`, default `.disabled`).
 - When enabled, the evaluator runs `SecTrustEvaluateWithError` (full system chain validation)
   before pin matching. Pinning is additive, never a replacement for chain validation.
-- On pin mismatch or a missing `serverTrust`, the delegate calls `.cancelAuthenticationChallenge`
-  and records `NetworkError.sslPinningFailed(host:)`. No code path accepts an unverified server on
-  failure.
-- `.development(...)` / `PinningMode.recordOnly` are explicitly non-blocking and only log the
-  observed `sha256/...` values. The names make the trade-off obvious at the call site.
+- The evaluator returns a `ServerTrustDecision`: `.pinned` -> the delegate answers `.useCredential`
+  (only after a pin matched); `.notPinned` -> `.performDefaultHandling` (normal system TLS);
+  `.rejected` -> `.cancelAuthenticationChallenge` + `NetworkError.sslPinningFailed(host:)`. A host
+  the configuration does not cover is `.notPinned`, so enabling pinning for one host never weakens
+  TLS for another. No code path accepts an unverified server on failure.
+- `.development(...)` / `PinningMode.recordOnly` do not enforce a pin (they only log the observed
+  `sha256/...` values), but they return `.notPinned`, so the OS system-trust evaluation still runs.
 - An empty pin set under enforced mode triggers a `precondition` (fails fast rather than silently
   allowing all).
+
+> Fixed 2026-09-09 (QA report finding C1): before this, `.notPinned` and record-only mode returned
+> "success" and the delegate answered `.useCredential`, which told `URLSession` to skip its own
+> evaluation, so an unpinned host on a pinned client accepted any certificate.
 
 ## Credential handling
 

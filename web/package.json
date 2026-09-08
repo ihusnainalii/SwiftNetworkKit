@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.mjs",
     "build": "next build && rm -rf ../docs && cp -r out ../docs",
-    "start": "next start",
+    "start": "node server.mjs",
     "lint": "next lint"
   },
   "dependencies": {

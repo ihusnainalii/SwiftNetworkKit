@@ -16,8 +16,7 @@ enum RequestBuilder {
 
         var path = endpoint.path
         for (key, value) in endpoint.pathParameters {
-            let encoded = value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? value
-            path = path.replacingOccurrences(of: ":\(key)", with: encoded)
+            path = path.replacingOccurrences(of: ":\(key)", with: Self.encodePathParameter(value))
         }
 
         let trimmedBase =
@@ -61,5 +60,18 @@ enum RequestBuilder {
         }
 
         return request
+    }
+
+    /// Percent-encodes a path-parameter value so it stays confined to a single URL path segment.
+    /// `.urlPathAllowed` leaves `/`, `:`, `;`, `@`, `=`, `&` unescaped, so a raw value like
+    /// `../admin` or `1/delete` would otherwise retarget the request. The bare-dot segment forms
+    /// `.` / `..` are escaped too, since they normalize away in `URL`.
+    private static func encodePathParameter(_ value: String) -> String {
+        let allowed = CharacterSet.urlPathAllowed.subtracting(CharacterSet(charactersIn: "/:;=@&+$,"))
+        var encoded = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+        if encoded == "." || encoded == ".." {
+            encoded = encoded.replacingOccurrences(of: ".", with: "%2E")
+        }
+        return encoded
     }
 }

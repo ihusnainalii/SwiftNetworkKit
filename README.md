@@ -641,11 +641,14 @@ config.sslPinning = .disabled          // normal system TLS, no delegate install
   additive, not a replacement.
 - A mismatch fails the request with `NetworkError.sslPinningFailed(host:)` and never falls back to
   "allow".
+- Hosts the configuration does not cover keep normal system TLS: enabling pinning for one host
+  never weakens TLS for another.
 - Multiple pins per host support certificate rotation: deploy the new pin alongside the old, then
   remove the old after the cert rolls.
 - A missing resource or malformed hash fails `NetworkClient` initialization, not silently at
   request time.
-- `.development` / record-only mode logs the observed pins and allows the connection, for adoption.
+- `.development` / record-only mode logs the observed pins for adoption; it does not enforce a pin,
+  but the OS system-trust evaluation still applies.
 
 ---
 

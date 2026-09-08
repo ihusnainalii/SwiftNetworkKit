@@ -44,6 +44,25 @@ struct MultipartFormDataTests {
         #expect(body.contains("PNGBYTES"))
     }
 
+    @Test("CRLF and quotes in name / filename cannot forge part headers")
+    func headerInjectionIsEscaped() throws {
+        var form = MultipartFormData(boundary: "B")
+        form.append(
+            Data("X".utf8),
+            name: "field",
+            fileName: "a.jpg\r\nContent-Type: text/plain\r\n\r\ninjected\r\n--B\r\nname=\"role\"\r\n\r\nadmin",
+            mimeType: "image/jpeg\r\nX-Evil: 1"
+        )
+        let body = String(data: try form.encoded(), encoding: .utf8)!
+
+        // Exactly one Content-Disposition line and one boundary opener for the single part.
+        #expect(body.components(separatedBy: "Content-Disposition:").count == 2)
+        #expect(body.components(separatedBy: "--B\r\n").count == 2)
+        #expect(!body.contains("\r\n\r\ninjected"))
+        #expect(!body.contains("X-Evil"))
+        #expect(body.contains("%0D%0A"))  // the CRLF was percent-encoded, not passed through
+    }
+
     @Test("writeEncoded streams the same bytes as encoded()")
     func writeEncodedMatchesInMemory() throws {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("part-\(UUID()).bin")
