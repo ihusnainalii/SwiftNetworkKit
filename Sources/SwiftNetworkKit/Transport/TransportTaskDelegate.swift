@@ -3,38 +3,29 @@ import Foundation
 import Security
 #endif
 
-/// A per-request `URLSession` delegate: answers the server-trust challenge (SSL pinning), forwards
-/// upload/download byte progress, and — for downloads — moves the finished file somewhere stable
-/// before `URLSession` deletes it.
+/// A per-request task delegate for ``URLSessionTransport/data(for:)``: it answers the server-trust
+/// challenge (SSL pinning) and records a rejection so the transport can surface the real
+/// ``NetworkError/sslPinningFailed(host:)`` instead of a bare cancellation.
 ///
-/// Fresh per `data(for:)` / `upload(...)` / `download(...)` call, so there is no shared state to key
-/// by task id.
-final class TransportTaskDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+/// Upload/download use ``TransportSessionDelegate`` instead — the async `data(for:delegate:)` family
+/// does not reliably forward byte-progress callbacks to a per-task delegate.
+final class TransportTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
 
     #if canImport(Security)
     private let evaluator: (any ServerTrustEvaluating)?
     #endif
-    private let onProgress: (@Sendable (ProgressEvent) -> Void)?
 
     private let lock = NSLock()
     private var _failure: NetworkError?
-    private var _downloadedFile: URL?
-
     var recordedFailure: NetworkError? { lock.withLock { _failure } }
-    var downloadedFile: URL? { lock.withLock { _downloadedFile } }
 
     #if canImport(Security)
-    init(evaluator: (any ServerTrustEvaluating)? = nil, onProgress: (@Sendable (ProgressEvent) -> Void)? = nil) {
+    init(evaluator: (any ServerTrustEvaluating)?) {
         self.evaluator = evaluator
-        self.onProgress = onProgress
     }
     #else
-    init(onProgress: (@Sendable (ProgressEvent) -> Void)? = nil) {
-        self.onProgress = onProgress
-    }
+    override init() {}
     #endif
-
-    // MARK: Server trust (SSL pinning)
 
     func urlSession(
         _ session: URLSession,
@@ -64,41 +55,5 @@ final class TransportTaskDelegate: NSObject, URLSessionDownloadDelegate, @unchec
         #else
         completionHandler(.performDefaultHandling, nil)
         #endif
-    }
-
-    // MARK: Progress
-
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didSendBodyData bytesSent: Int64,
-        totalBytesSent: Int64,
-        totalBytesExpectedToSend: Int64
-    ) {
-        onProgress?(ProgressEvent(completed: totalBytesSent, total: totalBytesExpectedToSend))
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didWriteData bytesWritten: Int64,
-        totalBytesWritten: Int64,
-        totalBytesExpectedToWrite: Int64
-    ) {
-        onProgress?(ProgressEvent(completed: totalBytesWritten, total: totalBytesExpectedToWrite))
-    }
-
-    // MARK: Download completion
-
-    func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didFinishDownloadingTo location: URL
-    ) {
-        // URLSession deletes `location` the moment this returns — move it now, synchronously.
-        let stable = FileManager.default.temporaryDirectory
-            .appendingPathComponent("swiftnetworkkit-download-\(UUID().uuidString)")
-        try? FileManager.default.moveItem(at: location, to: stable)
-        lock.withLock { _downloadedFile = stable }
     }
 }

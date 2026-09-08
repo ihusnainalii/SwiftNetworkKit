@@ -139,8 +139,9 @@ swift run NetworkKitDemo --offline  # auth + refresh section only, no network
 Source: [`Sources/NetworkKitDemo/`](Sources/NetworkKitDemo/).
 
 **SwiftUI app**: a complete standalone iOS app (MVVM + Clean Architecture) in
-[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list to detail, a POST form, and a
-Diagnostics screen (client config + a narrated 401 to refresh to retry walkthrough).
+[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list to detail, a POST form, an
+image downloader with a live progress bar, and a Diagnostics screen (client config, connectivity,
+metrics, and a narrated 401 to refresh to retry walkthrough).
 
 Open `Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj` in Xcode and run, or:
 
