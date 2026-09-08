@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M9.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M10.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M9) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M10) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -27,6 +27,7 @@ struct NetworkKitDemo {
         await uploadDownloadTour()
         await cachingTour()
         await requestManagementTour()
+        await oauthTour()
 
         print("\n═══ done ═══")
     }
@@ -390,6 +391,43 @@ struct NetworkKitDemo {
             try await group.waitForAll()
         }
         print("   → 10 requests through maxConcurrentRequests=2 -> all \(limited.requestCount) completed, never >2 in flight")
+    }
+
+    // MARK: - OAuth 2.0 + PKCE (URL building + token exchange via mock transport)
+
+    private static func oauthTour() async {
+        print("\n── 14. OAuth 2.0 Authorization Code + PKCE ──")
+
+        let config = OAuthConfiguration(
+            authorizationEndpoint: URL(string: "https://auth.example.com/authorize")!,
+            tokenEndpoint: URL(string: "https://auth.example.com/token")!,
+            clientID: "demo-client",
+            redirectURI: "networkkitdemo://callback",
+            scopes: ["openid", "profile"]
+        )
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(.json(Data(#"""
+        {"access_token":"AT-123","refresh_token":"RT-456","expires_in":3600,"token_type":"Bearer"}
+        """#.utf8)))
+        let flow = AuthorizationCodeFlow(configuration: config, transport: transport)
+
+        let state = AuthorizationCodeFlow.makeState()
+        let pkce = PKCE()
+        let authURL = flow.authorizationURL(state: state, pkce: pkce)
+        print("   → authorization URL (open this in ASWebAuthenticationSession):")
+        print("       \(authURL.absoluteString)")
+
+        // The provider redirects back with ?code=...&state=...
+        let redirect = URL(string: "networkkitdemo://callback?code=AUTH_CODE&state=\(state)")!
+        do {
+            let code = try flow.authorizationCode(fromRedirect: redirect, expectedState: state)
+            let tokens = try await flow.exchange(code: code, pkce: pkce)
+            print("   → exchanged code for access token \"\(tokens.accessToken)\", expires \(tokens.expiryDate.map { "\(Int($0.timeIntervalSinceNow))s" } ?? "n/a")")
+            print("   → wire flow.tokenManagerRefreshHandler() into NetworkClient(refresh:) for automatic refresh")
+        } catch {
+            print("   → \(error)")
+        }
     }
 
     // MARK: - Helpers

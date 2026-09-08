@@ -3,11 +3,11 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M9 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M10 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
 > and downloads with progress, HTTP response caching, request cancellation / deduplication /
-> concurrency queue). See
+> concurrency queue, OAuth 2.0 + PKCE). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -165,6 +165,28 @@ await client.resumeQueue()
 Cancelling the calling task also cancels the request. A token-refresh endpoint should set
 `var skipRequestQueue: Bool { true }` so a full queue plus an expired token can't deadlock.
 
+### OAuth 2.0 (Authorization Code + PKCE)
+
+URL building and token exchange only. The app presents the URL (in `ASWebAuthenticationSession`) and
+captures the redirect.
+
+```swift
+let flow = AuthorizationCodeFlow(configuration: OAuthConfiguration(
+    authorizationEndpoint: URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!,
+    tokenEndpoint: URL(string: "https://oauth2.googleapis.com/token")!,
+    clientID: "…", redirectURI: "myapp://callback", scopes: ["openid", "profile"]
+))
+
+let state = AuthorizationCodeFlow.makeState()
+let pkce = PKCE()
+// present flow.authorizationURL(state: state, pkce: pkce), receive `redirectURL`
+let code = try flow.authorizationCode(fromRedirect: redirectURL, expectedState: state)
+let tokens = try await flow.exchange(code: code, pkce: pkce)
+
+// hand automatic refresh to the client:
+let client = NetworkClient(configuration: config, refresh: flow.tokenManagerRefreshHandler())
+```
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -211,9 +233,10 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | Uploads and downloads with byte progress (`client.upload` / `client.download`) |
 | HTTP response caching (`CachePolicy`, memory + disk stores, ETag / 304, stale-while-revalidate) |
 | Request management: cancel by id / `cancelAll`, GET dedup, concurrency limit + priority, pause / resume |
+| OAuth 2.0 Authorization Code + PKCE (`PKCE`, `AuthorizationCodeFlow`, auto-refresh adapter) |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
 
-Not yet: OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the
+Not yet: offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the
 milestone order.
 
 ## Tests
