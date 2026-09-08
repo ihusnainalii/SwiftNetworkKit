@@ -29,7 +29,7 @@ export function Navbar() {
         </a>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
+        <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600 dark:text-slate-300">
           <a href="#pipeline" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Pipeline</a>
           <a href="#playground" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Playground</a>
           <a href="#concurrency" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Concurrency</a>
@@ -37,7 +37,11 @@ export function Navbar() {
             <span>Compare</span>
             <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-mono font-bold">VS</span>
           </a>
-          <a href="#features" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Features</a>
+          <a href="#milestones" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors flex items-center gap-1">
+            <span>14 Milestones</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold">M0-M14</span>
+          </a>
+          <a href="#features" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Modules</a>
           <a href="#api-reference" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">API Docs</a>
           <a href="#roadmap" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Roadmap</a>
           <a href="#installation" className="hover:text-orange-600 dark:hover:text-sky-400 transition-colors">Install</a>
@@ -85,6 +89,7 @@ export function Navbar() {
           <a href="#playground" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Code Builder & Playground</a>
           <a href="#concurrency" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Concurrency Visualizer</a>
           <a href="#compare" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1 font-semibold text-orange-600 dark:text-orange-400">Library Comparison (VS)</a>
+          <a href="#milestones" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1 font-semibold text-emerald-600 dark:text-emerald-400">14 Milestones (M0-M14)</a>
           <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Features Bento</a>
           <a href="#api-reference" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">API Reference</a>
           <a href="#roadmap" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-700 dark:text-slate-300 hover:text-orange-600 dark:hover:text-sky-400 py-1">Roadmap to 1.0.0</a>
