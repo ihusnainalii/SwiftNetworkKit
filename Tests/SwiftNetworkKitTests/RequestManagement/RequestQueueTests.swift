@@ -43,20 +43,35 @@ struct RequestQueueTests {
     func priorityOrder() async throws {
         let queue = RequestQueue(maxConcurrent: 1)
         let order = Order()
+        let gate = Gate()
 
-        // occupy the single slot
+        // Occupy the single slot until the test opens the gate.
         let blocker = Task {
-            try await queue.enqueue(priority: .normal) { try await Task.sleep(for: .milliseconds(40)) }
+            try await queue.enqueue(priority: .normal) { await gate.wait() }
         }
-        try await Task.sleep(for: .milliseconds(5))
+        try await poll { await queue.runningCount == 1 }
 
+        // Register the low-priority waiter, then the high-priority one, confirming each is
+        // enqueued before adding the next so the outcome depends only on priority, not scheduling.
         async let low: Void = queue.enqueue(priority: .low) { await order.record("low") }
-        try await Task.sleep(for: .milliseconds(2))
+        try await poll { await queue.waitingCount == 1 }
         async let high: Void = queue.enqueue(priority: .high) { await order.record("high") }
+        try await poll { await queue.waitingCount == 2 }
 
+        await gate.open()
         _ = try await (low, high)
         _ = try await blocker.value
         #expect(await order.entries == ["high", "low"])
+    }
+
+    /// Spins on an actor-state condition (max ~1s) instead of a fixed sleep, so the test does not
+    /// depend on scheduling latency (which balloons under ThreadSanitizer).
+    private func poll(_ condition: @Sendable () async -> Bool) async throws {
+        for _ in 0..<1000 {
+            if await condition() { return }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        Issue.record("poll condition never became true")
     }
 
     @Test("pause holds the queue; resume drains it")
@@ -80,6 +95,23 @@ struct RequestQueueTests {
 private actor Order {
     private(set) var entries: [String] = []
     func record(_ s: String) { entries.append(s) }
+}
+
+/// A one-shot gate: `wait()` suspends until `open()` is called (or returns immediately if already open).
+private actor Gate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var opened = false
+
+    func wait() async {
+        if opened { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func open() {
+        opened = true
+        continuation?.resume()
+        continuation = nil
+    }
 }
 
 private actor QueueCounter {

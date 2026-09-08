@@ -18,9 +18,9 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
         self.log = log
     }
 
-    public func evaluate(trust: SecTrust, host: String) -> Result<Void, NetworkError> {
+    public func evaluate(trust: SecTrust, host: String) -> ServerTrustDecision {
         guard let pins = configuration.pins(matching: host) else {
-            return .success(())  // pinning does not apply to this host
+            return .notPinned  // pinning does not apply to this host: fall back to system TLS
         }
 
         let chain = Self.certificates(in: trust)
@@ -29,13 +29,15 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
             for hash in chain.compactMap({ Self.spkiSHA256($0) }) {
                 log("SSLPinning[recordOnly] \(host): publicKeys([\"sha256/\(hash.base64EncodedString())\"])")
             }
-            return .success(())
+            // Record the observed pins, but do NOT vouch for the server — let URLSession still run
+            // its own chain / hostname / expiry checks.
+            return .notPinned
         }
 
         if configuration.validateCertificateChain {
             var error: CFError?
             guard SecTrustEvaluateWithError(trust, &error) else {
-                return .failure(.sslPinningFailed(host: host))
+                return .rejected(.sslPinningFailed(host: host))
             }
         }
 
@@ -43,13 +45,13 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
             for pin in pins {
                 switch pin {
                 case .certificate(let der):
-                    if SecCertificateCopyData(certificate) as Data == der { return .success(()) }
+                    if SecCertificateCopyData(certificate) as Data == der { return .pinned }
                 case .publicKeySHA256(let expected):
-                    if let actual = Self.spkiSHA256(certificate), actual == expected { return .success(()) }
+                    if let actual = Self.spkiSHA256(certificate), actual == expected { return .pinned }
                 }
             }
         }
-        return .failure(.sslPinningFailed(host: host))
+        return .rejected(.sslPinningFailed(host: host))
     }
 
     // MARK: - Chain / SPKI helpers

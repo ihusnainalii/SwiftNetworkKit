@@ -66,9 +66,11 @@ final class TransportSessionDelegate: NSObject,
             return
         }
         switch evaluator.evaluate(trust: trust, host: host) {
-        case .success:
+        case .pinned:
             completionHandler(.useCredential, URLCredential(trust: trust))
-        case .failure(let error):
+        case .notPinned:
+            completionHandler(.performDefaultHandling, nil)
+        case .rejected(let error):
             lock.withLock { _pinFailure = error }
             completionHandler(.cancelAuthenticationChallenge, nil)
         }

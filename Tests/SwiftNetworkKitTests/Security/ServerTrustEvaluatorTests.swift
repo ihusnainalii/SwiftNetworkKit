@@ -21,31 +21,31 @@ struct ServerTrustEvaluatorTests {
         #expect(ec == PinningFixtures.ecSPKISHA256)
     }
 
-    @Test("matching public-key pin passes")
+    @Test("matching public-key pin is .pinned")
     func publicKeyMatch() throws {
         let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
         let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
-        #expect(result.isSuccess)
+        #expect(result == .pinned)
     }
 
-    @Test("wrong pin fails with .sslPinningFailed")
+    @Test("wrong pin is .rejected(.sslPinningFailed)")
     func wrongPin() throws {
         let config = SSLPinningConfiguration(pins: [
             PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]
         ])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
-        #expect(result.failureCode == .sslPinningFailed)
+        #expect(result.rejectionCode == .sslPinningFailed)
     }
 
-    @Test("unmatched host is not pinned (passes)")
+    @Test("unmatched host is .notPinned (defers to system TLS, does not vouch)")
     func unmatchedHost() throws {
         let config = SSLPinningConfiguration(pins: ["other.example.com": [.publicKeySHA256(PinningFixtures.bogusHash)]])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
-        #expect(result.isSuccess)
+        #expect(result == .notPinned)
     }
 
     @Test("rotation: any pin in the list may match")
@@ -56,17 +56,17 @@ struct ServerTrustEvaluatorTests {
         ])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
-        #expect(result.isSuccess)
+        #expect(result == .pinned)
     }
 
-    @Test("certificate (DER) pin passes")
+    @Test("certificate (DER) pin is .pinned")
     func certificatePin() throws {
         let config = SSLPinningConfiguration(pins: [
             PinningFixtures.rsaHost: [.certificate(try PinningFixtures.der("pinning-rsa"))]
         ])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
-        #expect(result.isSuccess)
+        #expect(result == .pinned)
     }
 
     @Test("EC-P256 fixture pins by public key")
@@ -75,10 +75,10 @@ struct ServerTrustEvaluatorTests {
         let config = SSLPinningConfiguration(pins: [PinningFixtures.ecHost: [pin]])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-ec"), host: PinningFixtures.ecHost)
-        #expect(result.isSuccess)
+        #expect(result == .pinned)
     }
 
-    @Test("recordOnly never blocks and logs the computed pin")
+    @Test("recordOnly logs the computed pin but returns .notPinned (system TLS still applies)")
     func recordOnly() throws {
         let logged = LoggedLines()
         let config = SSLPinningConfiguration(
@@ -87,7 +87,7 @@ struct ServerTrustEvaluatorTests {
         )
         let result = evaluator(config) { logged.append($0) }
             .evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
-        #expect(result.isSuccess)
+        #expect(result == .notPinned)
         #expect(logged.all.contains { $0.contains(PinningFixtures.rsaSPKISHA256) })
     }
 }
@@ -99,9 +99,8 @@ private final class LoggedLines: @unchecked Sendable {
     var all: [String] { lock.withLock { lines } }
 }
 
-extension Result where Success == Void, Failure == NetworkError {
-    fileprivate var isSuccess: Bool { if case .success = self { return true } else { return false } }
-    fileprivate var failureCode: NetworkError.Code? {
-        if case .failure(let e) = self { return e.code } else { return nil }
+extension ServerTrustDecision {
+    fileprivate var rejectionCode: NetworkError.Code? {
+        if case .rejected(let e) = self { return e.code } else { return nil }
     }
 }

@@ -37,20 +37,26 @@ public enum StatusCodeMapper {
         }
     }
 
-    /// Parses a `Retry-After` header: either delta-seconds or an HTTP-date.
+    /// The longest `Retry-After` value the parser will report. A hostile server can send
+    /// `Retry-After: 1e30`; anything past a day is meaningless to a client and an unbounded value
+    /// crashes `Int(_:)` conversions downstream (e.g. in `errorDescription`).
+    static let maxRetryAfter: TimeInterval = 24 * 60 * 60
+
+    /// Parses a `Retry-After` header: either delta-seconds or an HTTP-date. Clamped to
+    /// `[0, maxRetryAfter]`; non-finite or unparseable values return `nil`.
     static func retryAfterInterval(from headers: HTTPHeaders) -> TimeInterval? {
         guard let raw = headers["Retry-After"]?.trimmingCharacters(in: .whitespaces), !raw.isEmpty else {
             return nil
         }
-        if let seconds = TimeInterval(raw) {
-            return max(0, seconds)
+        if let seconds = TimeInterval(raw), seconds.isFinite {
+            return min(max(0, seconds), maxRetryAfter)
         }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "GMT")
         formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss 'GMT'"
         if let date = formatter.date(from: raw) {
-            return max(0, date.timeIntervalSinceNow)
+            return min(max(0, date.timeIntervalSinceNow), maxRetryAfter)
         }
         return nil
     }

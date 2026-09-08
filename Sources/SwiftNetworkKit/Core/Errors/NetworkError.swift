@@ -124,7 +124,12 @@ extension NetworkError: LocalizedError {
         case .notFound: "Not found (404)"
         case .validation(let context): context.serverMessage ?? "Validation failed (\(context.statusCode))"
         case .rateLimited(let retryAfter, _):
-            retryAfter.map { "Rate limited — retry after \(Int($0))s" } ?? "Rate limited (429)"
+            retryAfter.map { seconds in
+                // Guard against a non-finite / huge value passed to a direct `.rateLimited(...)`
+                // construction: `Int(_:)` traps on anything past `Int.max`.
+                let safe = seconds.isFinite ? Int(min(max(0, seconds), 86_400)) : 0
+                return "Rate limited, retry after \(safe)s"
+            } ?? "Rate limited (429)"
         case .server(let context): context.serverMessage ?? "Server error (\(context.statusCode))"
         case .unacceptableStatusCode(let code, let context):
             context.serverMessage ?? "Unexpected status code \(code)"
