@@ -39,6 +39,10 @@ public protocol Endpoint: Sendable {
 
     var priority: RequestPriority { get }
 
+    /// Per-endpoint retry policy. `nil` = use the client's ``NetworkConfiguration/retry``. Set a
+    /// policy with `retryNonIdempotent = true` here to opt a specific `POST`/`PATCH` into retrying.
+    var retryPolicy: RetryPolicy? { get }
+
     /// Per-endpoint decoder override. `nil` = use the client's default.
     var decoder: JSONDecoder? { get }
 
@@ -57,6 +61,7 @@ public extension Endpoint {
     var authentication: AuthRequirement { .none }
     var timeout: TimeInterval? { nil }
     var priority: RequestPriority { .normal }
+    var retryPolicy: RetryPolicy? { nil }
     var decoder: JSONDecoder? { nil }
 }
 

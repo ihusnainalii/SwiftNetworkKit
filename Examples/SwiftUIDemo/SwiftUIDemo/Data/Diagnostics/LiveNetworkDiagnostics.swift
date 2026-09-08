@@ -5,10 +5,19 @@ import SwiftNetworkKit
 struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let baseURL: String
     let defaultHeaders: [String: String]
+    let retryPolicySummary: String
 
     init(client: NetworkClient) {
         self.baseURL = client.configuration.environment.baseURL.absoluteString
         self.defaultHeaders = client.configuration.environment.defaultHeaders.dictionary
+        let retry = client.configuration.retry
+        let backoff: String
+        switch retry.backoff {
+        case .constant(let seconds): backoff = "constant \(seconds)s"
+        case .exponential(let base, let multiplier, let maxDelay):
+            backoff = "exponential \(base)s ×\(Int(multiplier)) (max \(Int(maxDelay))s)"
+        }
+        self.retryPolicySummary = "\(retry.maxAttempts) attempts, \(backoff)"
     }
 
     func runAuthRefreshScenario() -> AsyncStream<DiagnosticEvent> {

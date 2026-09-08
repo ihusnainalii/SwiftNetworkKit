@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M2.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M3.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M2) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M3) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -20,6 +20,7 @@ struct NetworkKitDemo {
             await liveAPITour()
         }
         await authAndRefreshTour()
+        await retryTour()
 
         print("\n═══ done ═══")
     }
@@ -112,6 +113,32 @@ struct NetworkKitDemo {
         } catch {
             print("   → failed: \(error)")
         }
+    }
+
+    // MARK: - Retry + backoff (deterministic, via MockNetworkTransport + TestClock)
+
+    private static func retryTour() async {
+        print("\n── 8. Automatic retry with exponential backoff (mock transport) ──")
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(.status(503), .status(503), .json(Data(#"{"value":"42"}"#.utf8)))
+
+        let clock = TestClock() // records backoff waits instead of really sleeping
+
+        var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+        configuration.retry = RetryPolicy(maxAttempts: 3, jitter: .none)
+        configuration.clock = clock
+        let client = NetworkClient(configuration: configuration, transport: transport)
+
+        do {
+            let secret = try await client.request(SecretEndpoint())
+            print("   → got \"\(secret.value)\" after \(transport.requestCount) attempts")
+            print("   → backoff waits between attempts: \(clock.recordedSleeps)s (0.5, then 1.0)")
+        } catch {
+            print("   → failed: \(error)")
+        }
+
+        print("   note: POST/PATCH are never retried unless an endpoint opts in via retryPolicy")
     }
 
     // MARK: - Helpers

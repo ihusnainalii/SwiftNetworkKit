@@ -12,6 +12,7 @@ struct DiagnosticsView: View {
             List {
                 Section("Client configuration") {
                     LabeledContent("Base URL", value: model.baseURL)
+                    LabeledContent("Retry policy", value: model.retryPolicySummary)
                     ForEach(model.defaultHeaders, id: \.key) { header in
                         LabeledContent(header.key, value: header.value)
                     }

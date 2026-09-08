@@ -14,6 +14,7 @@ final class DiagnosticsViewModel {
     }
 
     var baseURL: String { diagnostics.baseURL }
+    var retryPolicySummary: String { diagnostics.retryPolicySummary }
     var defaultHeaders: [(key: String, value: String)] {
         diagnostics.defaultHeaders.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
     }
