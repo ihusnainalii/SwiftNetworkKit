@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { GitCompare, Sparkles, AlertCircle, Check, X, Minus } from "lucide-react";
 
-type LibraryKey = "alamofire" | "moya" | "urlsession";
+type LibraryKey = "alamofire" | "moya" | "urlsession" | "combine_async" | "openapi_apollo";
 
 interface ComparisonData {
   title: string;
@@ -149,6 +149,92 @@ class PinningDelegate: NSObject, URLSessionDelegate {
     }
 }`,
   },
+  combine_async: {
+    title: "SwiftNetworkKit vs. Combine / Reactive Pipelines",
+    tagline: "Swift 6 Structured Concurrency vs. Legacy Reactive Operators & Memory Leaks",
+    otherLabel: "Combine / RxSwift Tradeoffs",
+    snkPros: [
+      "Built purely on Swift 6 structured concurrency (async/await, Task, AsyncSequence)",
+      "Native iOS 17+ @Observable macros with automatic granular SwiftUI view invalidation",
+      "Zero AnyCancellable bag management, retain cycle hazards, or memory leaks",
+      "Clean linear execution flow with try/catch and actor data-isolation guarantees",
+    ],
+    otherCons: [
+      "Combine publishers lack Swift 6 Strict Concurrency @Sendable cross-isolation safety",
+      "Requires managing Set<AnyCancellable> across every view model and coordinator",
+      "Complex operator chains (flatMap, retryWhen, shareReplay) obscure error stack traces",
+      "Deprecated / unmaintained on visionOS & Linux server-side Swift environments",
+    ],
+    snkCode: `// SwiftNetworkKit (Swift 6 Observation + AsyncSequence)
+@Observable final class ProfileViewModel {
+    var state: ResourceState<User> = .idle
+    private let client: NetworkClient
+    
+    func load() async {
+        state = .loading
+        do {
+            let user: User = try await client.request(GetProfile())
+            state = .loaded(user)
+        } catch {
+            state = .error(error)
+        }
+    }
+}`,
+    otherCode: `// Combine (Complex Cancellable Bags & Retain Cycles)
+class ProfileViewModel: ObservableObject {
+    @Published var user: User?
+    private var cancellables = Set<AnyCancellable>()
+    
+    func load() {
+        URLSession.shared.dataTaskPublisher(for: url)
+            .map(\\ .data)
+            .decode(type: User.self, decoder: JSONDecoder())
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { _ in }, receiveValue: { [weak self] in
+                self?.user = $0
+            })
+            .store(in: &cancellables)
+    }
+}`,
+  },
+  openapi_apollo: {
+    title: "SwiftNetworkKit vs. OpenAPI / Apollo Code-Gen",
+    tagline: "Protocol-Oriented Swift Endpoints vs. Brittle Code-Gen Bloat",
+    otherLabel: "Code-Gen Tooling Tradeoffs",
+    snkPros: [
+      "Zero build-phase scripts, code generators, or external CLI toolchain dependencies",
+      "First-class Swift protocols tailored specifically to your app domain models",
+      "Instant incremental build times (no waiting for schema generation steps)",
+      "Full control over encoding, decoding strategies, date formatting, and caching policies",
+    ],
+    otherCons: [
+      "Requires running CLI tools or Xcode build phase scripts on every build",
+      "Massive generated boilerplate files inflating repository size and compilation times",
+      "Rigid generated types make customizing caching, retry, or security interceptors difficult",
+      "Schema mismatches during CI/CD cause sudden project build breakages",
+    ],
+    snkCode: `// SwiftNetworkKit (100% Native Swift Protocol Endpoint)
+struct SearchProducts: Endpoint {
+    typealias Response = [Product]
+    var path: String { "/products/search" }
+    var queryItems: [URLQueryItem]? {
+        [URLQueryItem(name: "q", value: query)]
+    }
+    var cachePolicy: CachePolicy { .returnCacheDataElseLoad }
+    let query: String
+}
+
+let items = try await client.request(SearchProducts(query: "swift6"))`,
+    otherCode: `// OpenAPI / Apollo Code-Gen (Fragile Schema CLI + Generated Files)
+// Requires: openapi-generator generate -i schema.yaml -g swift5
+// Produces 45+ generated .swift files with rigid generic wrappers:
+let request = OpenAPIClientAPI.SearchAPI.searchProducts(
+    q: "swift6",
+    apiResponseQueue: .main
+) { result, error in
+    // Generated callback handler...
+}`,
+  },
 };
 
 export function LibraryComparison() {
@@ -165,49 +251,38 @@ export function LibraryComparison() {
           How SwiftNetworkKit Compares
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
-          See why modern Swift 6 projects choose SwiftNetworkKit over heavy legacy frameworks or bare URLSession boilerplate.
+          See why modern Swift 6 projects choose SwiftNetworkKit over legacy callback frameworks, reactive overhead, code-gen clutter, or bare URLSession boilerplate.
         </p>
       </div>
 
       {/* Head to Head Selector */}
       <div className="glass-panel p-6 sm:p-8 mb-16 bg-white/90 dark:bg-slate-900/70 shadow-xl border border-slate-200 dark:border-white/10">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200 dark:border-white/10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200 dark:border-white/10">
           <div>
             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{data.title}</h3>
             <p className="text-sm text-sky-700 dark:text-sky-400 font-mono font-semibold">{data.tagline}</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSelectedLib("alamofire")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
-                selectedLib === "alamofire"
-                  ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
-                  : "glass-panel text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900/60 shadow-sm border border-slate-200 dark:border-transparent"
-              }`}
-            >
-              vs. Alamofire
-            </button>
-            <button
-              onClick={() => setSelectedLib("moya")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
-                selectedLib === "moya"
-                  ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
-                  : "glass-panel text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900/60 shadow-sm border border-slate-200 dark:border-transparent"
-              }`}
-            >
-              vs. Moya
-            </button>
-            <button
-              onClick={() => setSelectedLib("urlsession")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
-                selectedLib === "urlsession"
-                  ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
-                  : "glass-panel text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900/60 shadow-sm border border-slate-200 dark:border-transparent"
-              }`}
-            >
-              vs. Vanilla URLSession
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: "alamofire", label: "vs. Alamofire" },
+              { id: "moya", label: "vs. Moya" },
+              { id: "urlsession", label: "vs. URLSession" },
+              { id: "combine_async", label: "vs. Combine / Rx" },
+              { id: "openapi_apollo", label: "vs. OpenAPI / Apollo" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedLib(tab.id as LibraryKey)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+                  selectedLib === tab.id
+                    ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
+                    : "glass-panel text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900/60 shadow-sm border border-slate-200 dark:border-transparent"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -286,7 +361,7 @@ export function LibraryComparison() {
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
                 <div>Swift 6 Strict Concurrency</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Actor boundaries, 0 data races, Sendable</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">13 isolated actors, 0 data races, Sendable guarantees</div>
               </td>
               <td className="compare-highlight-col">
                 <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
@@ -301,7 +376,7 @@ export function LibraryComparison() {
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
                 <div>External Dependencies</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Zero third-party code in binary</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Zero third-party code in compiled binary</div>
               </td>
               <td className="compare-highlight-col">
                 <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
@@ -345,6 +420,21 @@ export function LibraryComparison() {
 
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
+                <div>RFC 7578 Multipart Disk Streaming</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">500MB+ file uploads directly from disk without OOM</div>
+              </td>
+              <td className="compare-highlight-col">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Zero-Copy Disk Stream
+                </span>
+              </td>
+              <td className="text-emerald-700 dark:text-emerald-400 text-xs font-mono font-semibold">MultipartFormData</td>
+              <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">Basic Wrappers</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">Manual Byte Buffers</td>
+            </tr>
+
+            <tr>
+              <td className="font-semibold text-slate-900 dark:text-white">
                 <div>Persisted Offline Request Queue</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Encrypted FIFO spool with automatic reconnect drain</div>
               </td>
@@ -360,12 +450,12 @@ export function LibraryComparison() {
 
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
-                <div>Two-Tier HTTP Response Caching</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Memory + DiskCacheStore with SHA-256 & ETag 304</div>
+                <div>Two-Tier Cache &amp; Stale-While-Revalidate</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Memory + DiskCacheStore with SHA-256 &amp; ETag 304</div>
               </td>
               <td className="compare-highlight-col">
                 <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Disk & Memory Actors
+                  <Check className="w-3.5 h-3.5" /> L1 + L2 with SWR
                 </span>
               </td>
               <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">Basic URLCache</td>
@@ -375,8 +465,8 @@ export function LibraryComparison() {
 
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
-                <div>Jittered Retry & Rate-Limiting</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Full & equal jitter, Retry-After header parsing</div>
+                <div>Jittered Retry &amp; Rate-Limiting</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Full &amp; equal jitter, Retry-After header parsing</div>
               </td>
               <td className="compare-highlight-col">
                 <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
@@ -390,7 +480,7 @@ export function LibraryComparison() {
 
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
-                <div>SwiftUI @Observable & Combine</div>
+                <div>SwiftUI @Observable &amp; AsyncSequence</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">NetworkResource state container for iOS 17+ Observation</div>
               </td>
               <td className="compare-highlight-col">
@@ -405,8 +495,23 @@ export function LibraryComparison() {
 
             <tr>
               <td className="font-semibold text-slate-900 dark:text-white">
+                <div>Zero-Overhead In-Memory Metrics</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Microsecond P50/P90/P95 latency tracking &amp; error histograms</div>
+              </td>
+              <td className="compare-highlight-col">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> Native NetworkMetrics
+                </span>
+              </td>
+              <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">EventMonitor</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+              <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+            </tr>
+
+            <tr>
+              <td className="font-semibold text-slate-900 dark:text-white">
                 <div>Privacy Redacting Logger</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Automatic secret, token & auth header masking</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Automatic secret, token &amp; auth header masking</div>
               </td>
               <td className="compare-highlight-col">
                 <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
@@ -416,6 +521,21 @@ export function LibraryComparison() {
               <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">Raw Logs</td>
               <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">Raw Logs</td>
               <td className="text-rose-700 dark:text-rose-400 text-xs font-mono font-semibold">None</td>
+            </tr>
+
+            <tr>
+              <td className="font-semibold text-slate-900 dark:text-white">
+                <div>Mock Transport &amp; Deterministic Tests</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-normal">Protocol-based mock transport with 0 network calls</div>
+              </td>
+              <td className="compare-highlight-col">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> MockTransport Protocol
+                </span>
+              </td>
+              <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">URLProtocol Stubbing</td>
+              <td className="text-emerald-700 dark:text-emerald-400 text-xs font-mono font-semibold">SampleData (Enum)</td>
+              <td className="text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">URLProtocol subclass</td>
             </tr>
           </tbody>
         </table>

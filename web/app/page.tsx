@@ -4,6 +4,7 @@ import { PipelineSimulator } from "@/components/PipelineSimulator";
 import { CodePlayground } from "@/components/CodePlayground";
 import { ConcurrencyVisualizer } from "@/components/ConcurrencyVisualizer";
 import { LibraryComparison } from "@/components/LibraryComparison";
+import { InteractiveGraphs } from "@/components/InteractiveGraphs";
 import { MilestonesSection } from "@/components/MilestonesSection";
 import { BentoFeatures } from "@/components/BentoFeatures";
 import { RoadmapSection } from "@/components/RoadmapSection";
@@ -30,6 +31,7 @@ export default function Home() {
         <PipelineSimulator />
         <CodePlayground />
         <ConcurrencyVisualizer />
+        <InteractiveGraphs />
         <LibraryComparison />
         <MilestonesSection />
         <BentoFeatures />

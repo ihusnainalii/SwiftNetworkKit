@@ -1,7 +1,24 @@
-# SwiftNetworkKit
+<p align="center">
+  <img src="assets/logo.svg" alt="SwiftNetworkKit Logo" width="128" height="128" />
+</p>
 
-A production-ready, composable networking layer for Apple platforms. Zero external dependencies,
-Swift 6 strict concurrency, protocol-oriented and fully testable.
+<h1 align="center">SwiftNetworkKit</h1>
+
+<p align="center">
+  <strong>A modern, composable, protocol-oriented networking framework for Apple platforms.</strong><br />
+  Zero external dependencies • Swift 6 strict concurrency • 13 isolated actors • Single-flight 401 token refresh • SPKI SSL pinning
+</p>
+
+<p align="center">
+  <a href="https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml"><img src="https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml"><img src="https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml/badge.svg" alt="Release" /></a>
+  <a href="https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/gitleaks.yml"><img src="https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/gitleaks.yml/badge.svg" alt="Secret scan" /></a>
+  <a href="https://codecov.io/gh/ihusnainalii/SwiftNetworkKit"><img src="https://codecov.io/gh/ihusnainalii/SwiftNetworkKit/branch/main/graph/badge.svg" alt="codecov" /></a>
+  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.0-orange.svg" alt="Swift 6" /></a>
+  <a href="https://swift.org/package-manager"><img src="https://img.shields.io/badge/SPM-compatible-brightgreen.svg" alt="SPM" /></a>
+  <a href="Package.swift"><img src="https://img.shields.io/badge/platforms-iOS%2016%20%7C%20macOS%2013%20%7C%20tvOS%2016%20%7C%20watchOS%209%20%7C%20visionOS%201-lightgrey.svg" alt="Platforms" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-source--available%20proprietary-red.svg" alt="License" /></a>
+</p>
 
 - **Version:** 0.1.0 (pre-release, API stabilizing toward 1.0.0)
 - **Swift:** 6.0 (`swift-tools-version:6.0`, Swift 6 language mode)
@@ -9,15 +26,6 @@ Swift 6 strict concurrency, protocol-oriented and fully testable.
 - **Distribution:** Swift Package Manager
 - **License:** Source-available proprietary. Use it in your apps (including commercial); do not
   redistribute, fork publicly, or rebrand it. See [License](#license).
-
-[![CI](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml)
-[![Release](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml)
-[![Secret scan](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/gitleaks.yml)
-[![codecov](https://codecov.io/gh/ihusnainalii/SwiftNetworkKit/branch/main/graph/badge.svg)](https://codecov.io/gh/ihusnainalii/SwiftNetworkKit)
-[![Swift 6](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
-[![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager)
-[![Platforms](https://img.shields.io/badge/platforms-iOS%2016%20%7C%20macOS%2013%20%7C%20tvOS%2016%20%7C%20watchOS%209%20%7C%20visionOS%201-lightgrey.svg)](Package.swift)
-[![License](https://img.shields.io/badge/license-source--available%20proprietary-red.svg)](LICENSE)
 
 ---
 

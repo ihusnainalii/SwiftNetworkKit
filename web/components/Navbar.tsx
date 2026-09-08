@@ -19,7 +19,8 @@ import {
   BookOpen,
   Compass,
   DownloadCloud,
-  Sparkles
+  Sparkles,
+  TrendingUp
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 
@@ -39,6 +40,8 @@ function NavIcon({ id, className = "w-4 h-4" }: { id: string; className?: string
       return <Code2 className={className} />;
     case "concurrency":
       return <GitBranch className={className} />;
+    case "graphs":
+      return <TrendingUp className={className} />;
     case "metrics":
       return <Zap className={className} />;
     case "milestones":
@@ -76,6 +79,13 @@ const INTERACTIVE_LABS: DropdownItem[] = [
     title: "Concurrency Visualizer",
     desc: "Single-flight token refresh actor & priority queueing",
     href: "#concurrency",
+  },
+  {
+    id: "graphs",
+    title: "Caching & Concurrency Graphs",
+    desc: "Two-tier latency waterfall, jitter curves & ROI calculator",
+    href: "#graphs",
+    badge: "Interactive",
   },
   {
     id: "metrics",
