@@ -1,43 +1,46 @@
 # SwiftUIDemo
 
-A standalone SwiftUI app that integrates **SwiftNetworkKit** via a local path dependency
-(`.package(name: "SwiftNetworkKit", path: "../..")`).
+A complete, standalone SwiftUI app that integrates **SwiftNetworkKit**, built with **MVVM + Clean
+Architecture**. Its own SwiftPM package with a local path dependency (`.package(path: "../..")`).
 
-It lists users from `https://jsonplaceholder.typicode.com`, drills into a detail screen that loads
-that user's posts, and shows idle / loading / loaded / error states with pull-to-refresh and retry.
+Three tabs against `https://jsonplaceholder.typicode.com`:
 
-## Run (command line — macOS)
+| Tab | Shows |
+|---|---|
+| **Users** | searchable list, pull-to-refresh, error state with retry → user detail (contact + posts + todos + albums, three parallel requests) |
+| **Compose** | a form that `POST`s a JSON body and decodes the created `Post` |
+| **Diagnostics** | the live client configuration + a narrated **401 → refresh → retry** walkthrough (mock transport) |
+
+## Run
 
 ```bash
-# from this directory
-swift run SwiftUIDemo
-
-# or from the repo root
+# command line (macOS)
 swift run --package-path Examples/SwiftUIDemo SwiftUIDemo
 ```
 
-## Run in Xcode
+**Xcode:** File ▸ Open… → select the `Examples/SwiftUIDemo` folder. If it reports a missing package
+product, File ▸ Packages ▸ Reset Package Caches, then Resolve Package Versions.
 
-1. In Xcode: **File ▸ Open…** and select the **`Examples/SwiftUIDemo`** folder (open the folder, not
-   just `Package.swift`).
-2. If you see *“Missing package product 'SwiftNetworkKit'”*: **File ▸ Packages ▸ Reset Package Caches**,
-   then **File ▸ Packages ▸ Resolve Package Versions**. This happens when a stale `Package.resolved`
-   is cached — the local `path: "../.."` dependency resolves fine once caches are cleared.
-3. Pick the **SwiftUIDemo** scheme and a My Mac / iOS Simulator destination, then Run.
+## Architecture
 
-The dependency is declared as `.package(path: "../..")` — a plain local path dependency on this
-repo. No `name:` argument (Xcode 26 rejects it on path dependencies).
+```
+Presentation  ──depends on──▶  Domain  ◀──implements──  Data
+(SwiftUI Views + @Observable       (entities +          (Endpoints + repositories
+ ViewModels)                        repository ports)    backed by NetworkClient)
+                                        ▲
+                          AppContainer (composition root, injected via Environment)
+```
 
-To use it inside an existing iOS app instead, drag the four files in `Sources/SwiftUIDemo/` into your
-app target and add SwiftNetworkKit as a package dependency.
+| Layer | Files | Rule |
+|---|---|---|
+| **Domain** | `Domain/Domain.swift` | entities + `UsersRepository` / `UserContentRepository` / `PostComposer` / `NetworkDiagnostics` protocols. **No import of SwiftNetworkKit or SwiftUI.** |
+| **Data** | `Data/Endpoints.swift`, `Data/LiveRepositories.swift`, `Data/LiveDiagnostics.swift`, `Data/AppContainer.swift` | the *only* code that imports SwiftNetworkKit and calls `client.request(...)`. Implements the Domain ports. |
+| **Presentation** | `Presentation/**` | `@MainActor @Observable` view models depend only on Domain protocols; SwiftUI views are dumb and bind to a view model. **No import of SwiftNetworkKit** (except `NetworkError` for display). |
+| **Composition root** | `Data/AppContainer.swift` + `App/` | builds the `NetworkClient` once, wires concrete repositories, injects `AppContainer` through the SwiftUI environment. Swap `.live` for a stub in tests/previews. |
 
-## How it integrates the package
+Each screen is a `ViewModel` + `View` pair. View models expose a `LoadPhase<Value>` (`idle` /
+`loading` / `loaded` / `failed(NetworkError)`) and intent methods (`load()`, `submit()`); views
+render it with the shared `PhaseView` / `ErrorStateView`.
 
-| File | What it shows |
-|---|---|
-| `API.swift` | `Endpoint` conformances (`ListUsers`, `PostsByUser`) + one shared pre-configured `NetworkClient` |
-| `Loadable.swift` | a `@MainActor @Observable` load-state holder over `NetworkError` — the shape SwiftNetworkKit ships as `NetworkResource` in milestone M14 |
-| `ContentView.swift` | `.task { await loadable.load { try await client.request(endpoint) } }`, `.refreshable`, `ContentUnavailableView` fed by `error.localizedDescription`, `navigationDestination` to a detail screen |
-
-The app never touches `URLSession`, decoding, or error mapping — only `Endpoint` types and
-`try await client.request(...)`.
+To reuse in a real iOS app: drop `Domain/`, `Data/`, `Presentation/` into your target and add
+SwiftNetworkKit as a package dependency.

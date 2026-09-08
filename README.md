@@ -32,7 +32,7 @@ struct GetProfile: Endpoint {
     var authentication: AuthRequirement { .required }
 }
 
-// 3. Call it — three styles
+// 3. Call it (three styles)
 let user: User = try await client.request(GetProfile())               // async/await
 client.request(GetProfile()) { (r: Result<User, NetworkError>) in }   // completion handler
 ```
@@ -40,9 +40,9 @@ client.request(GetProfile()) { (r: Result<User, NetworkError>) in }   // complet
 A `.required` endpoint that 401s triggers a single-flight token refresh and one automatic retry;
 a second 401 for the same request surfaces `NetworkError.sessionExpired`.
 
-## Demo
+## Demos
 
-A runnable tour of everything shipped so far:
+**CLI tour**: a scripted run through every shipped feature:
 
 ```bash
 swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -50,6 +50,14 @@ swift run NetworkKitDemo --offline  # auth + refresh section only, no network
 ```
 
 Source: [`Sources/NetworkKitDemo/`](Sources/NetworkKitDemo/).
+
+**SwiftUI app**: a complete standalone app (MVVM + Clean Architecture) in
+[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list → detail, a POST form, and a
+narrated 401→refresh→retry screen.
+
+```bash
+swift run --package-path Examples/SwiftUIDemo SwiftUIDemo
+```
 
 ## What's implemented
 
@@ -62,7 +70,7 @@ Source: [`Sources/NetworkKitDemo/`](Sources/NetworkKitDemo/).
 | Unified `NetworkError` (+ status, headers, body, server message) | ✅ M0 |
 | Auth strategies (Bearer / API key / Basic / custom) | ✅ M2 |
 | `TokenStorage` (in-memory + Keychain, pluggable) | ✅ M2 |
-| Actor `TokenManager` — single-flight 401 refresh, queueing, loop guard | ✅ M2 |
+| Actor `TokenManager` (single-flight 401 refresh, queueing, loop guard) | ✅ M2 |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`) | ✅ (shipped) |
 | Retry + backoff, SSL pinning, caching, upload/download, reachability, OAuth, offline, pagination, Combine/SwiftUI | ⏳ M3–M14 |
 

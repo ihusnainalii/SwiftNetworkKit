@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable tour of SwiftNetworkKit as it stands after milestones M0–M2.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M2.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,15 +12,13 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-
         print("═══ SwiftNetworkKit demo (M0–M2) ═══\n")
 
-        if !offline {
-            await liveAPITour()
-        } else {
+        if offline {
             print("• Skipping live API sections (--offline)\n")
+        } else {
+            await liveAPITour()
         }
-
         await authAndRefreshTour()
 
         print("\n═══ done ═══")
@@ -89,7 +87,6 @@ struct NetworkKitDemo {
         }
         struct Secret: Codable, Sendable { let value: String }
 
-        // Scripted transport: first call 401s, the retry (after refresh) succeeds.
         let transport = MockNetworkTransport()
         transport.enqueue(
             .success(status: 401, headers: [:], body: Data(#"{"message":"token expired"}"#.utf8)),
@@ -139,7 +136,6 @@ struct NetworkKitDemo {
     }
 }
 
-/// Local counter so the demo target needs no test-support code.
 private actor DemoCounter {
     private(set) var count = 0
     func bump() { count += 1 }

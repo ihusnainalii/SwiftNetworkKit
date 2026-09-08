@@ -16,8 +16,6 @@ struct Post: Codable, Sendable {
     let title: String
     let body: String
 
-    // JSONPlaceholder uses `userId`; the default decoder converts snake_case, not camelCase quirks,
-    // so map it explicitly.
     enum CodingKeys: String, CodingKey {
         case id, title, body
         case userID = "userId"
@@ -37,8 +35,8 @@ struct DraftPost: Codable, Sendable {
 
 // MARK: - Endpoints
 //
-// This is the *entire* integration surface an app writes: one type per operation. No URLSession,
-// no decoding boilerplate, no error mapping.
+// The entire integration surface an app writes: one type per operation. No URLSession, no decoding
+// boilerplate, no error mapping.
 
 enum JSONPlaceholder {
 
