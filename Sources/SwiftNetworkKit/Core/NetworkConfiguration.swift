@@ -26,13 +26,27 @@ public struct NetworkConfiguration: Sendable {
     /// App hook to override status-code → error mapping. Consulted before the built-in mapping.
     public var errorMapper: (@Sendable (ResponseContext) -> NetworkError?)?
 
+    // MARK: Authentication (M2)
+
+    /// How `.required` endpoints get authenticated. Defaults to ``BearerAuth``.
+    public var authorization: any AuthStrategy
+
+    /// Where tokens live. Defaults to ``InMemoryTokenStorage``; swap for `KeychainTokenStorage`.
+    public var tokenStorage: any TokenStorage
+
+    /// Refresh a stored token this many seconds *before* its `expiresAt` (proactive refresh).
+    public var proactiveRefreshLeeway: TimeInterval
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
         defaultEncoder: JSONEncoder = .networkKitDefault,
         redactedHeaders: Set<String> = NetworkConfiguration.defaultRedactedHeaders,
         redactedBodyKeys: Set<String> = NetworkConfiguration.defaultRedactedBodyKeys,
-        errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil
+        errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil,
+        authorization: any AuthStrategy = BearerAuth(),
+        tokenStorage: any TokenStorage = InMemoryTokenStorage(),
+        proactiveRefreshLeeway: TimeInterval = 60
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -40,6 +54,9 @@ public struct NetworkConfiguration: Sendable {
         self.redactedHeaders = Set(redactedHeaders.map { $0.lowercased() })
         self.redactedBodyKeys = redactedBodyKeys
         self.errorMapper = errorMapper
+        self.authorization = authorization
+        self.tokenStorage = tokenStorage
+        self.proactiveRefreshLeeway = proactiveRefreshLeeway
     }
 
     /// Convenience single-environment initializer.

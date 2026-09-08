@@ -1,11 +1,12 @@
 import Foundation
 
 /// The public entry point. Compose it once, then call ``request(_:)`` (and friends) with your
-/// ``Endpoint`` values — the client owns URL building, transport, status-code mapping and decoding.
+/// ``Endpoint`` values — the client owns URL building, transport, authentication, status-code
+/// mapping and decoding.
 ///
-/// **M1 scope:** the request pipeline is `build → send → map status → decode`. Authentication (M2),
-/// retry/backoff (M3), interceptors, logging and metrics (M4), caching (M8) and request management
-/// (M9) wrap ``perform(_:decode:)`` as they land — the public API does not change.
+/// **M2 scope:** the pipeline is `build → authorize → send → map status → (401 ⇒ refresh + retry
+/// once) → decode`. Retry/backoff (M3), interceptors/logging/metrics (M4), caching (M8) and request
+/// management (M9) wrap ``perform(_:decode:)`` as they land — the public API does not change.
 public final class NetworkClient: Sendable {
 
     /// The configuration this client was created with.
@@ -13,13 +14,33 @@ public final class NetworkClient: Sendable {
 
     private let transport: any NetworkTransport
 
+    /// Present only when a `refresh` handler was supplied; `nil` disables automatic token refresh.
+    let tokenManager: TokenManager?
+
     /// Creates a client.
     /// - Parameters:
-    ///   - configuration: base URL, headers, timeout, decoders, redaction, error mapping.
+    ///   - configuration: base URL, headers, timeout, auth strategy, token storage, decoders.
     ///   - transport: injection seam for tests. Defaults to ``URLSessionTransport``.
-    public init(configuration: NetworkConfiguration, transport: (any NetworkTransport)? = nil) {
+    ///   - refresh: how to obtain a fresh ``TokenPair`` after a 401. Omit to disable auto-refresh.
+    ///   - onSessionExpired: called once when a refresh fails or a request 401s twice.
+    public init(
+        configuration: NetworkConfiguration,
+        transport: (any NetworkTransport)? = nil,
+        refresh: TokenManager.RefreshHandler? = nil,
+        onSessionExpired: @escaping TokenManager.SessionExpiredHandler = {}
+    ) {
         self.configuration = configuration
         self.transport = transport ?? URLSessionTransport(timeout: configuration.environment.timeout)
+        if let refresh {
+            self.tokenManager = TokenManager(
+                storage: configuration.tokenStorage,
+                proactiveLeeway: configuration.proactiveRefreshLeeway,
+                refresh: refresh,
+                onSessionExpired: onSessionExpired
+            )
+        } else {
+            self.tokenManager = nil
+        }
     }
 
     /// Sends the endpoint and decodes its ``Endpoint/Response``.
@@ -34,17 +55,29 @@ public final class NetworkClient: Sendable {
         _ endpoint: E,
         decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
     ) async throws -> T {
+        if Task.isCancelled { throw NetworkError.cancelled }
+        let requestID = RequestID()
         do {
-            try Task.checkCancellation()
+            let result = try await execute(endpoint, requestID: requestID, decode: decode)
+            await tokenManager?.forget(requestID)
+            return result
         } catch {
-            throw NetworkError.cancelled
+            await tokenManager?.forget(requestID)
+            throw error
         }
+    }
 
-        let urlRequest = try RequestBuilder.build(
+    private func execute<E: Endpoint, T: Sendable>(
+        _ endpoint: E,
+        requestID: RequestID,
+        decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+    ) async throws -> T {
+        var urlRequest = try RequestBuilder.build(
             endpoint: endpoint,
             environment: configuration.environment,
             configuration: configuration
         )
+        try await authorize(&urlRequest, for: endpoint)
 
         let data: Data
         let response: HTTPURLResponse
@@ -62,6 +95,11 @@ public final class NetworkClient: Sendable {
         )
 
         if let error = StatusCodeMapper.map(context: context, errorMapper: configuration.errorMapper) {
+            if error.code == .unauthorized, endpoint.authentication.isAuthenticated, let tokenManager {
+                // Throws `.sessionExpired` on the second 401 for this request — no infinite loop.
+                _ = try await tokenManager.refreshedToken(forRetryOf: requestID)
+                return try await execute(endpoint, requestID: requestID, decode: decode)
+            }
             throw error
         }
 
@@ -69,7 +107,6 @@ public final class NetworkClient: Sendable {
         do {
             return try decode(data, response, decoder)
         } catch let error as NetworkError {
-            // Enrich a context-less decoding failure from `Endpoint.decode` with the real response.
             if case .decoding(let underlying, nil) = error {
                 throw NetworkError.decoding(underlying: underlying, context)
             }
@@ -77,5 +114,25 @@ public final class NetworkClient: Sendable {
         } catch {
             throw NetworkError.decoding(underlying: asSendableError(error), context)
         }
+    }
+
+    private func authorize<E: Endpoint>(_ request: inout URLRequest, for endpoint: E) async throws {
+        let strategy: any AuthStrategy
+        switch endpoint.authentication {
+        case .none:
+            return
+        case .required:
+            strategy = configuration.authorization
+        case .custom(let custom):
+            strategy = custom
+        }
+
+        let token: String?
+        if let tokenManager {
+            token = await tokenManager.tokenForOutgoingRequest()
+        } else {
+            token = try? await configuration.tokenStorage.accessToken()
+        }
+        try await strategy.authorize(&request, token: token)
     }
 }
