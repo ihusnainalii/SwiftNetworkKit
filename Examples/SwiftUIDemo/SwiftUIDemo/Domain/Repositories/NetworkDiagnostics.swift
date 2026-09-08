@@ -4,6 +4,8 @@ protocol NetworkDiagnostics: Sendable {
     var defaultHeaders: [String: String] { get }
     /// Human-readable summary of the client's retry policy (attempts + backoff).
     var retryPolicySummary: String { get }
+    /// Human-readable summary of the client's SSL pinning configuration.
+    var sslPinningSummary: String { get }
     /// Live counters from the client's metrics sink, as label/value rows for display.
     func metricsSummary() async -> [MetricsRow]
     /// Emits one event per step of a mock 401 → refresh → retry flow.

@@ -34,7 +34,7 @@ public final class NetworkClient: Sendable {
         onSessionExpired: @escaping TokenManager.SessionExpiredHandler = {}
     ) {
         self.configuration = configuration
-        self.transport = transport ?? URLSessionTransport(timeout: configuration.environment.timeout)
+        self.transport = transport ?? Self.defaultTransport(for: configuration)
         self.interceptors = InterceptorChain(
             requestInterceptors: [TracingInterceptor(configuration.tracing)] + configuration.requestInterceptors,
             responseInterceptors: configuration.responseInterceptors
@@ -229,6 +229,31 @@ public final class NetworkClient: Sendable {
             token = try? await configuration.tokenStorage.accessToken()
         }
         try await strategy.authorize(&request, token: token)
+    }
+
+    // MARK: - Transport construction
+
+    private static func defaultTransport(for configuration: NetworkConfiguration) -> any NetworkTransport {
+        let timeout = configuration.environment.timeout
+        #if canImport(Security)
+        let host = URLComponents(url: configuration.environment.baseURL, resolvingAgainstBaseURL: false)?.host
+        let resolved: SSLPinningConfiguration?
+        do {
+            resolved = try configuration.sslPinning.resolve(defaultHost: host)
+        } catch {
+            preconditionFailure("SSLPinning could not be resolved: \(error)")
+        }
+        guard let resolved else {
+            return URLSessionTransport(timeout: timeout)
+        }
+        let logger = configuration.logger
+        let evaluator = ServerTrustEvaluator(configuration: resolved) { line in
+            logger.log(line, level: .error)
+        }
+        return URLSessionTransport(timeout: timeout, trustEvaluator: evaluator)
+        #else
+        return URLSessionTransport(timeout: timeout)
+        #endif
     }
 
     // MARK: - Logging & metrics helpers

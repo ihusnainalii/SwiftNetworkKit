@@ -13,6 +13,7 @@ struct DiagnosticsView: View {
                 Section("Client configuration") {
                     LabeledContent("Base URL", value: model.baseURL)
                     LabeledContent("Retry policy", value: model.retryPolicySummary)
+                    LabeledContent("SSL pinning", value: model.sslPinningSummary)
                     ForEach(model.defaultHeaders, id: \.key) { header in
                         LabeledContent(header.key, value: header.value)
                     }

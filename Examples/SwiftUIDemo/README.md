@@ -15,7 +15,7 @@ Three tabs against `https://jsonplaceholder.typicode.com`:
 |---|---|
 | **Users** | searchable list, pull-to-refresh, error state with retry → user detail (contact + posts + todos + albums, three parallel requests) |
 | **Compose** | a form that `POST`s a JSON body and decodes the created `Post` |
-| **Diagnostics** | the live client configuration (base URL, retry policy, headers), live **metrics** (requests / succeeded / failed / retries / average duration from `InMemoryMetrics`), and a narrated **401 → refresh → retry** walkthrough (mock transport) |
+| **Diagnostics** | the live client configuration (base URL, retry policy, SSL pinning mode, headers), live **metrics** (requests / succeeded / failed / retries / average duration from `InMemoryMetrics`), and a narrated **401 → refresh → retry** walkthrough (mock transport) |
 
 ## Run
 

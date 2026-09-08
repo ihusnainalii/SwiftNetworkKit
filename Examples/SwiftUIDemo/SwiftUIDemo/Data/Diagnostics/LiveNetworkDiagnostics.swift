@@ -6,12 +6,20 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let baseURL: String
     let defaultHeaders: [String: String]
     let retryPolicySummary: String
+    let sslPinningSummary: String
     private let metrics: InMemoryMetrics
 
     init(client: NetworkClient, metrics: InMemoryMetrics) {
         self.baseURL = client.configuration.environment.baseURL.absoluteString
         self.defaultHeaders = client.configuration.environment.defaultHeaders.dictionary
         self.metrics = metrics
+        switch client.configuration.sslPinning {
+        case .disabled: self.sslPinningSummary = "disabled (system TLS)"
+        case .certificates: self.sslPinningSummary = "certificate pinning"
+        case .certificateResources: self.sslPinningSummary = "certificate pinning (bundle)"
+        case .publicKeys: self.sslPinningSummary = "public-key pinning"
+        case .development: self.sslPinningSummary = "record-only (development)"
+        }
         let retry = client.configuration.retry
         let backoff: String
         switch retry.backoff {

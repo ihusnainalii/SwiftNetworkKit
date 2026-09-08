@@ -63,6 +63,12 @@ public struct NetworkConfiguration: Sendable {
     /// Observability sink. Defaults to ``NoopMetrics``; use ``InMemoryMetrics`` to aggregate.
     public var metrics: any NetworkMetrics
 
+    // MARK: SSL pinning (M5)
+
+    /// Certificate / public-key pinning. Defaults to ``SSLPinning/disabled`` (normal system TLS).
+    /// A misconfigured value (missing resource, bad hash) fails `NetworkClient.init` loudly.
+    public var sslPinning: SSLPinning
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
@@ -79,7 +85,8 @@ public struct NetworkConfiguration: Sendable {
         responseInterceptors: [any ResponseInterceptor] = [],
         tracing: TraceHeaders = TraceHeaders(),
         logger: any NetworkLogger = ConsoleNetworkLogger(),
-        metrics: any NetworkMetrics = NoopMetrics()
+        metrics: any NetworkMetrics = NoopMetrics(),
+        sslPinning: SSLPinning = .disabled
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -97,6 +104,7 @@ public struct NetworkConfiguration: Sendable {
         self.tracing = tracing
         self.logger = logger
         self.metrics = metrics
+        self.sslPinning = sslPinning
     }
 
     /// Convenience single-environment initializer.
