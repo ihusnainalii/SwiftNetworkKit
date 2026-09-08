@@ -3,8 +3,9 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M3 are complete (core types, request pipeline,
-> authentication + automatic token refresh, retry + backoff + rate limiting). See
+> **Status:** in development. Milestones M0 through M4 are complete (core types, request pipeline,
+> authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
+> + redacting logger + metrics). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -56,6 +57,22 @@ struct SubmitOrder: Endpoint {
 }
 ```
 
+### Interceptors, logging, metrics
+
+```swift
+let metrics = InMemoryMetrics()
+var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+configuration.environment.logLevel = .verbose      // redacted headers in the log; tokens never appear
+configuration.metrics = metrics
+configuration.requestInterceptors = [MyHeaderInterceptor()]     // adapt every outgoing request
+configuration.responseInterceptors = [My2FAChallengeInterceptor()]   // proceed / retry / fail / substitute
+
+let snapshot = await metrics.snapshot()   // requestCount, successCount, statusCodeHistogram, p95Duration, ...
+```
+
+Every request gets a unique `X-Request-ID`. Wrap a group of calls in
+`client.withCorrelation(id) { ... }` to give them all one `X-Correlation-ID`.
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -91,10 +108,14 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | `TokenStorage` (in-memory + Keychain, pluggable) |
 | Actor `TokenManager` (single-flight 401 refresh, queueing, loop guard) |
 | Retry + backoff + jitter, idempotency-aware, `Retry-After` rate limiting |
-| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`) |
+| Request / response interceptors (`InterceptOutcome`: proceed / retry / fail / substitute) |
+| Correlation headers (`X-Request-ID` per request, `withCorrelation` for a logical operation) |
+| Redacting logger (`LogLevel` none / error / basic / verbose / debug; tokens never logged) |
+| Metrics (`NetworkMetrics` sink, `InMemoryMetrics` -> counts, histogram, average / p95) |
+| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`) |
 
-Not yet: SSL pinning, interceptors/logging/metrics, caching, upload/download, reachability, OAuth,
-offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the milestone order.
+Not yet: SSL pinning, caching, upload/download, reachability, OAuth, offline queue, pagination,
+batch, Combine/SwiftUI helpers. See the roadmap for the milestone order.
 
 ## Tests
 

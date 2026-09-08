@@ -18,6 +18,14 @@ struct DiagnosticsView: View {
                     }
                 }
 
+                if !model.metrics.isEmpty {
+                    Section("Metrics (live session)") {
+                        ForEach(model.metrics) { row in
+                            LabeledContent(row.label, value: row.value)
+                        }
+                    }
+                }
+
                 Section {
                     Button {
                         Task { await model.runAuthRefreshScenario() }
@@ -45,6 +53,8 @@ struct DiagnosticsView: View {
                 }
             }
             .navigationTitle("Diagnostics")
+            .task { await model.refreshMetrics() }
+            .refreshable { await model.refreshMetrics() }
         }
     }
 

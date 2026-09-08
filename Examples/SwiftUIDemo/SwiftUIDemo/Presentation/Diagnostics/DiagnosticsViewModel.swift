@@ -8,6 +8,7 @@ final class DiagnosticsViewModel {
 
     private(set) var events: [DiagnosticEvent] = []
     private(set) var isRunning = false
+    private(set) var metrics: [MetricsRow] = []
 
     init(diagnostics: any NetworkDiagnostics) {
         self.diagnostics = diagnostics
@@ -15,6 +16,10 @@ final class DiagnosticsViewModel {
 
     var baseURL: String { diagnostics.baseURL }
     var retryPolicySummary: String { diagnostics.retryPolicySummary }
+
+    func refreshMetrics() async {
+        metrics = await diagnostics.metricsSummary()
+    }
     var defaultHeaders: [(key: String, value: String)] {
         diagnostics.defaultHeaders.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
     }

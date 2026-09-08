@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M3.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M4.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M3) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M4) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -21,6 +21,7 @@ struct NetworkKitDemo {
         }
         await authAndRefreshTour()
         await retryTour()
+        await interceptorsAndMetricsTour()
 
         print("\n═══ done ═══")
     }
@@ -139,6 +140,72 @@ struct NetworkKitDemo {
         }
 
         print("   note: POST/PATCH are never retried unless an endpoint opts in via retryPolicy")
+    }
+
+    // MARK: - Interceptors + redacting logger + metrics (mock transport)
+
+    private static func interceptorsAndMetricsTour() async {
+        print("\n── 9. Interceptors, redacting logger, metrics (mock transport) ──")
+
+        struct AppVersionInterceptor: RequestInterceptor {
+            func adapt(_ request: URLRequest, for endpoint: AnyEndpoint) async throws -> URLRequest {
+                var request = request
+                request.setValue("9.9.9", forHTTPHeaderField: "X-App-Version")
+                return request
+            }
+        }
+        struct FlagEnvelope: ResponseInterceptor {
+            func process(_ context: ResponseContext, for endpoint: AnyEndpoint) async throws -> InterceptOutcome {
+                guard let data = context.data,
+                      String(data: data, encoding: .utf8)?.contains("NEEDS_2FA") == true
+                else { return .proceed }
+                return .fail(.forbidden(context))
+            }
+        }
+
+        struct Secret: Codable, Sendable { let value: String }
+        struct SecretEndpoint: Endpoint {
+            typealias Response = Secret
+            let path = "/secret"
+        }
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(
+            .json(Data(#"{"value":"42"}"#.utf8)),
+            .json(Data(#"{"code":"NEEDS_2FA"}"#.utf8))
+        )
+
+        let logger = CapturingLogger()
+        let metrics = InMemoryMetrics()
+
+        var environment = NetworkEnvironment(
+            kind: .development,
+            baseURL: URL(string: "https://api.example.com")!
+        )
+        environment.logLevel = .verbose
+
+        var configuration = NetworkConfiguration(environment: environment)
+        configuration.retry = .none
+        configuration.logger = logger
+        configuration.metrics = metrics
+        configuration.requestInterceptors = [AppVersionInterceptor()]
+        configuration.responseInterceptors = [FlagEnvelope()]
+
+        let client = NetworkClient(configuration: configuration, transport: transport)
+
+        _ = try? await client.request(SecretEndpoint())              // succeeds
+        do { _ = try await client.request(SecretEndpoint()) }        // interceptor fails it
+        catch { print("   ✗ second call rejected by response interceptor: .\(NetworkError.normalize(error).code)") }
+
+        let sentVersion = transport.recordedRequests.first?.value(forHTTPHeaderField: "X-App-Version") ?? "-"
+        print("   → X-App-Version sent by request interceptor: \(sentVersion)")
+        print("   → X-Request-ID auto-added: \(transport.recordedRequests.first?.value(forHTTPHeaderField: "X-Request-ID") ?? "-")")
+
+        print("   → captured log lines (Authorization/token redacted):")
+        for line in logger.lines { print("       \(line)") }
+
+        let snapshot = await metrics.snapshot()
+        print("   → metrics: \(snapshot.requestCount) requests, \(snapshot.successCount) ok, \(snapshot.failureCount) failed, histogram \(snapshot.statusCodeHistogram)")
     }
 
     // MARK: - Helpers

@@ -46,6 +46,23 @@ public struct NetworkConfiguration: Sendable {
     /// fake; production uses ``ContinuousClockAdapter``.
     public var clock: any NetworkClock
 
+    // MARK: Interceptors, logging, metrics (M4)
+
+    /// Run in order to adapt each outgoing request (after auth + tracing).
+    public var requestInterceptors: [any RequestInterceptor]
+
+    /// Run in reverse order to inspect each response (before status mapping).
+    public var responseInterceptors: [any ResponseInterceptor]
+
+    /// Correlation headers attached to every request. Defaults to a fresh `X-Request-ID` per request.
+    public var tracing: TraceHeaders
+
+    /// Where log lines go. Defaults to ``ConsoleNetworkLogger``; silence it via `environment.logLevel = .none`.
+    public var logger: any NetworkLogger
+
+    /// Observability sink. Defaults to ``NoopMetrics``; use ``InMemoryMetrics`` to aggregate.
+    public var metrics: any NetworkMetrics
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
@@ -57,7 +74,12 @@ public struct NetworkConfiguration: Sendable {
         tokenStorage: any TokenStorage = InMemoryTokenStorage(),
         proactiveRefreshLeeway: TimeInterval = 60,
         retry: RetryPolicy = .default,
-        clock: any NetworkClock = ContinuousClockAdapter()
+        clock: any NetworkClock = ContinuousClockAdapter(),
+        requestInterceptors: [any RequestInterceptor] = [],
+        responseInterceptors: [any ResponseInterceptor] = [],
+        tracing: TraceHeaders = TraceHeaders(),
+        logger: any NetworkLogger = ConsoleNetworkLogger(),
+        metrics: any NetworkMetrics = NoopMetrics()
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -70,6 +92,11 @@ public struct NetworkConfiguration: Sendable {
         self.proactiveRefreshLeeway = proactiveRefreshLeeway
         self.retry = retry
         self.clock = clock
+        self.requestInterceptors = requestInterceptors
+        self.responseInterceptors = responseInterceptors
+        self.tracing = tracing
+        self.logger = logger
+        self.metrics = metrics
     }
 
     /// Convenience single-environment initializer.

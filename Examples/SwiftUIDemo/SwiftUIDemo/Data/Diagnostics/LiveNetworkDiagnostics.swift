@@ -6,10 +6,12 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let baseURL: String
     let defaultHeaders: [String: String]
     let retryPolicySummary: String
+    private let metrics: InMemoryMetrics
 
-    init(client: NetworkClient) {
+    init(client: NetworkClient, metrics: InMemoryMetrics) {
         self.baseURL = client.configuration.environment.baseURL.absoluteString
         self.defaultHeaders = client.configuration.environment.defaultHeaders.dictionary
+        self.metrics = metrics
         let retry = client.configuration.retry
         let backoff: String
         switch retry.backoff {
@@ -18,6 +20,19 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
             backoff = "exponential \(base)s ×\(Int(multiplier)) (max \(Int(maxDelay))s)"
         }
         self.retryPolicySummary = "\(retry.maxAttempts) attempts, \(backoff)"
+    }
+
+    func metricsSummary() async -> [MetricsRow] {
+        let snapshot = await metrics.snapshot()
+        let averageMS = Int(snapshot.averageDuration.components.seconds * 1000)
+            + Int(snapshot.averageDuration.components.attoseconds / 1_000_000_000_000_000)
+        return [
+            MetricsRow(label: "Requests", value: "\(snapshot.requestCount)"),
+            MetricsRow(label: "Succeeded", value: "\(snapshot.successCount)"),
+            MetricsRow(label: "Failed", value: "\(snapshot.failureCount)"),
+            MetricsRow(label: "Retries", value: "\(snapshot.retryCount)"),
+            MetricsRow(label: "Avg duration", value: "\(averageMS) ms"),
+        ]
     }
 
     func runAuthRefreshScenario() -> AsyncStream<DiagnosticEvent> {
