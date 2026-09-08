@@ -8,7 +8,7 @@ release, so everything below is under `[Unreleased]`.
 
 ### Added
 
-- **Core** (M0–M1): `NetworkClient`, `NetworkConfiguration`, `NetworkEnvironment`, `Endpoint`
+- **Core** (M0-M1): `NetworkClient`, `NetworkConfiguration`, `NetworkEnvironment`, `Endpoint`
   protocol with per-endpoint overrides, unified `NetworkError` (status / headers / body / server
   message), `HTTPMethod` / `HTTPHeaders` / `QueryParameters` / `HTTPStatus`, `RequestBuilder`,
   typed decoding (`Decodable` / `Data` / `String` / `EmptyResponse`), `async/await` +
@@ -39,6 +39,9 @@ release, so everything below is under `[Unreleased]`.
   reconnect, `offlineReplayEvents()`.
 - **Pagination & batch** (M12): `PaginatedEndpoint`, `client.paginate` (`AsyncThrowingStream`) /
   `collectAll`, `client.zip` / `client.batch`.
+- **Combine & SwiftUI** (M14): `client.publisher(for:)` / `uploadPublisher` / `downloadPublisher` /
+  `paginatePublisher` (`#if canImport(Combine)`); `NetworkResource<Value>` and `Paged<Item>`
+  `@Observable` load-state holders (iOS 17+).
 - **Testing** (shipped in the library): `MockNetworkTransport` (FIFO queue, path/method matchers,
   `MockScenario` presets), `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`,
   `InMemoryOfflineStore`.

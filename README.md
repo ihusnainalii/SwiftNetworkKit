@@ -3,13 +3,14 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M13 are complete (core types, request pipeline,
+> **Status:** all 15 milestones (M0 to M14) are complete: core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
 > and downloads with progress, HTTP response caching, request cancellation / deduplication /
-> concurrency queue, OAuth 2.0 + PKCE, offline request queue, pagination + batch, mocking + CI). See
+> concurrency queue, OAuth 2.0 + PKCE, offline request queue, pagination + batch, mocking + CI,
+> Combine + SwiftUI helpers. API is stabilizing toward a `1.0.0`. See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
-> for the full roadmap and [`CHANGELOG.md`](CHANGELOG.md) for what's in each area.
+> for the milestone history and [`CHANGELOG.md`](CHANGELOG.md) for what's in each area.
 
 ## Quick start
 
@@ -237,6 +238,26 @@ let results = await client.batch(ids.map { GetItem(id: $0) })       // [Result<I
 `paginate` honors task cancellation and caps at `maxPages` (default 1000) against a runaway server.
 The endpoint owns the scheme entirely via `nextPage(after:)` (page number, cursor, `Link:` header).
 
+### Combine and SwiftUI
+
+```swift
+// Combine: one publisher per request; cancelling the subscription cancels the Task
+client.publisher(for: GetProfile())
+    .receive(on: DispatchQueue.main)
+    .sink(receiveCompletion: { ... }, receiveValue: { user in ... })
+
+client.uploadPublisher(CreatePhoto(), from: .multipart(form))   // .progress(_) … .finished(Response)
+client.paginatePublisher(ListUsers())                           // one value per page, then completion
+
+// SwiftUI: @Observable load-state holders (iOS 17+)
+@State private var users = NetworkResource<[User]>(client: .live)
+@State private var feed  = Paged<Post>(client: .live)
+
+List(users.value ?? []) { ... }
+    .overlay { if users.isLoading { ProgressView() } }
+    .task { await users.load(ListUsers()) }
+```
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -286,9 +307,11 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | OAuth 2.0 Authorization Code + PKCE (`PKCE`, `AuthorizationCodeFlow`, auto-refresh adapter) |
 | Offline request queue (opt-in per endpoint, persisted, replays FIFO on reconnect) |
 | Pagination as an `AsyncSequence` (`client.paginate` / `collectAll`) + parallel `zip` / `batch` |
+| Combine bridge (`client.publisher(for:)`, upload / download / paginate publishers) |
+| SwiftUI load state (`NetworkResource<Value>`, `Paged<Item>`; `@Observable`, iOS 17+) |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`, `InMemoryOfflineStore`) |
 
-Not yet: Combine / SwiftUI helpers. See the roadmap for the milestone order.
+All three call styles are supported: `async/await`, completion handlers, and Combine publishers.
 
 ## Tests
 
