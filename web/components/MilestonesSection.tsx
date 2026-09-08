@@ -22,7 +22,7 @@ import {
   Cpu
 } from "lucide-react";
 
-interface Milestone {
+interface Subsystem {
   id: string;
   tag: string;
   title: string;
@@ -34,11 +34,11 @@ interface Milestone {
   codeSnippet: string;
 }
 
-const MILESTONES: Milestone[] = [
+const SUBSYSTEMS: Subsystem[] = [
   {
     id: "m0",
-    tag: "M0",
-    title: "Scaffold & Core Types",
+    tag: "01",
+    title: "Scaffold & Protocol-Oriented DSL",
     category: "core",
     summary: "Package scaffold, immutable value-type models, and protocol-oriented Endpoint DSL under Swift 6 strict concurrency.",
     concurrencyModel: "Immutable Sendable Value Types",
@@ -58,8 +58,8 @@ const MILESTONES: Milestone[] = [
   },
   {
     id: "m1",
-    tag: "M1",
-    title: "Request Pipeline & Transport Layer",
+    tag: "02",
+    title: "Transport Pipeline & Decoding Engine",
     category: "core",
     summary: "Execution engine routing requests through interceptors, URLSession transport, status validation, and typed JSON decoding.",
     concurrencyModel: "Structured Concurrency (async/await)",
@@ -75,8 +75,8 @@ let profile: UserProfile = try await client.request(GetProfileEndpoint())`
   },
   {
     id: "m2",
-    tag: "M2",
-    title: "Auth Strategies & Actor TokenManager",
+    tag: "03",
+    title: "Single-Flight TokenManager & Auth",
     category: "auth_security",
     summary: "Single-flight token refresh actor with caller deduplication, loop prevention, and hardware-backed Keychain storage.",
     concurrencyModel: "Isolated Swift Actor (TokenManager)",
@@ -96,8 +96,8 @@ let profile: UserProfile = try await client.request(GetProfileEndpoint())`
   },
   {
     id: "m3",
-    tag: "M3",
-    title: "Retry Engine, Backoff & Rate Limiting",
+    tag: "04",
+    title: "Full Jitter Retry & Backoff Engine",
     category: "storage_cache",
     summary: "Configurable exponential backoff with full/equal jitter and strict RFC 6585 HTTP 429 Retry-After header compliance.",
     concurrencyModel: "Pure Sendable Functions & Clocks",
@@ -116,9 +116,9 @@ let profile: UserProfile = try await client.request(GetProfileEndpoint())`
   },
   {
     id: "m4",
-    tag: "M4",
-    title: "Observability, Interceptors & Redacting Logger",
-    category: "concurrency_streams",
+    tag: "05",
+    title: "Telemetry, Interceptors & Redacting Logger",
+    category: "tooling_frameworks",
     summary: "Bidirectional request/response interception, correlation trace propagation, metrics collection, and zero-leak PII redaction.",
     concurrencyModel: "@TaskLocal TraceContext + InMemoryMetrics Actor",
     primaryTypes: ["RequestInterceptor", "ResponseInterceptor", "RedactingLogger", "TraceContext", "MetricsCollector"],
@@ -136,8 +136,8 @@ let config = NetworkConfiguration(baseURL: url, logger: logger)`
   },
   {
     id: "m5",
-    tag: "M5",
-    title: "SSL & SPKI Certificate Pinning",
+    tag: "06",
+    title: "SPKI Public Key SHA-256 SSL Pinning",
     category: "auth_security",
     summary: "Subject Public Key Info (SPKI) SHA-256 hash pinning preventing certificate expiration lockouts and MitM attacks.",
     concurrencyModel: "Thread-Safe URLSessionDelegate Bridge",
@@ -157,7 +157,7 @@ let config = NetworkConfiguration(baseURL: url, logger: logger)`
   },
   {
     id: "m6",
-    tag: "M6",
+    tag: "07",
     title: "Connectivity & Reachability Engine",
     category: "concurrency_streams",
     summary: "Real-time network path monitoring over Network.framework NWPathMonitor with AsyncStream broadcasting.",
@@ -176,8 +176,8 @@ for await status in monitor.statusStream {
   },
   {
     id: "m7",
-    tag: "M7",
-    title: "Multipart Form, Upload & Download Progress",
+    tag: "08",
+    title: "RFC 7578 Multipart & Disk Streaming",
     category: "concurrency_streams",
     summary: "RFC 7578 multipart/form-data encoding and non-blocking upload/download byte progress streams.",
     concurrencyModel: "AsyncThrowingStream Byte Progress",
@@ -194,26 +194,26 @@ for await status in monitor.statusStream {
   },
   {
     id: "m8",
-    tag: "M8",
-    title: "Policy-Driven HTTP Response Caching",
+    tag: "09",
+    title: "Two-Tier Cache & Stale-While-Revalidate",
     category: "storage_cache",
     summary: "Two-tier Memory and Disk caching with SHA-256 cache keys, TTL management, and RFC 7234 Cache-Control validation.",
     concurrencyModel: "Isolated Actors (DiskCacheStore & MemoryCacheStore)",
     primaryTypes: ["CachePolicy", "ResponseCache", "DiskCacheStore", "MemoryCacheStore", "CachedResponse"],
     deliverables: [
-      "Policies: returnCacheDataElseLoad, returnCacheDataDontLoad, reloadRevalidating",
+      "Policies: returnCacheDataElseLoad, returnCacheDataDontLoad, reloadRevalidating, staleWhileRevalidate",
       "DiskCacheStore with NSFileProtectionCompleteUnlessOpen encryption at rest",
       "HTTP Cache-Control header parsing (max-age, no-cache, no-store, stale-while-revalidate)",
       "LRU eviction and automated expired cache entry pruning"
     ],
     codeSnippet: `let diskCache = DiskCacheStore(storageDirectory: cacheDirURL, maxSizeBytes: 50_000_000)
 var endpoint = GetFeedEndpoint()
-endpoint.cachePolicy = .returnCacheDataElseLoad`
+endpoint.cachePolicy = .staleWhileRevalidate(maxAge: 60, staleWindow: 300)`
   },
   {
     id: "m9",
-    tag: "M9",
-    title: "Request Lifecycle, Deduplication & Priority",
+    tag: "10",
+    title: "Request Deduplication & Priority Queue",
     category: "core",
     summary: "In-flight GET request collapsing, priority-based execution queueing, and string RequestID cancellation registry.",
     concurrencyModel: "Actor RequestDeduplicator + PriorityTaskQueue",
@@ -229,8 +229,8 @@ let profile = try await client.request(GetProfileEndpoint())`
   },
   {
     id: "m10",
-    tag: "M10",
-    title: "OAuth 2.0 PKCE Engine",
+    tag: "11",
+    title: "OAuth 2.0 PKCE Authorization Engine",
     category: "auth_security",
     summary: "Full RFC 7636 Proof Key for Code Exchange (PKCE) implementation with SHA-256 code challenge generation and token exchange.",
     concurrencyModel: "CryptoKit Hardware-Accelerated SHA-256",
@@ -251,8 +251,8 @@ let profile = try await client.request(GetProfileEndpoint())`
   },
   {
     id: "m11",
-    tag: "M11",
-    title: "Persisted Offline Request Queue",
+    tag: "12",
+    title: "Encrypted Offline Spool & Auto-Replay",
     category: "storage_cache",
     summary: "Disk-persisted FIFO request spooling with automatic background replay when network connectivity is restored.",
     concurrencyModel: "Isolated Actor (OfflineRequestQueue)",
@@ -272,8 +272,8 @@ let queueID = try await offlineQueue.enqueue(CreateCommentEndpoint(text: "Hello"
   },
   {
     id: "m12",
-    tag: "M12",
-    title: "AsyncSequence Pagination & Parallel Batching",
+    tag: "13",
+    title: "AsyncSequence Pagination & TaskGroup Batching",
     category: "concurrency_streams",
     summary: "Cursor and offset-based pagination over Swift AsyncSequence, plus parallel TaskGroup batch execution.",
     concurrencyModel: "TaskGroup + AsyncSequence Streams",
@@ -290,8 +290,8 @@ let queueID = try await offlineQueue.enqueue(CreateCommentEndpoint(text: "Hello"
   },
   {
     id: "m13",
-    tag: "M13",
-    title: "Test Doubles, Stubs & Mock Scenarios",
+    tag: "14",
+    title: "MockTransport & Deterministic Test Doubles",
     category: "tooling_frameworks",
     summary: "Built-in, zero-flakiness mock transport, URLProtocol interceptors, and scenario matchers shipped directly in package.",
     concurrencyModel: "Thread-Safe Mock Transport Isolation",
@@ -312,8 +312,8 @@ let queueID = try await offlineQueue.enqueue(CreateCommentEndpoint(text: "Hello"
   },
   {
     id: "m14",
-    tag: "M14",
-    title: "Combine Publishers & SwiftUI @Observable",
+    tag: "15",
+    title: "SwiftUI @Observable State & Observation Bridge",
     category: "tooling_frameworks",
     summary: "Opt-in Combine publishers and iOS 17+ @Observable load state holders with pull-to-refresh and lifecycle integration.",
     concurrencyModel: "@MainActor + Observation Framework",
@@ -338,7 +338,7 @@ final class ProfileViewModel {
   }
 ];
 
-function MilestoneIcon({ id, className = "w-4 h-4" }: { id: string; className?: string }) {
+function SubsystemIcon({ id, className = "w-4 h-4" }: { id: string; className?: string }) {
   switch (id) {
     case "m0":
       return <Layers className={className} />;
@@ -377,35 +377,35 @@ function MilestoneIcon({ id, className = "w-4 h-4" }: { id: string; className?: 
 
 export function MilestonesSection() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [activeMilestoneId, setActiveMilestoneId] = useState<string>("m0");
+  const [activeSubsystemId, setActiveSubsystemId] = useState<string>("m0");
 
   const categories = [
-    { id: "all", label: "All 15 Milestones (M0-M14)" },
-    { id: "core", label: "Core & Pipeline" },
-    { id: "auth_security", label: "Auth & Security" },
-    { id: "storage_cache", label: "Storage & Resilience" },
-    { id: "concurrency_streams", label: "Async & Streams" },
-    { id: "tooling_frameworks", label: "Tooling & SwiftUI" },
+    { id: "all", label: "All 15 Subsystems" },
+    { id: "core", label: "Core & Transport" },
+    { id: "auth_security", label: "Security & Auth" },
+    { id: "storage_cache", label: "Resilience & Cache" },
+    { id: "concurrency_streams", label: "Streams & Offline" },
+    { id: "tooling_frameworks", label: "Observability & SwiftUI" },
   ];
 
-  const filtered = MILESTONES.filter(
+  const filtered = SUBSYSTEMS.filter(
     (m) => selectedCategory === "all" || m.category === selectedCategory
   );
 
-  const activeMilestone =
-    MILESTONES.find((m) => m.id === activeMilestoneId) || MILESTONES[0];
+  const activeSubsystem =
+    SUBSYSTEMS.find((m) => m.id === activeSubsystemId) || SUBSYSTEMS[0];
 
   return (
-    <section id="milestones" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200 dark:border-white/5">
+    <section id="architecture" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-slate-200 dark:border-white/5">
       <div className="text-center max-w-3xl mx-auto mb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 text-xs font-semibold mb-3 font-mono">
-          <Cpu className="w-3.5 h-3.5" /> ARCHITECTURE CHRONOLOGY
+          <Cpu className="w-3.5 h-3.5" /> SYSTEMS BLUEPRINT
         </div>
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-white">
-          The 14-Milestone Engineering Blueprint
+          Modular Architecture &amp; 15 Engine Subsystems
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
-          Explore the complete architectural progression of SwiftNetworkKit from zero-scaffold foundations to production-grade enterprise concurrency.
+          Explore the decoupled, actor-isolated modules powering SwiftNetworkKit, from pure Swift 6 Sendable value types to native SwiftUI Observation.
         </p>
       </div>
 
@@ -416,10 +416,10 @@ export function MilestonesSection() {
             key={cat.id}
             onClick={() => {
               setSelectedCategory(cat.id);
-              const firstMatch = MILESTONES.find(
+              const firstMatch = SUBSYSTEMS.find(
                 (m) => cat.id === "all" || m.category === cat.id
               );
-              if (firstMatch) setActiveMilestoneId(firstMatch.id);
+              if (firstMatch) setActiveSubsystemId(firstMatch.id);
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
               selectedCategory === cat.id
@@ -434,14 +434,14 @@ export function MilestonesSection() {
 
       {/* Main Grid: Left selector timeline, Right detail view */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Milestone List */}
+        {/* Left Column: Subsystem List */}
         <div className="lg:col-span-5 space-y-2.5 max-h-[680px] overflow-y-auto pr-2 custom-scrollbar">
           {filtered.map((m) => {
-            const isActive = m.id === activeMilestone.id;
+            const isActive = m.id === activeSubsystem.id;
             return (
               <button
                 key={m.id}
-                onClick={() => setActiveMilestoneId(m.id)}
+                onClick={() => setActiveSubsystemId(m.id)}
                 className={`w-full text-left p-4 rounded-xl transition-all duration-200 flex items-center justify-between gap-4 border cursor-pointer ${
                   isActive
                     ? "bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/50 dark:border-orange-500/40 shadow-sm"
@@ -450,81 +450,91 @@ export function MilestonesSection() {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                       isActive
                         ? "bg-orange-600 text-white shadow-sm"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                     }`}
                   >
-                    <MilestoneIcon id={m.id} className="w-4 h-4" />
+                    <SubsystemIcon id={m.id} className="w-4 h-4" />
                   </div>
-                  <div className="truncate">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-orange-600 dark:text-orange-400">
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
                         {m.tag}
                       </span>
-                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                      <h4
+                        className={`text-xs font-bold truncate ${
+                          isActive
+                            ? "text-orange-600 dark:text-orange-400"
+                            : "text-slate-900 dark:text-slate-200"
+                        }`}
+                      >
                         {m.title}
-                      </span>
+                      </h4>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 font-mono">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                       {m.concurrencyModel}
                     </p>
                   </div>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-semibold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">v0.1.0</span>
-                </div>
+                <span
+                  className={`text-xs font-mono font-bold shrink-0 ${
+                    isActive ? "text-orange-600 dark:text-orange-400" : "text-slate-400 opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  &rarr;
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Right Column: Active Milestone Deep Dive */}
-        <div className="lg:col-span-7 glass-panel p-6 sm:p-8 bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-200 dark:border-white/10">
+        {/* Right Column: Active Subsystem Deep Dive */}
+        <div className="lg:col-span-7 glass-panel p-6 sm:p-8 bg-white/95 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 shadow-xl rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-200 dark:border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-md">
-                <MilestoneIcon id={activeMilestone.id} className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center border border-orange-500/20">
+                <SubsystemIcon id={activeSubsystem.id} className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-extrabold px-2 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                    Milestone {activeMilestone.tag}
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                    Subsystem {activeSubsystem.tag}
                   </span>
-                  <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Complete
+                  <span className="text-xs font-mono text-slate-400 uppercase">
+                    {activeSubsystem.category.replace("_", " & ")}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-1">
-                  {activeMilestone.title}
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
+                  {activeSubsystem.title}
                 </h3>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-xs font-mono px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-semibold">
-                {activeMilestone.concurrencyModel}
+              <span className="text-[11px] font-mono text-slate-400 block">CONCURRENCY MODEL</span>
+              <span className="text-xs font-mono font-bold text-sky-600 dark:text-sky-400">
+                {activeSubsystem.concurrencyModel}
               </span>
             </div>
           </div>
 
           <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-6 font-medium">
-            {activeMilestone.summary}
+            {activeSubsystem.summary}
           </p>
 
-          {/* Primary Types */}
+          {/* Primary Swift Types */}
           <div className="mb-6">
-            <h4 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-wider mb-2">
-              Primary Public Types Introduced
+            <h4 className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+              Primary Exported Types
             </h4>
             <div className="flex flex-wrap gap-1.5">
-              {activeMilestone.primaryTypes.map((t, idx) => (
+              {activeSubsystem.primaryTypes.map((t, idx) => (
                 <span
                   key={idx}
-                  className="px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 text-xs font-mono font-semibold"
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono text-sky-600 dark:text-sky-300 font-semibold"
                 >
                   {t}
                 </span>
@@ -532,35 +542,33 @@ export function MilestonesSection() {
             </div>
           </div>
 
-          {/* Deliverables Checklist */}
+          {/* Architectural Deliverables */}
           <div className="mb-6">
-            <h4 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-wider mb-2.5">
-              Key Engineering Deliverables
+            <h4 className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+              Architectural Capabilities &amp; Guarantees
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {activeMilestone.deliverables.map((item, idx) => (
-                <div
+            <ul className="space-y-2">
+              {activeSubsystem.deliverables.map((item, idx) => (
+                <li
                   key={idx}
-                  className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300"
+                  className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   <span>{item}</span>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
           {/* Code Snippet */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Code2 className="w-3.5 h-3.5 text-orange-500" />
-                Swift 6 Implementation Pattern
-              </h4>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-200 overflow-x-auto shadow-inner">
-              <pre className="whitespace-pre">
-                <code>{activeMilestone.codeSnippet}</code>
+            <h4 className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+              <span>Production Code Example</span>
+              <span className="text-[10px] text-slate-400 lowercase font-normal">Swift 6 strict concurrency</span>
+            </h4>
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs overflow-x-auto text-sky-300 shadow-md">
+              <pre className="whitespace-pre font-mono leading-relaxed">
+                <code>{activeSubsystem.codeSnippet}</code>
               </pre>
             </div>
           </div>

@@ -455,7 +455,7 @@ struct FeedEndpoint: Endpoint {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-sky-600 dark:text-sky-400">
-                      STATUS: STALE-WHILE-REVALIDATE ACTIVE (30s – 90s)
+                      STATUS: STALE-WHILE-REVALIDATE ACTIVE (30s to 90s)
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-slate-300">
                       Instantly yields cached data to UI (0.4ms) + launches asynchronous Swift actor task in background to update cache without UI latency!

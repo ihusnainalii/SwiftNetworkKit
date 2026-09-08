@@ -28,7 +28,7 @@ export function Footer() {
             <span>GitHub</span>
           </a>
           <a href="#compare" className="hover:text-slate-900 dark:hover:text-white transition-colors">Compare</a>
-          <a href="#milestones" className="hover:text-slate-900 dark:hover:text-white transition-colors">14 Milestones</a>
+          <a href="#architecture" className="hover:text-slate-900 dark:hover:text-white transition-colors">Architecture</a>
           <a href="#pipeline" className="hover:text-slate-900 dark:hover:text-white transition-colors">Pipeline</a>
           <a href="#playground" className="hover:text-slate-900 dark:hover:text-white transition-colors">Code Builder</a>
           <a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors">Modules</a>
