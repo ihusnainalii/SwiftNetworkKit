@@ -2,34 +2,6 @@
 import Foundation
 import Security
 
-/// Keychain accessibility classes, wrapped so the storage type stays `Sendable`
-/// (the underlying `CFString` constants are not).
-public enum KeychainAccessibility: Sendable {
-    case whenUnlocked
-    case afterFirstUnlock
-    case whenUnlockedThisDeviceOnly
-    case afterFirstUnlockThisDeviceOnly
-
-    var cfValue: CFString {
-        switch self {
-        case .whenUnlocked: kSecAttrAccessibleWhenUnlocked
-        case .afterFirstUnlock: kSecAttrAccessibleAfterFirstUnlock
-        case .whenUnlockedThisDeviceOnly: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        case .afterFirstUnlockThisDeviceOnly: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        }
-    }
-}
-
-/// A keychain-backed OSStatus failure.
-public struct KeychainError: Error, Sendable, CustomStringConvertible {
-    public let status: OSStatus
-
-    public var description: String {
-        let message = SecCopyErrorMessageString(status, nil) as String? ?? "unknown"
-        return "KeychainError(\(status)): \(message)"
-    }
-}
-
 /// `TokenStorage` backed by the system keychain (generic-password items keyed by `service` + account).
 ///
 /// The keychain C API is synchronous; the `async` methods here do not actually suspend.

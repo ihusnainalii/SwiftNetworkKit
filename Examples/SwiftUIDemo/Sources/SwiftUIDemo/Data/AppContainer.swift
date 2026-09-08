@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 import SwiftNetworkKit
 
 /// Composition root. Builds the `NetworkClient` once and wires the concrete repositories.
@@ -24,15 +23,4 @@ struct AppContainer: Sendable {
             diagnostics: LiveNetworkDiagnostics(client: client)
         )
     }()
-}
-
-private struct AppContainerKey: EnvironmentKey {
-    static let defaultValue = AppContainer.live
-}
-
-extension EnvironmentValues {
-    var container: AppContainer {
-        get { self[AppContainerKey.self] }
-        set { self[AppContainerKey.self] = newValue }
-    }
 }

@@ -35,30 +35,30 @@ struct NetworkKitDemo {
         )
 
         await section("1. Typed GET — one model") {
-            let user = try await client.request(JSONPlaceholder.GetUser(id: 1))
+            let user = try await client.request(GetUserEndpoint(id: 1))
             print("   → \(user.name) <\(user.email)> (@\(user.username))")
         }
 
         await section("2. Typed GET — collection + query parameter") {
-            let posts = try await client.request(JSONPlaceholder.ListPosts(authorUserID: 1))
+            let posts = try await client.request(ListPostsEndpoint(authorUserID: 1))
             print("   → \(posts.count) posts by user 1; first title: \"\(posts.first?.title ?? "-")\"")
         }
 
         await section("3. POST — JSON body, decoded response") {
             let created = try await client.request(
-                JSONPlaceholder.CreatePost(draft: DraftPost(title: "Hello", body: "from SwiftNetworkKit", userID: 1))
+                CreatePostEndpoint(draft: DraftPost(title: "Hello", body: "from SwiftNetworkKit", userID: 1))
             )
             print("   → created post id \(created.id): \"\(created.title)\"")
         }
 
         await section("4. Raw helpers — string(for:)") {
-            let raw = try await client.string(for: JSONPlaceholder.GetUser(id: 2))
+            let raw = try await client.string(for: GetUserEndpoint(id: 2))
             print("   → \(raw.prefix(60))…")
         }
 
         await section("5. Error handling — 404 → typed NetworkError") {
             do {
-                _ = try await client.request(JSONPlaceholder.MissingUser())
+                _ = try await client.request(MissingUserEndpoint())
                 print("   → unexpectedly succeeded")
             } catch let error as NetworkError {
                 print("   → caught .\(error.code) (status \(error.statusCode.map(String.init) ?? "-"))")
@@ -67,7 +67,7 @@ struct NetworkKitDemo {
 
         await section("6. Completion-handler API") {
             let name: String? = await withCheckedContinuation { continuation in
-                client.request(JSONPlaceholder.GetUser(id: 3)) { result in
+                client.request(GetUserEndpoint(id: 3)) { result in
                     continuation.resume(returning: try? result.get().name)
                 }
             }
@@ -79,13 +79,6 @@ struct NetworkKitDemo {
 
     private static func authAndRefreshTour() async {
         print("\n── 7. Bearer auth + automatic 401 refresh (mock transport) ──")
-
-        struct SecretResource: Endpoint {
-            typealias Response = Secret
-            let path = "/secret"
-            var authentication: AuthRequirement { .required }
-        }
-        struct Secret: Codable, Sendable { let value: String }
 
         let transport = MockNetworkTransport()
         transport.enqueue(
@@ -110,7 +103,7 @@ struct NetworkKitDemo {
         )
 
         do {
-            let secret = try await client.request(SecretResource())
+            let secret = try await client.request(SecretEndpoint())
             let sentTokens = transport.recordedRequests.compactMap {
                 $0.value(forHTTPHeaderField: "Authorization")
             }
@@ -134,9 +127,4 @@ struct NetworkKitDemo {
         }
         print("")
     }
-}
-
-private actor DemoCounter {
-    private(set) var count = 0
-    func bump() { count += 1 }
 }

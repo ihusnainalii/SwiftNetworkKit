@@ -63,8 +63,3 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
         }
     }
 }
-
-private actor RefreshCounter {
-    private(set) var count = 0
-    func bump() { count += 1 }
-}
