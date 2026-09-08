@@ -62,3 +62,11 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 .claude
+.agents
+# Website (web/ is the Next.js source; docs/ is the built site served by GitHub Pages)
+web/node_modules/
+web/.next/
+web/out/
+web/.env*.local
+*.tsbuildinfo
+next-env.d.ts

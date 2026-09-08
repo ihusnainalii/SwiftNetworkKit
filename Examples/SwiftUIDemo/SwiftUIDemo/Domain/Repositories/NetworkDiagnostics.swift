@@ -6,6 +6,8 @@ protocol NetworkDiagnostics: Sendable {
     var retryPolicySummary: String { get }
     /// Human-readable summary of the client's SSL pinning configuration.
     var sslPinningSummary: String { get }
+    /// Human-readable summary of the client's response cache.
+    var cacheSummary: String { get }
     /// Live connectivity, as label/value rows (status + link type).
     func connectivitySummary() async -> [MetricsRow]
     /// Live counters from the client's metrics sink, as label/value rows for display.

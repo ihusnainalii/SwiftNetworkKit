@@ -18,6 +18,12 @@ struct AppContainer: Sendable {
         )
         configuration.metrics = metrics
         configuration.requestInterceptors = [ClientHeaderInterceptor()]
+        // GET responses (users, posts, todos, albums) are served from cache first, then revalidated.
+        configuration.cache = CacheConfiguration(
+            store: MemoryCacheStore(limitBytes: 8 * 1024 * 1024),
+            defaultPolicy: .cacheFirst,
+            defaultTTL: 120
+        )
         let client = NetworkClient(configuration: configuration)
         let monitor = PathNetworkMonitor()
         return AppContainer(

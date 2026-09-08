@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Lookup and assignment ignore case (`headers["content-type"] == headers["Content-Type"]`), while the
 /// most recently assigned spelling of each field name is preserved for the wire.
-public struct HTTPHeaders: Sendable, Hashable, ExpressibleByDictionaryLiteral, Sequence {
+public struct HTTPHeaders: Sendable, Hashable, Codable, ExpressibleByDictionaryLiteral, Sequence {
 
     /// A single header field.
     public struct Element: Sendable, Hashable {
@@ -93,5 +93,18 @@ public struct HTTPHeaders: Sendable, Hashable, ExpressibleByDictionaryLiteral, S
     public func makeIterator() -> AnyIterator<Element> {
         var iterator = storage.values.makeIterator()
         return AnyIterator { iterator.next() }
+    }
+
+    // MARK: Codable
+
+    /// Encoded as a plain `[name: value]` object using the preserved field-name spellings.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.init(try container.decode([String: String].self))
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(dictionary)
     }
 }

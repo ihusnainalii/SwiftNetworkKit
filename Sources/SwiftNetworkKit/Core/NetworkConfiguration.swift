@@ -69,6 +69,11 @@ public struct NetworkConfiguration: Sendable {
     /// A misconfigured value (missing resource, bad hash) fails `NetworkClient.init` loudly.
     public var sslPinning: SSLPinning
 
+    // MARK: HTTP caching (M8)
+
+    /// Response caching. Defaults to ``CacheConfiguration/disabled`` (no caching).
+    public var cache: CacheConfiguration
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
@@ -86,7 +91,8 @@ public struct NetworkConfiguration: Sendable {
         tracing: TraceHeaders = TraceHeaders(),
         logger: any NetworkLogger = ConsoleNetworkLogger(),
         metrics: any NetworkMetrics = NoopMetrics(),
-        sslPinning: SSLPinning = .disabled
+        sslPinning: SSLPinning = .disabled,
+        cache: CacheConfiguration = .disabled
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -105,6 +111,7 @@ public struct NetworkConfiguration: Sendable {
         self.logger = logger
         self.metrics = metrics
         self.sslPinning = sslPinning
+        self.cache = cache
     }
 
     /// Convenience single-environment initializer.

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M7.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M8.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M7) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M8) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -25,6 +25,7 @@ struct NetworkKitDemo {
         await interceptorsAndMetricsTour()
         await reachabilityTour()
         await uploadDownloadTour()
+        await cachingTour()
 
         print("\n═══ done ═══")
     }
@@ -310,6 +311,37 @@ struct NetworkKitDemo {
             print("   → downloaded \(data.count) bytes to \(file.lastPathComponent)")
             try? FileManager.default.removeItem(at: file)
         }
+    }
+
+    // MARK: - HTTP caching (mock transport)
+
+    private static func cachingTour() async {
+        print("\n── 12. HTTP caching — cacheFirst, 304 revalidation, stale-while-revalidate ──")
+
+        struct Doc: Codable, Sendable { let text: String }
+        struct GetDoc: Endpoint {
+            typealias Response = Doc
+            let path = "/doc"
+        }
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(
+            .json(Data(#"{"text":"v1"}"#.utf8), headers: ["ETag": "\"1\"", "Cache-Control": "max-age=0"]),
+            .status(304, headers: ["ETag": "\"1\""]),
+            .json(Data(#"{"text":"v2"}"#.utf8), headers: ["ETag": "\"2\"", "Cache-Control": "max-age=60"])
+        )
+
+        var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+        configuration.cache = CacheConfiguration(store: MemoryCacheStore(), defaultPolicy: .cacheFirst)
+        let client = NetworkClient(configuration: configuration, transport: transport)
+
+        let first = try? await client.request(GetDoc())
+        print("   → 1st call: \"\(first?.text ?? "-")\" (from network, stored with ETag)")
+
+        let second = try? await client.request(GetDoc())
+        print("   → 2nd call: \"\(second?.text ?? "-")\" (max-age=0 -> revalidated; server said 304, cached body reused)")
+        print("     If-None-Match sent: \(transport.recordedRequests.last?.value(forHTTPHeaderField: "If-None-Match") ?? "-")")
+        print("   → transport hit \(transport.requestCount)x for 2 logical requests")
     }
 
     // MARK: - Helpers

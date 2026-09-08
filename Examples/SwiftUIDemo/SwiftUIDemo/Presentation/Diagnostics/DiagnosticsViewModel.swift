@@ -18,6 +18,7 @@ final class DiagnosticsViewModel {
     var baseURL: String { diagnostics.baseURL }
     var retryPolicySummary: String { diagnostics.retryPolicySummary }
     var sslPinningSummary: String { diagnostics.sslPinningSummary }
+    var cacheSummary: String { diagnostics.cacheSummary }
 
     func refreshMetrics() async {
         async let metrics = diagnostics.metricsSummary()

@@ -43,6 +43,10 @@ public protocol Endpoint: Sendable {
     /// policy with `retryNonIdempotent = true` here to opt a specific `POST`/`PATCH` into retrying.
     var retryPolicy: RetryPolicy? { get }
 
+    /// Per-endpoint cache policy. `nil` = use ``NetworkConfiguration/cache``'s default. Only `GET`
+    /// and `HEAD` responses are cached.
+    var cachePolicy: CachePolicy? { get }
+
     /// Per-endpoint decoder override. `nil` = use the client's default.
     var decoder: JSONDecoder? { get }
 
@@ -62,6 +66,7 @@ public extension Endpoint {
     var timeout: TimeInterval? { nil }
     var priority: RequestPriority { .normal }
     var retryPolicy: RetryPolicy? { nil }
+    var cachePolicy: CachePolicy? { nil }
     var decoder: JSONDecoder? { nil }
 }
 

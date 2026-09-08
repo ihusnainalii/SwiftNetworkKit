@@ -38,6 +38,14 @@ public enum HTTPMethod: Sendable, Hashable {
         }
     }
 
+    /// Whether a response to this method may be cached by default (`GET` / `HEAD`).
+    public var isCacheable: Bool {
+        switch self {
+        case .get, .head: true
+        default: false
+        }
+    }
+
     /// Parses a method from a raw string, mapping unknown verbs to `.custom`.
     public init(rawValue: String) {
         switch rawValue.uppercased() {

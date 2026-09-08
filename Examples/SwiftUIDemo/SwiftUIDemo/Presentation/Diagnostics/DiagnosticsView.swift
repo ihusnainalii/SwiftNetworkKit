@@ -14,6 +14,7 @@ struct DiagnosticsView: View {
                     LabeledContent("Base URL", value: model.baseURL)
                     LabeledContent("Retry policy", value: model.retryPolicySummary)
                     LabeledContent("SSL pinning", value: model.sslPinningSummary)
+                    LabeledContent("Cache", value: model.cacheSummary)
                     ForEach(model.defaultHeaders, id: \.key) { header in
                         LabeledContent(header.key, value: header.value)
                     }

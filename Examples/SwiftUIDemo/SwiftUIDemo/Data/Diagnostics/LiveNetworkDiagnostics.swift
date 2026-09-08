@@ -7,6 +7,7 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let defaultHeaders: [String: String]
     let retryPolicySummary: String
     let sslPinningSummary: String
+    let cacheSummary: String
     private let metrics: InMemoryMetrics
     private let monitor: any NetworkMonitor
 
@@ -30,6 +31,13 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
             backoff = "exponential \(base)s ×\(Int(multiplier)) (max \(Int(maxDelay))s)"
         }
         self.retryPolicySummary = "\(retry.maxAttempts) attempts, \(backoff)"
+
+        let cache = client.configuration.cache
+        if cache.store == nil {
+            self.cacheSummary = "disabled"
+        } else {
+            self.cacheSummary = "\(cache.defaultPolicy), TTL \(Int(cache.defaultTTL))s"
+        }
     }
 
     func connectivitySummary() async -> [MetricsRow] {

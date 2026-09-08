@@ -70,7 +70,7 @@ public final class NetworkClient: Sendable {
     /// inside `execute` and does not consume a retry attempt.
     func perform<E: Endpoint, T: Sendable>(
         _ endpoint: E,
-        decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+        decode: @escaping @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
     ) async throws -> T {
         if Task.isCancelled { throw NetworkError.cancelled }
         let requestID = RequestID()
@@ -114,7 +114,8 @@ public final class NetworkClient: Sendable {
         _ endpoint: E,
         requestID: RequestID,
         interceptorRetries: Int,
-        decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+        bypassCacheRead: Bool = false,
+        decode: @escaping @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
     ) async throws -> T {
         let anyEndpoint = AnyEndpoint(endpoint)
 
@@ -126,6 +127,40 @@ public final class NetworkClient: Sendable {
         try await authorize(&urlRequest, for: endpoint)
         urlRequest = try await interceptors.adapt(urlRequest, for: anyEndpoint)
 
+        // MARK: cache read
+        let policy = endpoint.cachePolicy ?? configuration.cache.defaultPolicy
+        let cache = (endpoint.method.isCacheable && policy != .ignoreCache) ? configuration.cache.store : nil
+        let cacheKey = CacheKey.make(
+            method: endpoint.method.rawValue,
+            url: urlRequest.url,
+            isAuthenticated: urlRequest.value(forHTTPHeaderField: "Authorization") != nil
+        )
+        var storedEntry: CachedResponse?
+
+        if let cache, policy.readsCache, !bypassCacheRead {
+            storedEntry = await cache.value(forKey: cacheKey)
+            if let storedEntry {
+                if policy == .staleWhileRevalidate {
+                    Task.detached { [self] in
+                        _ = try? await execute(
+                            endpoint, requestID: RequestID(), interceptorRetries: 0,
+                            bypassCacheRead: true, decode: decode
+                        )
+                    }
+                    return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+                }
+                if storedEntry.isFresh(ttl: configuration.cache.defaultTTL),
+                   policy == .cacheFirst || policy == .cacheOnly {
+                    return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+                }
+                if let etag = storedEntry.etag {
+                    urlRequest.setValue(etag, forHTTPHeaderField: "If-None-Match")
+                }
+            } else if policy == .cacheOnly {
+                throw NetworkError.offline
+            }
+        }
+
         let started = configuration.clock.now()
         emit(logFormatter.requestLines(urlRequest, endpoint: anyEndpoint, level: logLevel), level: .basic)
 
@@ -135,8 +170,24 @@ public final class NetworkClient: Sendable {
             (rawData, response) = try await transport.data(for: urlRequest)
         } catch {
             let mapped = NetworkError.normalize(error)
+            if let storedEntry, policy == .networkFirst || policy == .cacheFirst {
+                emit(["\u{2190} serving cached response (network failed: \(mapped.code.rawValue))"], level: .basic)
+                return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+            }
             await recordFailure(mapped, requestID: requestID, status: nil, since: started)
             throw mapped
+        }
+
+        // 304 Not Modified — the cached body is still current.
+        if response.statusCode == 304, let storedEntry {
+            var refreshed = storedEntry
+            refreshed.storedAt = Date()
+            await cache?.setValue(refreshed, forKey: cacheKey)
+            await configuration.metrics.record(
+                .success(requestID, duration: elapsed(since: started), status: 304)
+            )
+            emit(["\u{2190} 304 (\(Int(elapsed(since: started).components.seconds * 1000))ms) — cached"], level: .basic)
+            return try decodeCached(refreshed, endpoint: endpoint, request: urlRequest, decode: decode)
         }
 
         var context = ResponseContext(
@@ -157,7 +208,8 @@ public final class NetworkClient: Sendable {
         case .retry(let after) where interceptorRetries < 2:
             try await configuration.clock.sleep(for: .seconds(after))
             return try await execute(
-                endpoint, requestID: requestID, interceptorRetries: interceptorRetries + 1, decode: decode
+                endpoint, requestID: requestID, interceptorRetries: interceptorRetries + 1,
+                bypassCacheRead: true, decode: decode
             )
         case .retry:
             break // interceptor-retry cap reached — proceed with the response we have
@@ -177,11 +229,29 @@ public final class NetworkClient: Sendable {
                     throw error
                 }
                 return try await execute(
-                    endpoint, requestID: requestID, interceptorRetries: interceptorRetries, decode: decode
+                    endpoint, requestID: requestID, interceptorRetries: interceptorRetries,
+                    bypassCacheRead: true, decode: decode
                 )
             }
             await recordFailure(error, requestID: requestID, status: context.statusCode, since: started)
             throw error
+        }
+
+        // MARK: cache write
+        if let cache, policy.writesCache, HTTPStatus.isSuccess(context.statusCode) {
+            let cacheControl = CacheControl(headers: context.headers)
+            if !cacheControl.noStore {
+                await cache.setValue(
+                    CachedResponse(
+                        data: context.data ?? Data(),
+                        headers: context.headers,
+                        statusCode: context.statusCode,
+                        etag: context.headers["ETag"],
+                        maxAge: cacheControl.mustRevalidate ? 0 : cacheControl.maxAge
+                    ),
+                    forKey: cacheKey
+                )
+            }
         }
 
         let decoder = endpoint.decoder ?? configuration.defaultDecoder
@@ -208,6 +278,31 @@ public final class NetworkClient: Sendable {
             let mapped = NetworkError.decoding(underlying: asSendableError(error), context)
             await recordFailure(mapped, requestID: requestID, status: context.statusCode, since: started)
             throw mapped
+        }
+    }
+
+    /// Decodes a cached entry as if it had just come off the wire.
+    private func decodeCached<E: Endpoint, T: Sendable>(
+        _ entry: CachedResponse,
+        endpoint: E,
+        request: URLRequest,
+        decode: @escaping @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
+    ) throws -> T {
+        let decoder = endpoint.decoder ?? configuration.defaultDecoder
+        let url = request.url ?? URL(string: "https://cache.invalid")!
+        let response = HTTPURLResponse(
+            url: url, statusCode: entry.statusCode, httpVersion: "HTTP/1.1",
+            headerFields: entry.headers.dictionary
+        )!
+        do {
+            return try decode(entry.data, response, decoder)
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.decoding(
+                underlying: asSendableError(error),
+                ResponseContext(statusCode: entry.statusCode, headers: entry.headers, data: entry.data, request: request)
+            )
         }
     }
 

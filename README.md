@@ -3,10 +3,10 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M7 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M8 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
-> and downloads with progress). See
+> and downloads with progress, HTTP response caching). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -127,6 +127,24 @@ let fileURL = try await client.download(GetExport(), to: destinationURL) { event
 
 Uploads are not retried and skip the 401-refresh hop (a partial upload is unsafe to replay).
 
+### HTTP caching
+
+```swift
+var config = NetworkConfiguration(baseURL: "https://api.example.com")
+config.cache = .memory(policy: .cacheFirst)          // or a custom CacheConfiguration
+// disk-backed, survives launches:
+config.cache = CacheConfiguration(store: DiskCacheStore(), defaultPolicy: .staleWhileRevalidate)
+
+struct GetFeed: Endpoint {
+    typealias Response = Feed
+    var cachePolicy: CachePolicy? { .staleWhileRevalidate }   // per-endpoint override
+}
+```
+
+Only `GET` / `HEAD` are cached. `ETag` responses are revalidated with `If-None-Match` (a `304`
+reuses the stored body); `Cache-Control: no-store` is never persisted; `networkFirst` / `cacheFirst`
+fall back to a cached response when the network fails.
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -171,10 +189,11 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | Reachability (`NetworkMonitor` over `NWPathMonitor`, `AsyncStream` of status, `connectionRestored()`) |
 | Multipart form data (`MultipartFormData`, RFC 7578, streams large file parts from disk) |
 | Uploads and downloads with byte progress (`client.upload` / `client.download`) |
+| HTTP response caching (`CachePolicy`, memory + disk stores, ETag / 304, stale-while-revalidate) |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
 
-Not yet: caching, OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap
-for the milestone order.
+Not yet: OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the
+milestone order.
 
 ## Tests
 
