@@ -3,9 +3,9 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M5 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M6 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
-> + redacting logger + metrics, optional SSL / certificate pinning). See
+> + redacting logger + metrics, optional SSL / certificate pinning, reachability). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -91,6 +91,22 @@ config.sslPinning = .development(.publicKeys([]))
 Omit it (or `.disabled`) for normal system TLS. A mismatch fails the request with
 `NetworkError.sslPinningFailed(host:)`; a missing resource or bad hash fails `NetworkClient` init.
 
+### Reachability
+
+```swift
+let monitor = PathNetworkMonitor()
+
+for await status in await monitor.statusUpdates() {
+    // .satisfied(.wifi) / .satisfied(.cellular) / .unsatisfied / .requiresConnection
+}
+
+for await _ in await monitor.connectionRestored() {
+    // fires each time connectivity returns after a drop
+}
+```
+
+Inject `MockNetworkMonitor` in tests and call `send(.unsatisfied)` / `send(.satisfied(.wifi))`.
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -131,10 +147,11 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | Redacting logger (`LogLevel` none / error / basic / verbose / debug; tokens never logged) |
 | Metrics (`NetworkMetrics` sink, `InMemoryMetrics` -> counts, histogram, average / p95) |
 | Optional SSL / certificate pinning (`.certificates` / `.publicKeys` / per-host / rotation / record-only) |
-| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`) |
+| Reachability (`NetworkMonitor` over `NWPathMonitor`, `AsyncStream` of status, `connectionRestored()`) |
+| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
 
-Not yet: caching, upload/download, reachability, OAuth, offline queue, pagination, batch,
-Combine/SwiftUI helpers. See the roadmap for the milestone order.
+Not yet: caching, upload/download, OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers.
+See the roadmap for the milestone order.
 
 ## Tests
 

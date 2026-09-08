@@ -18,11 +18,12 @@ struct AppContainer: Sendable {
         configuration.metrics = metrics
         configuration.requestInterceptors = [ClientHeaderInterceptor()]
         let client = NetworkClient(configuration: configuration)
+        let monitor = PathNetworkMonitor()
         return AppContainer(
             users: LiveUsersRepository(client: client),
             userContent: LiveUserContentRepository(client: client),
             composer: LivePostComposer(client: client),
-            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics)
+            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor)
         )
     }()
 }

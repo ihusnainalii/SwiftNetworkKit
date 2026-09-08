@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M5.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M6.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M5) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M6) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -23,6 +23,7 @@ struct NetworkKitDemo {
         await authAndRefreshTour()
         await retryTour()
         await interceptorsAndMetricsTour()
+        await reachabilityTour()
 
         print("\n═══ done ═══")
     }
@@ -231,6 +232,41 @@ struct NetworkKitDemo {
 
         let snapshot = await metrics.snapshot()
         print("   → metrics: \(snapshot.requestCount) requests, \(snapshot.successCount) ok, \(snapshot.failureCount) failed, histogram \(snapshot.statusCodeHistogram)")
+    }
+
+    // MARK: - Reachability (mock monitor)
+
+    private static func reachabilityTour() async {
+        print("\n── 10. Reachability — NetworkMonitor stream + connectionRestored() ──")
+
+        let monitor = MockNetworkMonitor(initial: .satisfied(.wifi))
+
+        let observed = Task { () -> [String] in
+            var lines: [String] = []
+            for await status in await monitor.statusUpdates() {
+                lines.append(String(describing: status))
+                if lines.count == 4 { break }
+            }
+            return lines
+        }
+
+        let restores = Task { () -> Int in
+            var count = 0
+            for await _ in await monitor.connectionRestored() {
+                count += 1
+                if count == 1 { break }
+            }
+            return count
+        }
+
+        try? await Task.sleep(for: .milliseconds(20))
+        await monitor.send([.unsatisfied, .satisfied(.cellular), .unsatisfied])
+
+        print("   → observed: \(await observed.value)")
+        print("   → connectionRestored() fired \(await restores.value)x (unsatisfied → satisfied)")
+
+        let live = await PathNetworkMonitor().currentStatus
+        print("   → PathNetworkMonitor seeds as \(live) before NWPathMonitor's first callback")
     }
 
     // MARK: - Helpers

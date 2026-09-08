@@ -8,8 +8,10 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let retryPolicySummary: String
     let sslPinningSummary: String
     private let metrics: InMemoryMetrics
+    private let monitor: any NetworkMonitor
 
-    init(client: NetworkClient, metrics: InMemoryMetrics) {
+    init(client: NetworkClient, metrics: InMemoryMetrics, monitor: any NetworkMonitor) {
+        self.monitor = monitor
         self.baseURL = client.configuration.environment.baseURL.absoluteString
         self.defaultHeaders = client.configuration.environment.defaultHeaders.dictionary
         self.metrics = metrics
@@ -28,6 +30,20 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
             backoff = "exponential \(base)s ×\(Int(multiplier)) (max \(Int(maxDelay))s)"
         }
         self.retryPolicySummary = "\(retry.maxAttempts) attempts, \(backoff)"
+    }
+
+    func connectivitySummary() async -> [MetricsRow] {
+        let status = await monitor.currentStatus
+        let state: String
+        switch status {
+        case .satisfied: state = "online"
+        case .unsatisfied: state = "offline"
+        case .requiresConnection: state = "checking..."
+        }
+        return [
+            MetricsRow(label: "Status", value: state),
+            MetricsRow(label: "Link", value: status.connectionType.map { "\($0)" } ?? "n/a"),
+        ]
     }
 
     func metricsSummary() async -> [MetricsRow] {

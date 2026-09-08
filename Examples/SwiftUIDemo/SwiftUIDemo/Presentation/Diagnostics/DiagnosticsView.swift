@@ -19,6 +19,14 @@ struct DiagnosticsView: View {
                     }
                 }
 
+                if !model.connectivity.isEmpty {
+                    Section("Connectivity") {
+                        ForEach(model.connectivity) { row in
+                            LabeledContent(row.label, value: row.value)
+                        }
+                    }
+                }
+
                 if !model.metrics.isEmpty {
                     Section("Metrics (live session)") {
                         ForEach(model.metrics) { row in
