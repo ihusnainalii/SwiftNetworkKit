@@ -16,6 +16,7 @@ struct DiagnosticsView: View {
                     LabeledContent("SSL pinning", value: model.sslPinningSummary)
                     LabeledContent("Cache", value: model.cacheSummary)
                     LabeledContent("Requests", value: model.requestManagementSummary)
+                    LabeledContent("Offline queue", value: "\(model.offlineQueueDepth) pending")
                     ForEach(model.defaultHeaders, id: \.key) { header in
                         LabeledContent(header.key, value: header.value)
                     }

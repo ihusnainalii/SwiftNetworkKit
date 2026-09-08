@@ -11,9 +11,11 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
     let requestManagementSummary: String
     private let metrics: InMemoryMetrics
     private let monitor: any NetworkMonitor
+    private let offlineStore: InMemoryOfflineStore
 
-    init(client: NetworkClient, metrics: InMemoryMetrics, monitor: any NetworkMonitor) {
+    init(client: NetworkClient, metrics: InMemoryMetrics, monitor: any NetworkMonitor, offlineStore: InMemoryOfflineStore) {
         self.monitor = monitor
+        self.offlineStore = offlineStore
         self.baseURL = client.configuration.environment.baseURL.absoluteString
         self.defaultHeaders = client.configuration.environment.defaultHeaders.dictionary
         self.metrics = metrics
@@ -42,6 +44,10 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
 
         let dedup = client.configuration.enableDeduplication ? "dedup on" : "dedup off"
         self.requestManagementSummary = "max \(client.configuration.maxConcurrentRequests) concurrent, \(dedup)"
+    }
+
+    func offlineQueueDepth() async -> Int {
+        await offlineStore.count
     }
 
     func connectivitySummary() async -> [MetricsRow] {

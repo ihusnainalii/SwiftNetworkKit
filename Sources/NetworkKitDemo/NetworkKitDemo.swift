@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M10.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M11.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M10) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M11) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -28,6 +28,7 @@ struct NetworkKitDemo {
         await cachingTour()
         await requestManagementTour()
         await oauthTour()
+        await offlineQueueTour()
 
         print("\n═══ done ═══")
     }
@@ -428,6 +429,54 @@ struct NetworkKitDemo {
         } catch {
             print("   → \(error)")
         }
+    }
+
+    // MARK: - Offline request queue (mock transport + mock monitor)
+
+    private static func offlineQueueTour() async {
+        print("\n── 15. Offline request queue — persist while offline, replay on reconnect ──")
+
+        struct Ack: Codable, Sendable { let ok: Bool }
+        struct SubmitOrder: Endpoint {
+            typealias Response = Ack
+            let path = "/orders"
+            let method = HTTPMethod.post
+            var offlineBehavior: OfflineBehavior { .queue(expiresAfter: 3600) }
+        }
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(.failure(.noInternet), .json(Data(#"{"ok":true}"#.utf8), status: 201))
+
+        let monitor = MockNetworkMonitor(initial: .unsatisfied)
+        let store = InMemoryOfflineStore()
+
+        var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+        configuration.retry = .none
+        configuration.offlineStore = store
+        configuration.networkMonitor = monitor
+        let client = NetworkClient(configuration: configuration, transport: transport)
+
+        do {
+            _ = try await client.request(SubmitOrder())
+        } catch let error as NetworkError {
+            if case .offlineQueued(let id) = error {
+                print("   → offline: SubmitOrder persisted as \(id), caller got .offlineQueued")
+            }
+        } catch {
+            print("   → \(error)")
+        }
+        print("   → \(await store.count) request(s) waiting in the queue")
+
+        let events = await client.offlineReplayEvents()
+        await monitor.send(.satisfied(.wifi)) // ...connectivity returns
+
+        for await event in events {
+            if case .replayed(let id, let status) = event {
+                print("   → reconnected: replayed \(id) -> HTTP \(status)")
+            }
+            break
+        }
+        print("   → \(await store.count) request(s) left in the queue")
     }
 
     // MARK: - Helpers

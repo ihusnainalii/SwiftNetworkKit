@@ -10,6 +10,7 @@ final class DiagnosticsViewModel {
     private(set) var isRunning = false
     private(set) var metrics: [MetricsRow] = []
     private(set) var connectivity: [MetricsRow] = []
+    private(set) var offlineQueueDepth = 0
 
     init(diagnostics: any NetworkDiagnostics) {
         self.diagnostics = diagnostics
@@ -26,6 +27,7 @@ final class DiagnosticsViewModel {
         async let connectivity = diagnostics.connectivitySummary()
         self.metrics = await metrics
         self.connectivity = await connectivity
+        self.offlineQueueDepth = await diagnostics.offlineQueueDepth()
     }
     var defaultHeaders: [(key: String, value: String)] {
         diagnostics.defaultHeaders.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }

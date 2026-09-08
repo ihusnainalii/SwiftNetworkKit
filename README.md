@@ -3,11 +3,11 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M10 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M11 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
 > and downloads with progress, HTTP response caching, request cancellation / deduplication /
-> concurrency queue, OAuth 2.0 + PKCE). See
+> concurrency queue, OAuth 2.0 + PKCE, offline request queue). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -187,6 +187,31 @@ let tokens = try await flow.exchange(code: code, pkce: pkce)
 let client = NetworkClient(configuration: config, refresh: flow.tokenManagerRefreshHandler())
 ```
 
+### Offline request queue
+
+```swift
+var config = NetworkConfiguration(baseURL: "https://api.example.com")
+config.offlineStore = FileOfflineStore()          // persisted; survives launches
+config.networkMonitor = PathNetworkMonitor()
+
+struct SubmitOrder: Endpoint {
+    typealias Response = Order
+    var method: HTTPMethod { .post }
+    var offlineBehavior: OfflineBehavior { .queue(expiresAfter: 3600) }
+}
+```
+
+Sent offline, the request is archived and the caller gets `NetworkError.offlineQueued(id)`
+immediately. When connectivity returns the queue replays FIFO; observe the outcomes:
+
+```swift
+for await event in await client.offlineReplayEvents() {
+    // .replayed(id, statusCode:) / .failed(id, error) / .expired(id)
+}
+```
+
+Multipart bodies can't be archived, so a multipart endpoint always fails fast instead.
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -234,10 +259,10 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | HTTP response caching (`CachePolicy`, memory + disk stores, ETag / 304, stale-while-revalidate) |
 | Request management: cancel by id / `cancelAll`, GET dedup, concurrency limit + priority, pause / resume |
 | OAuth 2.0 Authorization Code + PKCE (`PKCE`, `AuthorizationCodeFlow`, auto-refresh adapter) |
-| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
+| Offline request queue (opt-in per endpoint, persisted, replays FIFO on reconnect) |
+| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`, `InMemoryOfflineStore`) |
 
-Not yet: offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the
-milestone order.
+Not yet: pagination, batch, Combine/SwiftUI helpers. See the roadmap for the milestone order.
 
 ## Tests
 

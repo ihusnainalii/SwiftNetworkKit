@@ -22,6 +22,9 @@ public enum NetworkError: Error, Sendable {
     case sessionExpired
     case cancelled
     case offline
+    /// The request was persisted to the offline queue; its replay outcome arrives on
+    /// ``NetworkClient/offlineReplayEvents()``.
+    case offlineQueued(RequestID)
     case transport(underlying: any Error & Sendable)
     case unknown(underlying: (any Error & Sendable)?)
 }
@@ -31,7 +34,7 @@ public extension NetworkError {
     enum Code: String, Sendable, Hashable, CaseIterable {
         case invalidURL, noInternet, timeout, unauthorized, forbidden, notFound
         case validation, rateLimited, server, unacceptableStatusCode, decoding, encoding
-        case sslPinningFailed, tokenRefreshFailed, sessionExpired, cancelled, offline
+        case sslPinningFailed, tokenRefreshFailed, sessionExpired, cancelled, offline, offlineQueued
         case transport, unknown
     }
 
@@ -54,6 +57,7 @@ public extension NetworkError {
         case .sessionExpired: .sessionExpired
         case .cancelled: .cancelled
         case .offline: .offline
+        case .offlineQueued: .offlineQueued
         case .transport: .transport
         case .unknown: .unknown
         }
@@ -131,6 +135,7 @@ extension NetworkError: LocalizedError {
         case .sessionExpired: "The session has expired"
         case .cancelled: "The request was cancelled"
         case .offline: "The device is offline"
+        case .offlineQueued(let id): "Offline — request \(id) queued for replay"
         case .transport(let underlying): "Transport error: \(underlying)"
         case .unknown(let underlying): underlying.map { "Unknown error: \($0)" } ?? "An unknown error occurred"
         }

@@ -26,13 +26,16 @@ struct AppContainer: Sendable {
         )
         configuration.maxConcurrentRequests = 4
         configuration.enableDeduplication = true
-        let client = NetworkClient(configuration: configuration)
         let monitor = PathNetworkMonitor()
+        let offlineStore = InMemoryOfflineStore()
+        configuration.networkMonitor = monitor
+        configuration.offlineStore = offlineStore
+        let client = NetworkClient(configuration: configuration)
         return AppContainer(
             users: LiveUsersRepository(client: client),
             userContent: LiveUserContentRepository(client: client),
             composer: LivePostComposer(client: client),
-            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor),
+            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor, offlineStore: offlineStore),
             media: LiveMediaDownloader(client: client)
         )
     }()

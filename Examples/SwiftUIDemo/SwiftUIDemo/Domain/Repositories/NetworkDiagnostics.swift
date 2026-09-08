@@ -10,6 +10,8 @@ protocol NetworkDiagnostics: Sendable {
     var cacheSummary: String { get }
     /// Human-readable summary of the request-management settings (concurrency + dedup).
     var requestManagementSummary: String { get }
+    /// How many requests are waiting in the offline queue right now.
+    func offlineQueueDepth() async -> Int
     /// Live connectivity, as label/value rows (status + link type).
     func connectivitySummary() async -> [MetricsRow]
     /// Live counters from the client's metrics sink, as label/value rows for display.

@@ -20,6 +20,7 @@ public final class NetworkClient: Sendable {
     let registry = RequestRegistry()
     let queue: RequestQueue
     let deduplicator = RequestDeduplicator()
+    let offlineQueue: OfflineRequestQueue?
 
     /// Present only when a `refresh` handler was supplied; `nil` disables automatic token refresh.
     let tokenManager: TokenManager?
@@ -40,6 +41,15 @@ public final class NetworkClient: Sendable {
         self.configuration = configuration
         self.transport = transport ?? Self.defaultTransport(for: configuration)
         self.queue = RequestQueue(maxConcurrent: configuration.maxConcurrentRequests)
+        if let store = configuration.offlineStore, let monitor = configuration.networkMonitor {
+            let offlineTransport = self.transport
+            self.offlineQueue = OfflineRequestQueue(
+                store: store, monitor: monitor, metrics: configuration.metrics,
+                send: { request in try await offlineTransport.data(for: request).1 }
+            )
+        } else {
+            self.offlineQueue = nil
+        }
         self.interceptors = InterceptorChain(
             requestInterceptors: [TracingInterceptor(configuration.tracing)] + configuration.requestInterceptors,
             responseInterceptors: configuration.responseInterceptors
@@ -105,6 +115,24 @@ public final class NetworkClient: Sendable {
     /// Resumes admitting queued requests.
     public func resumeQueue() async {
         await queue.resume()
+    }
+
+    /// A stream of outcomes for requests that were queued while offline and later replayed.
+    public func offlineReplayEvents() async -> AsyncStream<OfflineReplayEvent> {
+        guard let offlineQueue else { return AsyncStream { $0.finish() } }
+        return await offlineQueue.events()
+    }
+
+    /// Replays any queued offline requests now (also happens automatically on reconnect).
+    public func replayOfflineQueue() async {
+        await offlineQueue?.replayNow()
+    }
+
+    /// Persists `request` for later replay if the endpoint opted in and the body can be archived.
+    private func offlineQueueID<E: Endpoint>(for endpoint: E, request: URLRequest) async throws -> RequestID? {
+        guard let offlineQueue, case .queue(let expiresAfter) = endpoint.offlineBehavior else { return nil }
+        if case .multipart = endpoint.body { return nil } // multipart bodies don't survive archiving
+        return try? await offlineQueue.enqueue(request, expiresAfter: expiresAfter)
     }
 
     /// Runs `operation` through the concurrency queue unless the endpoint opts out. Used by the
@@ -256,6 +284,10 @@ public final class NetworkClient: Sendable {
             if let storedEntry, policy == .networkFirst || policy == .cacheFirst {
                 emit(["\u{2190} serving cached response (network failed: \(mapped.code.rawValue))"], level: .basic)
                 return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
+            }
+            if mapped.code == .noInternet, let queued = try await offlineQueueID(for: endpoint, request: urlRequest) {
+                await recordFailure(mapped, requestID: requestID, status: nil, since: started)
+                throw NetworkError.offlineQueued(queued)
             }
             await recordFailure(mapped, requestID: requestID, status: nil, since: started)
             throw mapped

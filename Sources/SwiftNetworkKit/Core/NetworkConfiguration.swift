@@ -84,6 +84,15 @@ public struct NetworkConfiguration: Sendable {
     /// An ``Endpoint`` can override with ``Endpoint/deduplicate``. Defaults to `false`.
     public var enableDeduplication: Bool
 
+    // MARK: Offline queue (M11)
+
+    /// Persistence for requests made offline by endpoints that opt into ``OfflineBehavior/queue(expiresAfter:)``.
+    /// `nil` disables the offline queue. Requires ``networkMonitor`` too.
+    public var offlineStore: (any OfflineStore)?
+
+    /// Connectivity source. Used to fail-fast offline requests and to trigger offline-queue replay.
+    public var networkMonitor: (any NetworkMonitor)?
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
@@ -104,7 +113,9 @@ public struct NetworkConfiguration: Sendable {
         sslPinning: SSLPinning = .disabled,
         cache: CacheConfiguration = .disabled,
         maxConcurrentRequests: Int = 6,
-        enableDeduplication: Bool = false
+        enableDeduplication: Bool = false,
+        offlineStore: (any OfflineStore)? = nil,
+        networkMonitor: (any NetworkMonitor)? = nil
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -126,6 +137,8 @@ public struct NetworkConfiguration: Sendable {
         self.cache = cache
         self.maxConcurrentRequests = maxConcurrentRequests
         self.enableDeduplication = enableDeduplication
+        self.offlineStore = offlineStore
+        self.networkMonitor = networkMonitor
     }
 
     /// Convenience single-environment initializer.

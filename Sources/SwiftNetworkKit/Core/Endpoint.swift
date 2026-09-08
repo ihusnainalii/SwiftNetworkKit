@@ -55,6 +55,10 @@ public protocol Endpoint: Sendable {
     /// token-refresh endpoint so a full queue plus an expired token can't deadlock.
     var skipRequestQueue: Bool { get }
 
+    /// What to do when this request is made offline. Defaults to ``OfflineBehavior/fail``. Requires
+    /// ``NetworkConfiguration/offlineStore`` + ``NetworkConfiguration/networkMonitor`` to be set.
+    var offlineBehavior: OfflineBehavior { get }
+
     /// Per-endpoint decoder override. `nil` = use the client's default.
     var decoder: JSONDecoder? { get }
 
@@ -77,6 +81,7 @@ public extension Endpoint {
     var cachePolicy: CachePolicy? { nil }
     var deduplicate: Bool? { nil }
     var skipRequestQueue: Bool { false }
+    var offlineBehavior: OfflineBehavior { .fail }
     var decoder: JSONDecoder? { nil }
 }
 
