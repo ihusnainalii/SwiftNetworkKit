@@ -7,7 +7,8 @@ Swift 6 strict concurrency, protocol-oriented and fully testable.
 - **Swift:** 6.0 (`swift-tools-version:6.0`, Swift 6 language mode)
 - **Platforms:** iOS 16+, macOS 13+, tvOS 16+, watchOS 9+, visionOS 1+
 - **Distribution:** Swift Package Manager
-- **License:** Apache-2.0
+- **License:** Source-available proprietary. Use it in your apps (including commercial); do not
+  redistribute, fork publicly, or rebrand it. See [License](#license).
 
 [![CI](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/ci.yml)
 [![Release](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml/badge.svg)](https://github.com/ihusnainalii/SwiftNetworkKit/actions/workflows/release.yml)
@@ -16,7 +17,7 @@ Swift 6 strict concurrency, protocol-oriented and fully testable.
 [![Swift 6](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 [![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager)
 [![Platforms](https://img.shields.io/badge/platforms-iOS%2016%20%7C%20macOS%2013%20%7C%20tvOS%2016%20%7C%20watchOS%209%20%7C%20visionOS%201-lightgrey.svg)](Package.swift)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-source--available%20proprietary-red.svg)](LICENSE)
 
 ---
 
@@ -1414,7 +1415,31 @@ privately report a vulnerability. A standing review lives in
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+SwiftNetworkKit is **source-available proprietary software**, Copyright (c) 2026 Husnain Ali. All
+rights reserved. It is not open source.
+
+**You may**
+
+- Read and study the source.
+- Add it as a dependency and compile it into your own applications, including commercial ones, and
+  ship those applications with the library embedded in compiled form.
+- Use it for development, testing, evaluation, and CI.
+- File issues, feature requests, and discussion.
+
+**You may not**
+
+- Redistribute the source code as a standalone library, package, template, or sample.
+- Publish, host, mirror, or publicly fork the repository or any substantial part of it.
+- Rename, rebrand, or re-release it under your own name or any name other than the Owner's, or
+  present it as your own work.
+- Build a competing networking library or SDK substantially derived from it.
+- Remove copyright or license notices, or sublicense it.
+
+Contributions (pull requests) are welcome, but by submitting one you assign all rights in it to the
+Owner; the codebase stays solely the Owner's property.
+
+Full terms in [LICENSE](LICENSE). For redistribution, OEM, or white-label permission, contact the
+Owner. This is not legal advice.
 
 ---
 

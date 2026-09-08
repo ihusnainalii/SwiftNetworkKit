@@ -1,5 +1,13 @@
 # Contributing to SwiftNetworkKit
 
+## Licensing of contributions
+
+SwiftNetworkKit is source-available proprietary software owned by Husnain Ali (see
+[LICENSE](LICENSE)). Issues and discussion are open to everyone. If you open a pull request, then
+by submitting it you assign all right, title, and interest in your contribution to the Owner, as
+set out in Section 4 of the LICENSE. The codebase remains solely the Owner's property. If you are
+not willing to assign your contribution, please open an issue instead of a pull request.
+
 ## Ground rules
 
 - **Zero dependencies.** `Package.swift` must stay free of `dependencies:`. If a feature seems to
