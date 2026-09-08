@@ -113,23 +113,14 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           -skipPackagePluginValidation
 
-  # 7 - Secret scan on the full history of the PR / push range.
-  secrets:
-    name: Secret scan (gitleaks)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Secret scanning runs in its own workflow (.github/workflows/gitleaks.yml) so it can
+  # also run on a weekly schedule.
 
   # Single required status for branch protection.
   ci-ok:
     name: CI passed
     runs-on: ubuntu-latest
-    needs: [lint, build, test, sanitizers, ios, docs, secrets]
+    needs: [lint, build, test, sanitizers, ios, docs]
     if: always()
     steps:
       - run: |

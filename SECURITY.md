@@ -20,6 +20,9 @@ SwiftNetworkKit is a client networking layer with **no external dependencies**. 
 server, open listening sockets, execute downloaded code, or persist anything outside the locations
 you configure.
 
+A standing source review is kept in
+[Documentation/SecurityAudit.md](Documentation/SecurityAudit.md).
+
 ### Cryptography
 
 | Concern | What the package does |

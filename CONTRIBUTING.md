@@ -45,17 +45,16 @@ tags by hand.
 
 ## Adding a feature
 
-1. Land a plan or issue describing the surface area first (see `.claude/PRPs/plans/`).
+1. Open an issue describing the surface area first.
 2. Public API gets doc comments with a runnable `swift` example.
 3. Unit tests use the shipped test doubles (`MockNetworkTransport`, `URLProtocolStub`,
-   `TestClock`, ...). No real network in tests.
-4. Update `README.md`, both "What's implemented" tables, and `ROADMAP.md` if the scope changes.
+   `TestClock`, and so on). No real network in tests.
+4. Update `README.md` (and its feature list) and `ROADMAP.md` if the scope changes.
 5. Wire the feature into a demo (`Sources/NetworkKitDemo/` and/or `Examples/SwiftUIDemo/`).
 
 ## Style specifics
 
-- README files: no em dashes or en-dash ranges (write "M0 through M3"). "What's implemented" is an
-  Area-only checklist, no status column.
+- Markdown docs: no em dashes or en-dash ranges. Keep the README feature list a plain checklist.
 - Line length 120 (soft), 160 (hard).
 - Prefer `async/await` and `actor` for new code; Combine and SwiftUI helpers stay thin adapters
   over the async API, gated by `#if canImport`.

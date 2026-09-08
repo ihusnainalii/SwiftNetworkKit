@@ -11,61 +11,59 @@ history: every merge to `main` updates a rolling release PR, and merging that PR
 
 ## [0.1.0] - 2026-09-09
 
-Initial pre-release. Fifteen milestones (M0 through M14) of the composable, zero-dependency,
-Swift 6 networking layer.
+Initial pre-release.
 
 ### Added
 
-- **Core** (M0-M1): `NetworkClient`, `NetworkConfiguration`, `NetworkEnvironment`, `Endpoint`
-  protocol with per-endpoint overrides, unified `NetworkError` (status / headers / body / server
-  message), `HTTPMethod` / `HTTPHeaders` / `QueryParameters` / `HTTPStatus`, `RequestBuilder`,
-  typed decoding (`Decodable` / `Data` / `String` / `EmptyResponse`), `async/await` +
-  completion-handler APIs, `data` / `string` / `send` helpers.
-- **Authentication** (M2): `AuthStrategy` (Bearer / API key / Basic / custom), `TokenStorage`
+- **Core.** `NetworkClient`, `NetworkConfiguration`, `NetworkEnvironment`, `Endpoint` protocol with
+  per-endpoint overrides, unified `NetworkError` (status / headers / body / server message),
+  `HTTPMethod` / `HTTPHeaders` / `QueryParameters` / `HTTPStatus`, `RequestBuilder`, typed decoding
+  (`Decodable` / `Data` / `String` / `EmptyResponse`), `async/await` and completion-handler APIs,
+  `data` / `string` / `send` helpers.
+- **Authentication.** `AuthStrategy` (Bearer / API key / Basic / custom), `TokenStorage`
   (`InMemoryTokenStorage`, `KeychainTokenStorage`), actor `TokenManager` (single-flight 401
   refresh, request queueing, loop guard, proactive refresh).
-- **Retry** (M3): `RetryPolicy` (`.default` / `.none` / `.aggressive`), `BackoffStrategy`
-  (constant / exponential), `Jitter`, idempotency-aware `RetryDecision`, `NetworkClock` port +
+- **Retry.** `RetryPolicy` (`.default` / `.none` / `.aggressive`), `BackoffStrategy`
+  (constant / exponential), `Jitter`, idempotency-aware `RetryDecision`, `NetworkClock` port plus
   `TestClock`, `429` / `503` `Retry-After` handling.
-- **Observability** (M4): request / response interceptors (`InterceptOutcome`), `TracingInterceptor`
+- **Observability.** Request / response interceptors (`InterceptOutcome`), `TracingInterceptor`
   (`X-Request-ID`, `withCorrelation`), redacting `NetworkLogger` (`LogLevel`, `Redactor`),
-  `NetworkMetrics` (`InMemoryMetrics` -> counts / histogram / p95).
-- **Security** (M5): optional `SSLPinning` (`.certificates` / `.certificateResources` /
-  `.publicKeys` / `.development`), per-host, rotation-safe, record-only mode; app ships only the
-  `.cer` files.
-- **Connectivity** (M6): `NetworkMonitor` over `NWPathMonitor`, `AsyncStream` of `NetworkStatus`,
+  `NetworkMetrics` (`InMemoryMetrics`: counts / histogram / p95).
+- **Security.** Optional `SSLPinning` (`.certificates` / `.certificateResources` / `.publicKeys` /
+  `.development`), per-host, rotation-safe, record-only mode; the app ships only the `.cer` files.
+- **Connectivity.** `NetworkMonitor` over `NWPathMonitor`, `AsyncStream` of `NetworkStatus`,
   `connectionRestored()`.
-- **Transfer** (M7): `MultipartFormData` (RFC 7578, streams large file parts), `client.upload` /
+- **Transfer.** `MultipartFormData` (RFC 7578, streams large file parts), `client.upload` /
   `client.download` with byte `ProgressEvent`.
-- **Caching** (M8): `CachePolicy`, `MemoryCacheStore` / `DiskCacheStore`, ETag / `304`
-  revalidation, stale-while-revalidate, network-failure fallback.
-- **Request management** (M9): cancel by id / `cancelAll`, GET/HEAD deduplication, concurrency
-  limit + priority queue, `pauseQueue` / `resumeQueue`.
-- **OAuth** (M10): `PKCE`, `AuthorizationCodeFlow` (URL building + token exchange), auto-refresh
+- **Caching.** `CachePolicy`, `MemoryCacheStore` / `DiskCacheStore`, ETag / `304` revalidation,
+  stale-while-revalidate, network-failure fallback.
+- **Request management.** Cancel by id / `cancelAll`, GET/HEAD deduplication, concurrency limit
+  plus priority queue, `pauseQueue` / `resumeQueue`.
+- **OAuth.** `PKCE`, `AuthorizationCodeFlow` (URL building plus token exchange), auto-refresh
   adapter (`flow.tokenManagerRefreshHandler()`).
-- **Offline** (M11): opt-in `OfflineBehavior.queue`, persisted `FileOfflineStore`, FIFO replay on
+- **Offline.** Opt-in `OfflineBehavior.queue`, persisted `FileOfflineStore`, FIFO replay on
   reconnect, `offlineReplayEvents()`.
-- **Pagination & batch** (M12): `PaginatedEndpoint`, `client.paginate` (`AsyncThrowingStream`) /
+- **Pagination and batch.** `PaginatedEndpoint`, `client.paginate` (`AsyncThrowingStream`) /
   `collectAll`, `client.zip` / `client.batch`.
-- **Combine & SwiftUI** (M14): `client.publisher(for:)` / `uploadPublisher` / `downloadPublisher` /
+- **Combine and SwiftUI.** `client.publisher(for:)` / `uploadPublisher` / `downloadPublisher` /
   `paginatePublisher` (`#if canImport(Combine)`); `NetworkResource<Value>` and `Paged<Item>`
   `@Observable` load-state holders (iOS 17+).
-- **Testing** (shipped in the library): `MockNetworkTransport` (FIFO queue, path/method matchers,
+- **Testing (shipped in the library).** `MockNetworkTransport` (FIFO queue, path/method matchers,
   `MockScenario` presets), `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`,
   `InMemoryOfflineStore`.
 
+### Security
+
+- Disk cache and offline queue write with `.completeFileProtectionUnlessOpen` (encrypted at rest
+  while the device is locked). See [Documentation/SecurityAudit.md](Documentation/SecurityAudit.md).
+
 ### Tooling
 
-- Multi-stage CI (`.github/workflows/ci.yml`): SwiftLint (`--strict`) + swift-format (`--strict`),
-  `swift build -warnings-as-errors`, `swift test` + code coverage (Codecov + job summary),
-  ThreadSanitizer + AddressSanitizer, iOS Simulator builds (library + `SwiftUIDemo`), DocC build,
-  gitleaks secret scan.
+- Multi-stage CI (`.github/workflows/ci.yml`): SwiftLint (`--strict`) plus swift-format
+  (`--strict`), `swift build -warnings-as-errors`, `swift test` plus code coverage (Codecov and
+  job summary), ThreadSanitizer plus AddressSanitizer, iOS Simulator builds (library and
+  `SwiftUIDemo`), DocC build.
+- Secret scanning (`.github/workflows/gitleaks.yml`): `gitleaks` on push, PR, and weekly.
 - Release automation (`.github/workflows/release.yml`): release-please cuts a tagged GitHub
   Release with generated notes on every merge of its release PR.
-- `.swiftlint.yml`, `.swift-format`, `scripts/coverage.sh`.
-
-### Notes
-
-- Every milestone has an implementation report under `.claude/PRPs/reports/`.
-- Security review: [`.claude/PRPs/reports/swift-network-kit-security-audit.md`](.claude/PRPs/reports/swift-network-kit-security-audit.md).
-- Modernity analysis: [`.claude/PRPs/reports/swift-network-kit-modernity-analysis.md`](.claude/PRPs/reports/swift-network-kit-modernity-analysis.md).
+- `.swiftlint.yml`, `.swift-format`, `.gitleaks.toml`, `scripts/coverage.sh`.
