@@ -6,7 +6,6 @@ struct SwiftUIDemoApp: App {
         WindowGroup {
             RootView()
                 .environment(\.container, .live)
-                .frame(minWidth: 480, minHeight: 640)
         }
     }
 }
