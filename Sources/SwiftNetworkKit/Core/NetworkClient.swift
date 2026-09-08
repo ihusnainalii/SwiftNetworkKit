@@ -50,20 +50,44 @@ public final class NetworkClient: Sendable {
         }
     }
 
-    /// The shared pipeline. `decode` runs only on a 2xx/304 response; all failure mapping happens here.
+    /// The shared pipeline. `decode` runs only on a 2xx/304 response; all failure mapping happens
+    /// here, and retryable failures are re-attempted per the effective ``RetryPolicy`` with backoff
+    /// waits routed through ``NetworkConfiguration/clock``. The 401 → refresh → retry hop lives
+    /// inside ``execute(_:requestID:decode:)`` and does not consume a retry attempt.
     func perform<E: Endpoint, T: Sendable>(
         _ endpoint: E,
         decode: @Sendable (Data, HTTPURLResponse, JSONDecoder) throws -> T
     ) async throws -> T {
         if Task.isCancelled { throw NetworkError.cancelled }
         let requestID = RequestID()
-        do {
-            let result = try await execute(endpoint, requestID: requestID, decode: decode)
-            await tokenManager?.forget(requestID)
-            return result
-        } catch {
-            await tokenManager?.forget(requestID)
-            throw error
+        let policy = endpoint.retryPolicy ?? configuration.retry
+        var attempt = 1
+
+        while true {
+            do {
+                let result = try await execute(endpoint, requestID: requestID, decode: decode)
+                await tokenManager?.forget(requestID)
+                return result
+            } catch {
+                let networkError = NetworkError.normalize(error)
+                let decision = RetryDecision.evaluate(
+                    policy: policy,
+                    method: endpoint.method,
+                    attempt: attempt,
+                    error: networkError
+                )
+                guard case .retry(let delay) = decision, !Task.isCancelled else {
+                    await tokenManager?.forget(requestID)
+                    throw networkError
+                }
+                do {
+                    try await configuration.clock.sleep(for: .seconds(delay))
+                } catch {
+                    await tokenManager?.forget(requestID)
+                    throw NetworkError.cancelled
+                }
+                attempt += 1
+            }
         }
     }
 

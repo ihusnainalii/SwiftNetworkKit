@@ -37,6 +37,15 @@ public struct NetworkConfiguration: Sendable {
     /// Refresh a stored token this many seconds *before* its `expiresAt` (proactive refresh).
     public var proactiveRefreshLeeway: TimeInterval
 
+    // MARK: Retry (M3)
+
+    /// Client-wide retry policy. An ``Endpoint`` overrides it with ``Endpoint/retryPolicy``.
+    public var retry: RetryPolicy
+
+    /// The time source for every wait (backoff, `Retry-After`, proactive refresh). Tests inject a
+    /// fake; production uses ``ContinuousClockAdapter``.
+    public var clock: any NetworkClock
+
     public init(
         environment: NetworkEnvironment,
         defaultDecoder: JSONDecoder = .networkKitDefault,
@@ -46,7 +55,9 @@ public struct NetworkConfiguration: Sendable {
         errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil,
         authorization: any AuthStrategy = BearerAuth(),
         tokenStorage: any TokenStorage = InMemoryTokenStorage(),
-        proactiveRefreshLeeway: TimeInterval = 60
+        proactiveRefreshLeeway: TimeInterval = 60,
+        retry: RetryPolicy = .default,
+        clock: any NetworkClock = ContinuousClockAdapter()
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
@@ -57,6 +68,8 @@ public struct NetworkConfiguration: Sendable {
         self.authorization = authorization
         self.tokenStorage = tokenStorage
         self.proactiveRefreshLeeway = proactiveRefreshLeeway
+        self.retry = retry
+        self.clock = clock
     }
 
     /// Convenience single-environment initializer.

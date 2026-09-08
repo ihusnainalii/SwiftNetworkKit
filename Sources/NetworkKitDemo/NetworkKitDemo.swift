@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M2.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M3.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M2) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M3) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -20,6 +20,7 @@ struct NetworkKitDemo {
             await liveAPITour()
         }
         await authAndRefreshTour()
+        await retryTour()
 
         print("\n═══ done ═══")
     }
@@ -35,30 +36,30 @@ struct NetworkKitDemo {
         )
 
         await section("1. Typed GET — one model") {
-            let user = try await client.request(JSONPlaceholder.GetUser(id: 1))
+            let user = try await client.request(GetUserEndpoint(id: 1))
             print("   → \(user.name) <\(user.email)> (@\(user.username))")
         }
 
         await section("2. Typed GET — collection + query parameter") {
-            let posts = try await client.request(JSONPlaceholder.ListPosts(authorUserID: 1))
+            let posts = try await client.request(ListPostsEndpoint(authorUserID: 1))
             print("   → \(posts.count) posts by user 1; first title: \"\(posts.first?.title ?? "-")\"")
         }
 
         await section("3. POST — JSON body, decoded response") {
             let created = try await client.request(
-                JSONPlaceholder.CreatePost(draft: DraftPost(title: "Hello", body: "from SwiftNetworkKit", userID: 1))
+                CreatePostEndpoint(draft: DraftPost(title: "Hello", body: "from SwiftNetworkKit", userID: 1))
             )
             print("   → created post id \(created.id): \"\(created.title)\"")
         }
 
         await section("4. Raw helpers — string(for:)") {
-            let raw = try await client.string(for: JSONPlaceholder.GetUser(id: 2))
+            let raw = try await client.string(for: GetUserEndpoint(id: 2))
             print("   → \(raw.prefix(60))…")
         }
 
         await section("5. Error handling — 404 → typed NetworkError") {
             do {
-                _ = try await client.request(JSONPlaceholder.MissingUser())
+                _ = try await client.request(MissingUserEndpoint())
                 print("   → unexpectedly succeeded")
             } catch let error as NetworkError {
                 print("   → caught .\(error.code) (status \(error.statusCode.map(String.init) ?? "-"))")
@@ -67,7 +68,7 @@ struct NetworkKitDemo {
 
         await section("6. Completion-handler API") {
             let name: String? = await withCheckedContinuation { continuation in
-                client.request(JSONPlaceholder.GetUser(id: 3)) { result in
+                client.request(GetUserEndpoint(id: 3)) { result in
                     continuation.resume(returning: try? result.get().name)
                 }
             }
@@ -79,13 +80,6 @@ struct NetworkKitDemo {
 
     private static func authAndRefreshTour() async {
         print("\n── 7. Bearer auth + automatic 401 refresh (mock transport) ──")
-
-        struct SecretResource: Endpoint {
-            typealias Response = Secret
-            let path = "/secret"
-            var authentication: AuthRequirement { .required }
-        }
-        struct Secret: Codable, Sendable { let value: String }
 
         let transport = MockNetworkTransport()
         transport.enqueue(
@@ -110,7 +104,7 @@ struct NetworkKitDemo {
         )
 
         do {
-            let secret = try await client.request(SecretResource())
+            let secret = try await client.request(SecretEndpoint())
             let sentTokens = transport.recordedRequests.compactMap {
                 $0.value(forHTTPHeaderField: "Authorization")
             }
@@ -119,6 +113,32 @@ struct NetworkKitDemo {
         } catch {
             print("   → failed: \(error)")
         }
+    }
+
+    // MARK: - Retry + backoff (deterministic, via MockNetworkTransport + TestClock)
+
+    private static func retryTour() async {
+        print("\n── 8. Automatic retry with exponential backoff (mock transport) ──")
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(.status(503), .status(503), .json(Data(#"{"value":"42"}"#.utf8)))
+
+        let clock = TestClock() // records backoff waits instead of really sleeping
+
+        var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+        configuration.retry = RetryPolicy(maxAttempts: 3, jitter: .none)
+        configuration.clock = clock
+        let client = NetworkClient(configuration: configuration, transport: transport)
+
+        do {
+            let secret = try await client.request(SecretEndpoint())
+            print("   → got \"\(secret.value)\" after \(transport.requestCount) attempts")
+            print("   → backoff waits between attempts: \(clock.recordedSleeps)s (0.5, then 1.0)")
+        } catch {
+            print("   → failed: \(error)")
+        }
+
+        print("   note: POST/PATCH are never retried unless an endpoint opts in via retryPolicy")
     }
 
     // MARK: - Helpers
@@ -134,9 +154,4 @@ struct NetworkKitDemo {
         }
         print("")
     }
-}
-
-private actor DemoCounter {
-    private(set) var count = 0
-    func bump() { count += 1 }
 }

@@ -1,46 +1,5 @@
 import Foundation
 
-/// Whether — and how — a request needs authentication applied.
-public enum AuthRequirement: Sendable {
-    /// No authentication.
-    case none
-    /// Apply the client's configured ``AuthStrategy``, refreshing the token on a 401.
-    case required
-    /// Apply a specific strategy for this endpoint (still 401-refresh aware).
-    case custom(any AuthStrategy)
-
-    /// `true` for `.required` and `.custom`.
-    public var isAuthenticated: Bool {
-        switch self {
-        case .none: false
-        case .required, .custom: true
-        }
-    }
-}
-
-extension AuthRequirement: Equatable {
-    /// Compares only the well-known cases; two `.custom` values are never considered equal
-    /// (strategies aren't `Equatable`).
-    public static func == (lhs: AuthRequirement, rhs: AuthRequirement) -> Bool {
-        switch (lhs, rhs) {
-        case (.none, .none), (.required, .required): true
-        default: false
-        }
-    }
-}
-
-/// Relative scheduling hint for the request queue (M9). Best-effort — running requests aren't preempted.
-public enum RequestPriority: Sendable, Comparable {
-    case low
-    case normal
-    case high
-}
-
-/// A response body that is expected to be empty (204, or a write with no useful payload).
-public struct EmptyResponse: Codable, Sendable, Hashable {
-    public init() {}
-}
-
 /// One API operation, defined by the consuming app.
 ///
 /// Conform an `enum` or `struct` per API. Almost everything has a default — a minimal endpoint is
@@ -80,6 +39,10 @@ public protocol Endpoint: Sendable {
 
     var priority: RequestPriority { get }
 
+    /// Per-endpoint retry policy. `nil` = use the client's ``NetworkConfiguration/retry``. Set a
+    /// policy with `retryNonIdempotent = true` here to opt a specific `POST`/`PATCH` into retrying.
+    var retryPolicy: RetryPolicy? { get }
+
     /// Per-endpoint decoder override. `nil` = use the client's default.
     var decoder: JSONDecoder? { get }
 
@@ -98,13 +61,8 @@ public extension Endpoint {
     var authentication: AuthRequirement { .none }
     var timeout: TimeInterval? { nil }
     var priority: RequestPriority { .normal }
+    var retryPolicy: RetryPolicy? { nil }
     var decoder: JSONDecoder? { nil }
-}
-
-/// Reasons the default decoder cannot produce a value.
-public enum EndpointDecodingFailure: Error, Sendable, Equatable {
-    case responseNotUTF8
-    case unsupportedResponseType(String)
 }
 
 public extension Endpoint {

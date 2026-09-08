@@ -26,10 +26,9 @@ struct NetworkClientTests {
         _ transport: MockNetworkTransport,
         errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil
     ) -> NetworkClient {
-        NetworkClient(
-            configuration: NetworkConfiguration(baseURL: "https://api.example.com", errorMapper: errorMapper),
-            transport: transport
-        )
+        var configuration = NetworkConfiguration(baseURL: "https://api.example.com", errorMapper: errorMapper)
+        configuration.retry = .none // these tests exercise single-response mapping; retry has its own suite
+        return NetworkClient(configuration: configuration, transport: transport)
     }
 
     @Test("decodes a JSON body into the endpoint's Response")

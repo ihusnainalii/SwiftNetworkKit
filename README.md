@@ -3,8 +3,9 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones **M0–M2** are complete (core types, request pipeline,
-> authentication + automatic token refresh). See [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
+> **Status:** in development. Milestones M0 through M3 are complete (core types, request pipeline,
+> authentication + automatic token refresh, retry + backoff + rate limiting). See
+> [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
 ## Quick start
@@ -40,6 +41,21 @@ client.request(GetProfile()) { (r: Result<User, NetworkError>) in }   // complet
 A `.required` endpoint that 401s triggers a single-flight token refresh and one automatic retry;
 a second 401 for the same request surfaces `NetworkError.sessionExpired`.
 
+Transient failures (`5xx`, `408`, connectivity drops) are retried with exponential backoff and
+jitter, capped by `RetryPolicy` (`maxAttempts` 3 by default). `POST` and `PATCH` are never retried
+unless an endpoint opts in. `429` and `503` honor a server `Retry-After` header.
+
+```swift
+var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+configuration.retry = .aggressive            // or .none, or a custom RetryPolicy
+
+struct SubmitOrder: Endpoint {
+    typealias Response = Order
+    var method: HTTPMethod { .post }
+    var retryPolicy: RetryPolicy? { RetryPolicy(retryNonIdempotent: true) }   // this POST is safe to repeat
+}
+```
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -51,28 +67,34 @@ swift run NetworkKitDemo --offline  # auth + refresh section only, no network
 
 Source: [`Sources/NetworkKitDemo/`](Sources/NetworkKitDemo/).
 
-**SwiftUI app**: a complete standalone app (MVVM + Clean Architecture) in
-[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list → detail, a POST form, and a
-narrated 401→refresh→retry screen.
+**SwiftUI app**: a complete standalone iOS app (MVVM + Clean Architecture) in
+[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list to detail, a POST form, and a
+Diagnostics screen (client config + a narrated 401 to refresh to retry walkthrough).
+
+Open `Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj` in Xcode and run, or:
 
 ```bash
-swift run --package-path Examples/SwiftUIDemo SwiftUIDemo
+xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
+  -scheme SwiftUIDemo -destination 'generic/platform=iOS Simulator' build
 ```
 
 ## What's implemented
 
-| Area | Status |
-|---|---|
-| Generic HTTP (methods, headers, query, path params, JSON/form/raw bodies) | ✅ M0–M1 |
-| `Endpoint` abstraction with per-endpoint overrides | ✅ M0 |
-| Typed decoding (`Decodable` / `Data` / `String` / `EmptyResponse`) | ✅ M1 |
-| `async/await` + completion-handler APIs | ✅ M1 |
-| Unified `NetworkError` (+ status, headers, body, server message) | ✅ M0 |
-| Auth strategies (Bearer / API key / Basic / custom) | ✅ M2 |
-| `TokenStorage` (in-memory + Keychain, pluggable) | ✅ M2 |
-| Actor `TokenManager` (single-flight 401 refresh, queueing, loop guard) | ✅ M2 |
-| Request mocking (`MockNetworkTransport`, `URLProtocolStub`) | ✅ (shipped) |
-| Retry + backoff, SSL pinning, caching, upload/download, reachability, OAuth, offline, pagination, Combine/SwiftUI | ⏳ M3–M14 |
+| Area |
+|---|
+| Generic HTTP (methods, headers, query, path params, JSON/form/raw bodies) |
+| `Endpoint` abstraction with per-endpoint overrides |
+| Typed decoding (`Decodable` / `Data` / `String` / `EmptyResponse`) |
+| `async/await` + completion-handler APIs |
+| Unified `NetworkError` (status, headers, body, server message) |
+| Auth strategies (Bearer / API key / Basic / custom) |
+| `TokenStorage` (in-memory + Keychain, pluggable) |
+| Actor `TokenManager` (single-flight 401 refresh, queueing, loop guard) |
+| Retry + backoff + jitter, idempotency-aware, `Retry-After` rate limiting |
+| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`) |
+
+Not yet: SSL pinning, interceptors/logging/metrics, caching, upload/download, reachability, OAuth,
+offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the milestone order.
 
 ## Tests
 

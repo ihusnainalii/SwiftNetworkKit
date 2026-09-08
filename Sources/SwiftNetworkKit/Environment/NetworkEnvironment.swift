@@ -1,13 +1,5 @@
 import Foundation
 
-/// Which deployment an environment represents.
-public enum EnvironmentKind: String, Sendable, CaseIterable {
-    case development
-    case qa
-    case staging
-    case production
-}
-
 /// A named set of connection settings. An app can hold several and switch between them.
 ///
 /// Milestone-added fields (SSL pins in M5, retry policy in M3, per-environment cache config in M8)

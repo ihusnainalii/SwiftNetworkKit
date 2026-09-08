@@ -19,6 +19,11 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
             if headers["Content-Type"] == nil { headers["Content-Type"] = "application/json" }
             return .success(status: status, headers: headers, body: body)
         }
+
+        /// A bare status-code response — handy for scripting retry sequences (`503, 503, 200`).
+        public static func status(_ code: Int, headers: HTTPHeaders = [:], body: Data = Data()) -> Outcome {
+            .success(status: code, headers: headers, body: body)
+        }
     }
 
     private let lock = NSLock()
