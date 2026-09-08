@@ -27,6 +27,7 @@ let package = Package(
         .testTarget(
             name: "SwiftNetworkKitTests",
             dependencies: ["SwiftNetworkKit"],
+            resources: [.copy("Fixtures")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]

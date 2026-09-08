@@ -3,8 +3,9 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M3 are complete (core types, request pipeline,
-> authentication + automatic token refresh, retry + backoff + rate limiting). See
+> **Status:** in development. Milestones M0 through M6 are complete (core types, request pipeline,
+> authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
+> + redacting logger + metrics, optional SSL / certificate pinning, reachability). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -56,6 +57,56 @@ struct SubmitOrder: Endpoint {
 }
 ```
 
+### Interceptors, logging, metrics
+
+```swift
+let metrics = InMemoryMetrics()
+var configuration = NetworkConfiguration(baseURL: "https://api.example.com")
+configuration.environment.logLevel = .verbose      // redacted headers in the log; tokens never appear
+configuration.metrics = metrics
+configuration.requestInterceptors = [MyHeaderInterceptor()]     // adapt every outgoing request
+configuration.responseInterceptors = [My2FAChallengeInterceptor()]   // proceed / retry / fail / substitute
+
+let snapshot = await metrics.snapshot()   // requestCount, successCount, statusCodeHistogram, p95Duration, ...
+```
+
+Every request gets a unique `X-Request-ID`. Wrap a group of calls in
+`client.withCorrelation(id) { ... }` to give them all one `X-Correlation-ID`.
+
+### SSL / certificate pinning (optional)
+
+The app ships its `.cer` files and writes one line. The package owns the `URLSession` delegate,
+challenge handling and trust evaluation.
+
+```swift
+var config = NetworkConfiguration(baseURL: "https://api.acme.com")
+
+config.sslPinning = .certificateResources(["acme-2025", "acme-2026"])   // .cer/.der in the app bundle
+// or pin the key, which survives certificate renewal:
+config.sslPinning = .publicKeys(["sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="])
+// or discover the values first (never blocks; logs the sha256/... to paste above):
+config.sslPinning = .development(.publicKeys([]))
+```
+
+Omit it (or `.disabled`) for normal system TLS. A mismatch fails the request with
+`NetworkError.sslPinningFailed(host:)`; a missing resource or bad hash fails `NetworkClient` init.
+
+### Reachability
+
+```swift
+let monitor = PathNetworkMonitor()
+
+for await status in await monitor.statusUpdates() {
+    // .satisfied(.wifi) / .satisfied(.cellular) / .unsatisfied / .requiresConnection
+}
+
+for await _ in await monitor.connectionRestored() {
+    // fires each time connectivity returns after a drop
+}
+```
+
+Inject `MockNetworkMonitor` in tests and call `send(.unsatisfied)` / `send(.satisfied(.wifi))`.
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -91,10 +142,16 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | `TokenStorage` (in-memory + Keychain, pluggable) |
 | Actor `TokenManager` (single-flight 401 refresh, queueing, loop guard) |
 | Retry + backoff + jitter, idempotency-aware, `Retry-After` rate limiting |
-| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`) |
+| Request / response interceptors (`InterceptOutcome`: proceed / retry / fail / substitute) |
+| Correlation headers (`X-Request-ID` per request, `withCorrelation` for a logical operation) |
+| Redacting logger (`LogLevel` none / error / basic / verbose / debug; tokens never logged) |
+| Metrics (`NetworkMetrics` sink, `InMemoryMetrics` -> counts, histogram, average / p95) |
+| Optional SSL / certificate pinning (`.certificates` / `.publicKeys` / per-host / rotation / record-only) |
+| Reachability (`NetworkMonitor` over `NWPathMonitor`, `AsyncStream` of status, `connectionRestored()`) |
+| Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
 
-Not yet: SSL pinning, interceptors/logging/metrics, caching, upload/download, reachability, OAuth,
-offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap for the milestone order.
+Not yet: caching, upload/download, OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers.
+See the roadmap for the milestone order.
 
 ## Tests
 

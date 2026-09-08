@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M3.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M6.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,17 +12,44 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M3) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M6) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
         } else {
             await liveAPITour()
+            await sslPinningTour()
         }
         await authAndRefreshTour()
         await retryTour()
+        await interceptorsAndMetricsTour()
+        await reachabilityTour()
 
         print("\n═══ done ═══")
+    }
+
+    // MARK: - SSL pinning (record-only mode, real network)
+
+    private static func sslPinningTour() async {
+        print("\n── SSL pinning — .development mode prints the live pins to paste into production ──")
+
+        let logger = CapturingLogger()
+        var configuration = NetworkConfiguration(baseURL: "https://jsonplaceholder.typicode.com")
+        // recordOnly: never blocks, logs the computed sha256/… for the server's cert chain.
+        configuration.sslPinning = .development(.publicKeys([], hosts: ["jsonplaceholder.typicode.com"]))
+        configuration.environment.logLevel = .error
+        configuration.logger = logger
+
+        let client = NetworkClient(configuration: configuration)
+        do {
+            _ = try await client.request(GetUserEndpoint(id: 1))
+            let pins = logger.lines.filter { $0.contains("recordOnly") }
+            print("   → request succeeded (recordOnly never blocks). Discovered pins:")
+            for line in pins { print("       \(line)") }
+            print("   → swap in `.publicKeys([...])` with one of these for production enforcement")
+        } catch {
+            print("   → \(error)")
+        }
     }
 
     // MARK: - Live API (real network)
@@ -139,6 +166,107 @@ struct NetworkKitDemo {
         }
 
         print("   note: POST/PATCH are never retried unless an endpoint opts in via retryPolicy")
+    }
+
+    // MARK: - Interceptors + redacting logger + metrics (mock transport)
+
+    private static func interceptorsAndMetricsTour() async {
+        print("\n── 9. Interceptors, redacting logger, metrics (mock transport) ──")
+
+        struct AppVersionInterceptor: RequestInterceptor {
+            func adapt(_ request: URLRequest, for endpoint: AnyEndpoint) async throws -> URLRequest {
+                var request = request
+                request.setValue("9.9.9", forHTTPHeaderField: "X-App-Version")
+                return request
+            }
+        }
+        struct FlagEnvelope: ResponseInterceptor {
+            func process(_ context: ResponseContext, for endpoint: AnyEndpoint) async throws -> InterceptOutcome {
+                guard let data = context.data,
+                      String(data: data, encoding: .utf8)?.contains("NEEDS_2FA") == true
+                else { return .proceed }
+                return .fail(.forbidden(context))
+            }
+        }
+
+        struct Secret: Codable, Sendable { let value: String }
+        struct SecretEndpoint: Endpoint {
+            typealias Response = Secret
+            let path = "/secret"
+        }
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(
+            .json(Data(#"{"value":"42"}"#.utf8)),
+            .json(Data(#"{"code":"NEEDS_2FA"}"#.utf8))
+        )
+
+        let logger = CapturingLogger()
+        let metrics = InMemoryMetrics()
+
+        var environment = NetworkEnvironment(
+            kind: .development,
+            baseURL: URL(string: "https://api.example.com")!
+        )
+        environment.logLevel = .verbose
+
+        var configuration = NetworkConfiguration(environment: environment)
+        configuration.retry = .none
+        configuration.logger = logger
+        configuration.metrics = metrics
+        configuration.requestInterceptors = [AppVersionInterceptor()]
+        configuration.responseInterceptors = [FlagEnvelope()]
+
+        let client = NetworkClient(configuration: configuration, transport: transport)
+
+        _ = try? await client.request(SecretEndpoint())              // succeeds
+        do { _ = try await client.request(SecretEndpoint()) }        // interceptor fails it
+        catch { print("   ✗ second call rejected by response interceptor: .\(NetworkError.normalize(error).code)") }
+
+        let sentVersion = transport.recordedRequests.first?.value(forHTTPHeaderField: "X-App-Version") ?? "-"
+        print("   → X-App-Version sent by request interceptor: \(sentVersion)")
+        print("   → X-Request-ID auto-added: \(transport.recordedRequests.first?.value(forHTTPHeaderField: "X-Request-ID") ?? "-")")
+
+        print("   → captured log lines (Authorization/token redacted):")
+        for line in logger.lines { print("       \(line)") }
+
+        let snapshot = await metrics.snapshot()
+        print("   → metrics: \(snapshot.requestCount) requests, \(snapshot.successCount) ok, \(snapshot.failureCount) failed, histogram \(snapshot.statusCodeHistogram)")
+    }
+
+    // MARK: - Reachability (mock monitor)
+
+    private static func reachabilityTour() async {
+        print("\n── 10. Reachability — NetworkMonitor stream + connectionRestored() ──")
+
+        let monitor = MockNetworkMonitor(initial: .satisfied(.wifi))
+
+        let observed = Task { () -> [String] in
+            var lines: [String] = []
+            for await status in await monitor.statusUpdates() {
+                lines.append(String(describing: status))
+                if lines.count == 4 { break }
+            }
+            return lines
+        }
+
+        let restores = Task { () -> Int in
+            var count = 0
+            for await _ in await monitor.connectionRestored() {
+                count += 1
+                if count == 1 { break }
+            }
+            return count
+        }
+
+        try? await Task.sleep(for: .milliseconds(20))
+        await monitor.send([.unsatisfied, .satisfied(.cellular), .unsatisfied])
+
+        print("   → observed: \(await observed.value)")
+        print("   → connectionRestored() fired \(await restores.value)x (unsatisfied → satisfied)")
+
+        let live = await PathNetworkMonitor().currentStatus
+        print("   → PathNetworkMonitor seeds as \(live) before NWPathMonitor's first callback")
     }
 
     // MARK: - Helpers

@@ -10,17 +10,20 @@ struct AppContainer: Sendable {
     let diagnostics: any NetworkDiagnostics
 
     static let live: AppContainer = {
-        let client = NetworkClient(
-            configuration: NetworkConfiguration(
-                baseURL: "https://jsonplaceholder.typicode.com",
-                headers: ["Accept": "application/json"]
-            )
+        let metrics = InMemoryMetrics()
+        var configuration = NetworkConfiguration(
+            baseURL: "https://jsonplaceholder.typicode.com",
+            headers: ["Accept": "application/json"]
         )
+        configuration.metrics = metrics
+        configuration.requestInterceptors = [ClientHeaderInterceptor()]
+        let client = NetworkClient(configuration: configuration)
+        let monitor = PathNetworkMonitor()
         return AppContainer(
             users: LiveUsersRepository(client: client),
             userContent: LiveUserContentRepository(client: client),
             composer: LivePostComposer(client: client),
-            diagnostics: LiveNetworkDiagnostics(client: client)
+            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor)
         )
     }()
 }
