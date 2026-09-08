@@ -50,4 +50,33 @@ struct URLSessionTransportTests {
         _ = try await makeTransport().data(for: request)
         #expect(URLProtocolStub.lastRequest?.url?.path == "/track")
     }
+
+    @Test("upload sends the body and returns the response")
+    func upload() async throws {
+        URLProtocolStub.respond(status: 201, body: Data(#"{"ok":true}"#.utf8))
+        var request = URLRequest(url: URL(string: "https://example.com/upload")!)
+        request.httpMethod = "POST"
+
+        let (data, response) = try await makeTransport().upload(
+            request, from: .data(Data(repeating: 0x2A, count: 4096)), progress: nil
+        )
+
+        #expect(response.statusCode == 201)
+        #expect(data == Data(#"{"ok":true}"#.utf8))
+        #expect(URLProtocolStub.lastRequest?.url?.path == "/upload")
+    }
+
+    @Test("download writes the response body to a temp file")
+    func download() async throws {
+        let payload = Data(repeating: 0x7F, count: 10_000)
+        URLProtocolStub.respond(status: 200, body: payload)
+
+        let (url, response) = try await makeTransport().download(
+            URLRequest(url: URL(string: "https://example.com/file.bin")!), progress: nil
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        #expect(response.statusCode == 200)
+        #expect(try Data(contentsOf: url) == payload)
+    }
 }

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftNetworkKit
 
-/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M6.
+/// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M7.
 ///
 /// ```
 /// swift run NetworkKitDemo            # hits the live jsonplaceholder.typicode.com API
@@ -12,7 +12,7 @@ struct NetworkKitDemo {
 
     static func main() async {
         let offline = CommandLine.arguments.contains("--offline")
-        print("═══ SwiftNetworkKit demo (M0–M6) ═══\n")
+        print("═══ SwiftNetworkKit demo (M0–M7) ═══\n")
 
         if offline {
             print("• Skipping live API sections (--offline)\n")
@@ -24,6 +24,7 @@ struct NetworkKitDemo {
         await retryTour()
         await interceptorsAndMetricsTour()
         await reachabilityTour()
+        await uploadDownloadTour()
 
         print("\n═══ done ═══")
     }
@@ -267,6 +268,48 @@ struct NetworkKitDemo {
 
         let live = await PathNetworkMonitor().currentStatus
         print("   → PathNetworkMonitor seeds as \(live) before NWPathMonitor's first callback")
+    }
+
+    // MARK: - Multipart upload + download with progress (mock transport)
+
+    private static func uploadDownloadTour() async {
+        print("\n── 11. Multipart upload + download with progress (mock transport) ──")
+
+        struct Created: Codable, Sendable { let id: Int }
+        struct Upload: Endpoint {
+            typealias Response = Created
+            let path = "/photos"
+            let method = HTTPMethod.post
+        }
+        struct Fetch: Endpoint {
+            typealias Response = Data
+            let path = "/photos/1/raw"
+        }
+
+        let transport = MockNetworkTransport()
+        transport.enqueue(
+            .json(Data(#"{"id":101}"#.utf8), status: 201),
+            .success(status: 200, headers: [:], body: Data(repeating: 0x2A, count: 8192))
+        )
+        let client = NetworkClient(configuration: NetworkConfiguration(baseURL: "https://api.example.com"), transport: transport)
+
+        var form = MultipartFormData(boundary: "demo-boundary")
+        form.append("a cat photo", name: "caption")
+        form.append(Data(repeating: 0xFF, count: 4096), name: "photo", fileName: "cat.jpg", mimeType: "image/jpeg")
+        print("   → multipart body is \(try! form.encoded().count) bytes, Content-Type: \(form.contentType)")
+
+        let created = try? await client.upload(Upload(), from: .multipart(form)) { event in
+            print("     upload \(Int((event.fraction ?? 0) * 100))%")
+        }
+        print("   → server created photo id \(created?.id ?? -1)")
+
+        let file = try? await client.download(Fetch()) { event in
+            print("     download \(event.completed)/\(event.total) bytes")
+        }
+        if let file, let data = try? Data(contentsOf: file) {
+            print("   → downloaded \(data.count) bytes to \(file.lastPathComponent)")
+            try? FileManager.default.removeItem(at: file)
+        }
     }
 
     // MARK: - Helpers

@@ -9,6 +9,9 @@ public enum RequestBody: Sendable {
     case data(Data)
     case json(@Sendable () throws -> Data)
     case formURLEncoded([String: String])
+    /// An in-memory `multipart/form-data` body. For large files use ``NetworkClient/upload(_:from:progress:)``
+    /// with `.multipart` instead — it can stream from disk and report progress.
+    case multipart(MultipartFormData)
 
     /// Builds a `.json` body from any `Encodable & Sendable` value.
     public static func json<T: Encodable & Sendable>(
@@ -43,6 +46,15 @@ public enum RequestBody: Sendable {
                 }
                 .joined(separator: "&")
             return (Data(encoded.utf8), "application/x-www-form-urlencoded; charset=utf-8")
+
+        case .multipart(let form):
+            do {
+                return (try form.encoded(), form.contentType)
+            } catch let error as NetworkError {
+                throw error
+            } catch {
+                throw NetworkError.encoding(underlying: asSendableError(error))
+            }
         }
     }
 }
