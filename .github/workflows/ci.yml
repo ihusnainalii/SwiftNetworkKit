@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, refectoring]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & test (SPM)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: swift build
+        run: swift build -Xswiftc -warnings-as-errors
+      - name: swift test
+        run: swift test --parallel
+      - name: swift test (ThreadSanitizer)
+        run: swift test --sanitize=thread
+
+  ios-build:
+    name: Build for iOS Simulator
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: xcodebuild (library)
+        run: >
+          xcodebuild build
+          -scheme SwiftNetworkKit
+          -destination 'generic/platform=iOS Simulator'
+          -skipPackagePluginValidation
+      - name: xcodebuild (SwiftUIDemo)
+        run: >
+          xcodebuild build
+          -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj
+          -scheme SwiftUIDemo
+          -destination 'generic/platform=iOS Simulator'

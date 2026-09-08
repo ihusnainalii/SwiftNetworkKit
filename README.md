@@ -3,13 +3,13 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M12 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M13 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
 > + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
 > and downloads with progress, HTTP response caching, request cancellation / deduplication /
-> concurrency queue, OAuth 2.0 + PKCE, offline request queue, pagination + batch). See
+> concurrency queue, OAuth 2.0 + PKCE, offline request queue, pagination + batch, mocking + CI). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
-> for the full roadmap.
+> for the full roadmap and [`CHANGELOG.md`](CHANGELOG.md) for what's in each area.
 
 ## Quick start
 
@@ -296,6 +296,12 @@ Not yet: Combine / SwiftUI helpers. See the roadmap for the milestone order.
 swift test
 swift test --sanitize=thread
 ```
+
+Test doubles ship in the library: `MockNetworkTransport` (FIFO queue **or** `stub(pathContains:with:)`
+matchers, plus `MockScenario` presets), `URLProtocolStub`, `TestClock`, `CapturingLogger`,
+`MockNetworkMonitor`, `InMemoryOfflineStore`. `ArchitectureTests` grep-guards the library's own layer
+discipline. CI (`.github/workflows/ci.yml`) runs build (`-warnings-as-errors`), tests, ThreadSanitizer
+and iOS builds.
 
 ## License
 
