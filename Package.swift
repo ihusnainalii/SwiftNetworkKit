@@ -12,10 +12,16 @@ let package = Package(
     ],
     products: [
         .library(name: "SwiftNetworkKit", targets: ["SwiftNetworkKit"]),
+        .executable(name: "NetworkKitDemo", targets: ["NetworkKitDemo"]),
     ],
     targets: [
         .target(
             name: "SwiftNetworkKit",
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
+        .executableTarget(
+            name: "NetworkKitDemo",
+            dependencies: ["SwiftNetworkKit"],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(

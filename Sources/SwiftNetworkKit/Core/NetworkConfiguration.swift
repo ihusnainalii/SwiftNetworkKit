@@ -64,6 +64,8 @@ public struct NetworkConfiguration: Sendable {
         baseURL: URL,
         headers: HTTPHeaders = [:],
         timeout: TimeInterval = 60,
+        authorization: any AuthStrategy = BearerAuth(),
+        tokenStorage: any TokenStorage = InMemoryTokenStorage(),
         errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil
     ) {
         self.init(
@@ -73,7 +75,9 @@ public struct NetworkConfiguration: Sendable {
                 defaultHeaders: headers,
                 timeout: timeout
             ),
-            errorMapper: errorMapper
+            errorMapper: errorMapper,
+            authorization: authorization,
+            tokenStorage: tokenStorage
         )
     }
 
@@ -83,12 +87,21 @@ public struct NetworkConfiguration: Sendable {
         baseURL string: String,
         headers: HTTPHeaders = [:],
         timeout: TimeInterval = 60,
+        authorization: any AuthStrategy = BearerAuth(),
+        tokenStorage: any TokenStorage = InMemoryTokenStorage(),
         errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil
     ) {
         guard let url = URL(string: string) else {
             preconditionFailure(#"NetworkConfiguration: invalid baseURL string "\#(string)""#)
         }
-        self.init(baseURL: url, headers: headers, timeout: timeout, errorMapper: errorMapper)
+        self.init(
+            baseURL: url,
+            headers: headers,
+            timeout: timeout,
+            authorization: authorization,
+            tokenStorage: tokenStorage,
+            errorMapper: errorMapper
+        )
     }
 
     public static let defaultRedactedHeaders: Set<String> = [
