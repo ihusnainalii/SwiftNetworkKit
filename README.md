@@ -60,9 +60,12 @@ Swift 6 strict concurrency, protocol-oriented and fully testable.
 - [Testing and mocking](#testing-and-mocking)
 - [Thread safety](#thread-safety)
 - [Performance](#performance)
+- [Known issues and platform notes](#known-issues-and-platform-notes)
 - [Best practices](#best-practices)
 - [Complete example](#complete-example)
 - [Demos](#demos)
+- [FAQ](#faq)
+- [Communication](#communication)
 - [Versioning](#versioning)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -1233,6 +1236,25 @@ Details: [Documentation/Concurrency.md](Documentation/Concurrency.md).
 
 ---
 
+## Known issues and platform notes
+
+Apple-platform behaviors that shape the design or that you should be aware of:
+
+| Area | Note |
+|---|---|
+| Upload/download progress | The `async` `URLSession.upload(for:from:)` / `download(for:)` methods do not reliably forward `didSendBodyData` / `didWriteData` to a per-task delegate. SwiftNetworkKit works around this by running each transfer on a dedicated `URLSession` with a session-level delegate (`TransportSessionDelegate`). A side effect: uploads and downloads do not share the main client's connection pool. |
+| Background transfers | `URLSessionConfiguration.background` requires app-side wiring (an `AppDelegate` completion handler, an app-wide session identifier). SwiftNetworkKit does not configure background sessions automatically; `download(_:to:)` runs in-process. |
+| Background sessions in the Simulator | Historically flaky (`rdar://26870455`). Test background behavior on a device. |
+| Keychain on macOS CI | `KeychainTokenStorage` can be unavailable on headless CI runners with no keychain. `KeychainTokenStorage.isAvailable` guards this; the test suite skips those cases when it returns `false`. |
+| `URLProtocol` + request bodies | Custom `URLProtocol` subclasses (used by `URLProtocolStub` in tests) historically mishandle `httpBodyStream` (`rdar://26849668`). The stub asserts on URL, method, and headers rather than replaying streamed bodies. |
+| TLS 1.3 0-RTT | Not used. `URLSession` decides; the package does not opt into early data. |
+| `visionOS` / `watchOS` | The library builds for both, but CI currently only runs iOS and macOS destinations. Treat them as "builds, lightly exercised" until the CI matrix expands (see [ROADMAP.md](ROADMAP.md)). |
+
+If you hit a platform bug not listed here, please file an issue with the OS version and a minimal
+reproduction.
+
+---
+
 ## Best practices
 
 - Define one typed `Endpoint` per API operation; decode straight into your models.
@@ -1366,6 +1388,57 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 
 ---
 
+## FAQ
+
+**Why not just use Alamofire or plain `URLSession`?**
+Use whichever fits. `URLSession` is the right choice for simple needs. Alamofire is a mature,
+broadly adopted open-source library. SwiftNetworkKit exists for teams that want the specific
+combination of actor-based single-flight token refresh, drop-in certificate pinning, an offline
+replay queue, request deduplication, and a shipped mock transport, in one zero-dependency package
+under a single owner. It is source-available proprietary, not open source.
+
+**Does it support Linux or Windows?**
+The core is Foundation-only and much of it should build on Linux, but it is not tested there and
+`Security` / `Network` / `CryptoKit`-backed features (pinning, Keychain, PKCE hashing, reachability)
+are Apple-only. Treat non-Apple platforms as unsupported for now.
+
+**Can I use it in a SwiftUI app that targets iOS 16?**
+Yes. The whole library builds and runs on iOS 16. Only the `NetworkResource` / `Paged`
+`@Observable` helpers require iOS 17 (they are `@available`-gated). On iOS 16, drive state with your
+own view models over the `async` API, as the SwiftUI demo does.
+
+**Why is certificate pinning opt-in?**
+Pinning that is on by default causes outages when a certificate rotates unexpectedly. Making it a
+deliberate one-line choice, with multi-pin rotation support and a record-only discovery mode, is
+safer for most apps.
+
+**Do I have to use the token refresh, cache, or offline queue?**
+No. Everything beyond a plain request is opt-in through `NetworkConfiguration` or per-endpoint
+overrides. A minimal client is just `NetworkClient(configuration: NetworkConfiguration(baseURL:))`.
+
+**Why source-available and not MIT?**
+The owner wants the library usable in any app, including commercial ones, while keeping it a single
+canonical project: no public forks, rebrands, or competing repackages. See [LICENSE](LICENSE).
+
+**Is Swift Testing required to consume the package?**
+No. The package's own tests use Swift Testing (Xcode 16+), but they are internal. Consuming apps
+can be on any toolchain that supports Swift 6.
+
+---
+
+## Communication
+
+| If you want to | Then |
+|---|---|
+| Ask how to do something with SwiftNetworkKit, discuss best practices, or float a feature idea | Open a thread in [GitHub Discussions](https://github.com/ihusnainalii/SwiftNetworkKit/discussions) |
+| Ask a general Swift / `URLSession` / HTTP question not specific to this package | Stack Overflow or the [Swift Forums](https://forums.swift.org) |
+| Report a bug | Open a [GitHub issue](https://github.com/ihusnainalii/SwiftNetworkKit/issues/new/choose) using the bug template, with your OS/Xcode versions and a minimal reproduction |
+| Request a feature | Start a Discussion first; if there is agreement, open an issue with the feature template |
+| Report a security vulnerability | Do **not** open a public issue. Follow [SECURITY.md](SECURITY.md) (private advisory or email) |
+| Contribute code | Read [CONTRIBUTING.md](CONTRIBUTING.md) first; discuss non-trivial changes in Discussions before opening a pull request |
+
+---
+
 ## Versioning
 
 [Semantic Versioning](https://semver.org). Pre-1.0, a **minor** bump may include breaking changes;
@@ -1389,10 +1462,14 @@ and a `swift-log` bridge (as a separate product, keeping the core dependency-fre
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). In short: zero dependencies, one primary type per file,
-Swift 6 strict concurrency, Conventional Commits, and every change stays green under
-`swift build -warnings-as-errors`, `swift test`, ThreadSanitizer, SwiftLint `--strict`, and
-`swift format lint --strict`.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Questions go to
+[Discussions](https://github.com/ihusnainalii/SwiftNetworkKit/discussions); bugs and accepted
+features use the issue templates. Non-trivial changes are discussed before a pull request. By
+submitting a PR you assign it to the Owner (LICENSE Section 4).
+
+In short: zero dependencies, one primary type per file, Swift 6 strict concurrency, Conventional
+Commits, and every change stays green under `swift build -warnings-as-errors`, `swift test`,
+ThreadSanitizer, SwiftLint `--strict`, and `swift format lint --strict`.
 
 ```bash
 swift build -Xswiftc -warnings-as-errors
