@@ -1,7 +1,13 @@
 # SwiftUIDemo
 
-A complete, standalone SwiftUI app that integrates **SwiftNetworkKit**, built with **MVVM + Clean
-Architecture**. Its own SwiftPM package with a local path dependency (`.package(path: "../..")`).
+A complete, standalone SwiftUI **app** (Xcode project) that integrates **SwiftNetworkKit**, built
+with **MVVM + Clean Architecture**. It references the package by local path
+(`XCLocalSwiftPackageReference "../.."`).
+
+> This is a real iOS app target, not a Swift Package executable. A SwiftPM `@main App` executable
+> cannot launch on iOS (no app bundle / Info.plist); it crashes with `EXC_BREAKPOINT` on
+> `com.apple.uikit.eventfetch-thread`. An Xcode app target with `GENERATE_INFOPLIST_FILE = YES`
+> produces a proper bundle.
 
 Three tabs against `https://jsonplaceholder.typicode.com`:
 
@@ -13,13 +19,18 @@ Three tabs against `https://jsonplaceholder.typicode.com`:
 
 ## Run
 
+Open **`SwiftUIDemo.xcodeproj`** in Xcode, pick the **SwiftUIDemo** scheme and an iOS Simulator
+(or your device), and Run.
+
+Command line:
+
 ```bash
-# command line (macOS)
-swift run --package-path Examples/SwiftUIDemo SwiftUIDemo
+xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
+  -scheme SwiftUIDemo -destination 'generic/platform=iOS Simulator' build
 ```
 
-**Xcode:** File ▸ Open… → select the `Examples/SwiftUIDemo` folder. If it reports a missing package
-product, File ▸ Packages ▸ Reset Package Caches, then Resolve Package Versions.
+If Xcode reports a missing package: **File ▸ Packages ▸ Reset Package Caches**, then **Resolve
+Package Versions**.
 
 ## Architecture
 
@@ -31,16 +42,16 @@ Presentation  ──depends on──▶  Domain  ◀──implements──  Data
                           AppContainer (composition root, injected via Environment)
 ```
 
-| Layer | Files | Rule |
+| Layer | Folder | Rule |
 |---|---|---|
-| **Domain** | `Domain/Domain.swift` | entities + `UsersRepository` / `UserContentRepository` / `PostComposer` / `NetworkDiagnostics` protocols. **No import of SwiftNetworkKit or SwiftUI.** |
-| **Data** | `Data/Endpoints.swift`, `Data/LiveRepositories.swift`, `Data/LiveDiagnostics.swift`, `Data/AppContainer.swift` | the *only* code that imports SwiftNetworkKit and calls `client.request(...)`. Implements the Domain ports. |
-| **Presentation** | `Presentation/**` | `@MainActor @Observable` view models depend only on Domain protocols; SwiftUI views are dumb and bind to a view model. **No import of SwiftNetworkKit** (except `NetworkError` for display). |
-| **Composition root** | `Data/AppContainer.swift` + `App/` | builds the `NetworkClient` once, wires concrete repositories, injects `AppContainer` through the SwiftUI environment. Swap `.live` for a stub in tests/previews. |
+| **Domain** | `SwiftUIDemo/Domain/` | entities + `UsersRepository` / `UserContentRepository` / `PostComposer` / `NetworkDiagnostics` protocols. **No import of SwiftNetworkKit or SwiftUI.** |
+| **Data** | `SwiftUIDemo/Data/` | the *only* code that imports SwiftNetworkKit and calls `client.request(...)`. Implements the Domain ports. `AppContainer` is the composition root. |
+| **Presentation** | `SwiftUIDemo/Presentation/` | `@MainActor @Observable` view models depend only on Domain protocols; SwiftUI views bind to a view model. **No import of SwiftNetworkKit** (except `NetworkError` for display). |
+| **App** | `SwiftUIDemo/App/` | `@main App`, `RootView` (TabView), the `AppContainer` environment key. |
 
-Each screen is a `ViewModel` + `View` pair. View models expose a `LoadPhase<Value>` (`idle` /
-`loading` / `loaded` / `failed(NetworkError)`) and intent methods (`load()`, `submit()`); views
-render it with the shared `PhaseView` / `ErrorStateView`.
+One file per type. Each screen is a `ViewModel` + `View` pair; view models expose a
+`LoadPhase<Value>` (`idle` / `loading` / `loaded` / `failed(NetworkError)`) plus intent methods,
+rendered by the shared `PhaseView` / `ErrorStateView`.
 
-To reuse in a real iOS app: drop `Domain/`, `Data/`, `Presentation/` into your target and add
+To reuse in your own app: drop `Domain/`, `Data/`, `Presentation/` into your target and add
 SwiftNetworkKit as a package dependency.
