@@ -3,9 +3,10 @@
 A composable, protocol-oriented networking layer for Swift. Zero external dependencies.
 Swift 6 strict concurrency. iOS 16+ / macOS 13+ / tvOS 16+ / watchOS 9+ / visionOS 1+.
 
-> **Status:** in development. Milestones M0 through M6 are complete (core types, request pipeline,
+> **Status:** in development. Milestones M0 through M7 are complete (core types, request pipeline,
 > authentication + automatic token refresh, retry + backoff + rate limiting, interceptors + tracing
-> + redacting logger + metrics, optional SSL / certificate pinning, reachability). See
+> + redacting logger + metrics, optional SSL / certificate pinning, reachability, multipart uploads
+> and downloads with progress). See
 > [`.claude/PRPs/plans/swift-network-kit.plan.md`](.claude/PRPs/plans/swift-network-kit.plan.md)
 > for the full roadmap.
 
@@ -107,6 +108,25 @@ for await _ in await monitor.connectionRestored() {
 
 Inject `MockNetworkMonitor` in tests and call `send(.unsatisfied)` / `send(.satisfied(.wifi))`.
 
+### Uploads and downloads
+
+```swift
+var form = MultipartFormData()
+form.append("a cat", name: "caption")
+form.append(jpegData, name: "photo", fileName: "cat.jpg", mimeType: "image/jpeg")
+// or a large file, streamed from disk: form.append(fileURL, name: "video")
+
+let created: Photo = try await client.upload(CreatePhoto(), from: .multipart(form)) { event in
+    print(event.fraction ?? 0)   // 0.0 ... 1.0
+}
+
+let fileURL = try await client.download(GetExport(), to: destinationURL) { event in
+    print("\(event.completed) / \(event.total)")
+}
+```
+
+Uploads are not retried and skip the 401-refresh hop (a partial upload is unsafe to replay).
+
 ## Demos
 
 **CLI tour**: a scripted run through every shipped feature:
@@ -119,8 +139,9 @@ swift run NetworkKitDemo --offline  # auth + refresh section only, no network
 Source: [`Sources/NetworkKitDemo/`](Sources/NetworkKitDemo/).
 
 **SwiftUI app**: a complete standalone iOS app (MVVM + Clean Architecture) in
-[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list to detail, a POST form, and a
-Diagnostics screen (client config + a narrated 401 to refresh to retry walkthrough).
+[`Examples/SwiftUIDemo/`](Examples/SwiftUIDemo/): searchable user list to detail, a POST form, an
+image downloader with a live progress bar, and a Diagnostics screen (client config, connectivity,
+metrics, and a narrated 401 to refresh to retry walkthrough).
 
 Open `Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj` in Xcode and run, or:
 
@@ -148,10 +169,12 @@ xcodebuild -project Examples/SwiftUIDemo/SwiftUIDemo.xcodeproj \
 | Metrics (`NetworkMetrics` sink, `InMemoryMetrics` -> counts, histogram, average / p95) |
 | Optional SSL / certificate pinning (`.certificates` / `.publicKeys` / per-host / rotation / record-only) |
 | Reachability (`NetworkMonitor` over `NWPathMonitor`, `AsyncStream` of status, `connectionRestored()`) |
+| Multipart form data (`MultipartFormData`, RFC 7578, streams large file parts from disk) |
+| Uploads and downloads with byte progress (`client.upload` / `client.download`) |
 | Request mocking (`MockNetworkTransport`, `URLProtocolStub`, `TestClock`, `CapturingLogger`, `MockNetworkMonitor`) |
 
-Not yet: caching, upload/download, OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers.
-See the roadmap for the milestone order.
+Not yet: caching, OAuth, offline queue, pagination, batch, Combine/SwiftUI helpers. See the roadmap
+for the milestone order.
 
 ## Tests
 

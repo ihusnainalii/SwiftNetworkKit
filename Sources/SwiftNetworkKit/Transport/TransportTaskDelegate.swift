@@ -1,23 +1,31 @@
 import Foundation
 #if canImport(Security)
 import Security
+#endif
 
-/// A per-request `URLSession` task delegate that answers server-trust challenges with a
-/// ``ServerTrustEvaluating``. Fresh per `data(for:)` call — no shared state to key by task id.
+/// A per-request task delegate for ``URLSessionTransport/data(for:)``: it answers the server-trust
+/// challenge (SSL pinning) and records a rejection so the transport can surface the real
+/// ``NetworkError/sslPinningFailed(host:)`` instead of a bare cancellation.
 ///
-/// When it rejects a challenge the transport sees a generic cancellation; it reads
-/// ``recordedFailure`` to surface the real ``NetworkError/sslPinningFailed(host:)``.
-final class PinningTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+/// Upload/download use ``TransportSessionDelegate`` instead — the async `data(for:delegate:)` family
+/// does not reliably forward byte-progress callbacks to a per-task delegate.
+final class TransportTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
 
-    private let evaluator: any ServerTrustEvaluating
+    #if canImport(Security)
+    private let evaluator: (any ServerTrustEvaluating)?
+    #endif
+
     private let lock = NSLock()
     private var _failure: NetworkError?
-
     var recordedFailure: NetworkError? { lock.withLock { _failure } }
 
-    init(evaluator: any ServerTrustEvaluating) {
+    #if canImport(Security)
+    init(evaluator: (any ServerTrustEvaluating)?) {
         self.evaluator = evaluator
     }
+    #else
+    override init() {}
+    #endif
 
     func urlSession(
         _ session: URLSession,
@@ -25,7 +33,9 @@ final class PinningTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Se
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust else {
+        #if canImport(Security)
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let evaluator else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
@@ -42,6 +52,8 @@ final class PinningTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked Se
             lock.withLock { _failure = error }
             completionHandler(.cancelAuthenticationChallenge, nil)
         }
+        #else
+        completionHandler(.performDefaultHandling, nil)
+        #endif
     }
 }
-#endif

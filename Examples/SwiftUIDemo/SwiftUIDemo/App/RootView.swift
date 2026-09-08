@@ -11,6 +11,9 @@ struct RootView: View {
             ComposePostView(container: container)
                 .tabItem { Label("Compose", systemImage: "square.and.pencil") }
 
+            DownloadsView(container: container)
+                .tabItem { Label("Downloads", systemImage: "arrow.down.circle") }
+
             DiagnosticsView(container: container)
                 .tabItem { Label("Diagnostics", systemImage: "waveform.path.ecg") }
         }

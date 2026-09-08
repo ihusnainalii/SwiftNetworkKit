@@ -8,6 +8,7 @@ struct AppContainer: Sendable {
     let userContent: any UserContentRepository
     let composer: any PostComposer
     let diagnostics: any NetworkDiagnostics
+    let media: any MediaDownloader
 
     static let live: AppContainer = {
         let metrics = InMemoryMetrics()
@@ -23,7 +24,8 @@ struct AppContainer: Sendable {
             users: LiveUsersRepository(client: client),
             userContent: LiveUserContentRepository(client: client),
             composer: LivePostComposer(client: client),
-            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor)
+            diagnostics: LiveNetworkDiagnostics(client: client, metrics: metrics, monitor: monitor),
+            media: LiveMediaDownloader(client: client)
         )
     }()
 }

@@ -13,9 +13,9 @@ public final class NetworkClient: Sendable {
     /// The configuration this client was created with.
     public let configuration: NetworkConfiguration
 
-    private let transport: any NetworkTransport
-    private let interceptors: InterceptorChain
-    private let logFormatter: NetworkLogFormatter
+    let transport: any NetworkTransport
+    let interceptors: InterceptorChain
+    let logFormatter: NetworkLogFormatter
 
     /// Present only when a `refresh` handler was supplied; `nil` disables automatic token refresh.
     let tokenManager: TokenManager?
@@ -211,7 +211,7 @@ public final class NetworkClient: Sendable {
         }
     }
 
-    private func authorize<E: Endpoint>(_ request: inout URLRequest, for endpoint: E) async throws {
+    func authorize<E: Endpoint>(_ request: inout URLRequest, for endpoint: E) async throws {
         let strategy: any AuthStrategy
         switch endpoint.authentication {
         case .none:
@@ -258,18 +258,18 @@ public final class NetworkClient: Sendable {
 
     // MARK: - Logging & metrics helpers
 
-    private var logLevel: LogLevel { configuration.environment.logLevel }
+    var logLevel: LogLevel { configuration.environment.logLevel }
 
-    private func elapsed(since start: ContinuousClock.Instant) -> Duration {
+    func elapsed(since start: ContinuousClock.Instant) -> Duration {
         start.duration(to: configuration.clock.now())
     }
 
-    private func emit(_ lines: [String], level: LogLevel) {
+    func emit(_ lines: [String], level: LogLevel) {
         guard logLevel != .none, !lines.isEmpty else { return }
         for line in lines { configuration.logger.log(line, level: level) }
     }
 
-    private func recordFailure(
+    func recordFailure(
         _ error: NetworkError, requestID: RequestID, status: Int?, since start: ContinuousClock.Instant
     ) async {
         await configuration.metrics.record(.failure(requestID, error, status: status ?? error.statusCode))
