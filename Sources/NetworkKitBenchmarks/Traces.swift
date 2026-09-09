@@ -99,7 +99,7 @@ enum Traces {
             out.append(pipelineTrace("cache_miss", "Cache miss", "network round trip through the full pipeline", rec))
         }
 
-        // cache hit: same call, answered from the store — transport never runs.
+        // cache hit: same call, answered from the store; transport never runs.
         do {
             let rec = TraceRecorder()
             let store = MemoryCacheStore()
@@ -113,7 +113,7 @@ enum Traces {
             let c2 = client(
                 transport: RecordingTransport(MockNetworkTransport(default: .json(body)), rec2), recorder: rec2,
                 cache: CacheConfiguration(store: store, defaultPolicy: .cacheFirst, defaultTTL: 3600))
-            rec2.mark("pipeline", "issued", "client.request(Get()) — entry already cached")
+            rec2.mark("pipeline", "issued", "client.request(Get()), entry already cached")
             _ = try? await c2.request(Get(cachePolicy: .cacheFirst))
             rec2.mark("pipeline", "done", "served from ResponseCache, transport untouched")
             out.append(
@@ -189,7 +189,7 @@ enum Traces {
         let calls = mock.requestCount
         return trace(
             "deduplication", "Request deduplication",
-            "\(n) identical requests in flight — \(calls) reached the transport, \(n - calls) coalesced onto it", rec)
+            "\(n) identical requests in flight, \(calls) reached the transport, \(n - calls) coalesced onto it", rec)
     }
 
     private static func refresh() async -> ConcurrencyTrace {
@@ -258,7 +258,7 @@ enum Traces {
 
         return trace(
             "priority_queue", "Priority request queue",
-            "one slot, low then high enqueued — the queue admits high before low", rec)
+            "one slot, low then high enqueued; the queue admits high before low", rec)
     }
 
     private static func trace(

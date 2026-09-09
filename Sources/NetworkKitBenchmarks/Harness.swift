@@ -1,7 +1,7 @@
 import Foundation
 
 /// A tiny, zero-dependency timing harness: warm up, run `iterations` timed passes, report the
-/// distribution. Deliberately not statistically fancy — the goal is an honest order-of-magnitude
+/// distribution. Deliberately not statistically fancy; the goal is an honest order-of-magnitude
 /// picture of SwiftNetworkKit's own overhead, published alongside each release.
 enum Harness {
     /// Times a synchronous closure.

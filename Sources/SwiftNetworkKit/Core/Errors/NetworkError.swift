@@ -30,7 +30,7 @@ public enum NetworkError: Error, Sendable {
 }
 
 extension NetworkError {
-    /// A stable, `Equatable` discriminant — handy for `switch`ing and for tests.
+    /// A stable, `Equatable` discriminant, handy for `switch`ing and for tests.
     public enum Code: String, Sendable, Hashable, CaseIterable {
         case invalidURL, noInternet, timeout, unauthorized, forbidden, notFound
         case validation, rateLimited, server, unacceptableStatusCode, decoding, encoding
@@ -92,7 +92,7 @@ extension NetworkError {
 
     /// Whether re-attempting the same request could plausibly succeed.
     ///
-    /// An advisory hint for callers — e.g. whether to show a "Try again" affordance.
+    /// An advisory hint for callers, e.g. whether to show a "Try again" affordance.
     /// The client's own automatic retries are driven separately by ``RetryPolicy``;
     /// this does not consult it.
     public var isRetryable: Bool {
@@ -158,7 +158,7 @@ extension NetworkError: LocalizedError {
         case .sessionExpired: "The session has expired"
         case .cancelled: "The request was cancelled"
         case .offline: "The device is offline"
-        case .offlineQueued(let id): "Offline — request \(id) queued for replay"
+        case .offlineQueued(let id): "Offline: request \(id) queued for replay"
         case .transport(let underlying): "Transport error: \(underlying)"
         case .unknown(let underlying): underlying.map { "Unknown error: \($0)" } ?? "An unknown error occurred"
         }

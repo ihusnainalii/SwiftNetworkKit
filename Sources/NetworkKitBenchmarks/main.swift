@@ -46,7 +46,7 @@ encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes
 
 func log(_ s: String) { FileHandle.standardError.write(Data((s + "\n").utf8)) }
 
-log("SwiftNetworkKit benchmarks — \(env.configuration) build, \(env.os) \(env.arch)")
+log("SwiftNetworkKit benchmarks: \(env.configuration) build, \(env.os) \(env.arch)")
 
 let report = BenchmarkReport(
     version: SwiftNetworkKit.version,
