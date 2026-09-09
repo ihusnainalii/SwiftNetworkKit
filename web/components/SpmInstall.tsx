@@ -2,44 +2,17 @@
 
 import React, { useState } from "react";
 import { Package, Copy, Check } from "lucide-react";
+import { APP_VERSION, REPO_URL, getManifestSnippet, CLI_SNIPPET } from "../lib/config";
 
 export function SpmInstall() {
   const [tab, setTab] = useState<"xcode" | "manifest" | "cli">("xcode");
   const [copied, setCopied] = useState(false);
 
-  const manifestSnippet = `// swift-tools-version:6.0
-import PackageDescription
-
-let package = Package(
-    name: "MyProject",
-    platforms: [
-        .iOS(.v16),
-        .macOS(.v13),
-        .tvOS(.v16),
-        .watchOS(.v9),
-        .visionOS(.v1)
-    ],
-    dependencies: [
-        .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "0.1.0")
-    ],
-    targets: [
-        .target(
-            name: "MyProject",
-            dependencies: [
-                .product(name: "SwiftNetworkKit", package: "SwiftNetworkKit")
-            ]
-        )
-    ]
-)`;
-
-  const cliSnippet = `# Live tour hitting JSONPlaceholder API
-swift run NetworkKitDemo
-
-# Offline test suite (single-flight 401 refresh walkthrough)
-swift run NetworkKitDemo --offline`;
+  const manifestSnippet = getManifestSnippet(APP_VERSION);
+  const cliSnippet = CLI_SNIPPET;
 
   const copyContent = () => {
-    let text = "https://github.com/ihusnainalii/SwiftNetworkKit";
+    let text = REPO_URL;
     if (tab === "manifest") text = manifestSnippet;
     if (tab === "cli") text = cliSnippet;
     navigator.clipboard.writeText(text);
@@ -106,10 +79,10 @@ swift run NetworkKitDemo --offline`;
               <li>Paste the repository URL into the search bar:</li>
             </ol>
             <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-sky-400">
-              <code>https://github.com/ihusnainalii/SwiftNetworkKit</code>
+              <code>{REPO_URL}</code>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Select Dependency Rule: <strong className="text-slate-800 dark:text-slate-200">Up to Next Minor Version</strong> starting from <code className="text-orange-600 dark:text-orange-300 font-bold font-mono">0.1.0</code>.
+              Select Dependency Rule: <strong className="text-slate-800 dark:text-slate-200">Up to Next Minor Version</strong> starting from <code className="text-orange-600 dark:text-orange-300 font-bold font-mono">{APP_VERSION}</code>.
             </p>
           </div>
         )}

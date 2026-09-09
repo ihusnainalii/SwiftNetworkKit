@@ -20,6 +20,7 @@ import {
   HardDrive,
   Database
 } from "lucide-react";
+import { APP_VERSION } from "../lib/config";
 
 interface HeaderItem {
   key: string;
@@ -68,7 +69,7 @@ const PRESET_ENDPOINTS = [
       { key: "Content-Type", value: "application/json", enabled: true },
       { key: "Accept", value: "application/json", enabled: true }
     ],
-    body: JSON.stringify({ name: "Husnain", package: "SwiftNetworkKit", version: "0.1.0" }, null, 2),
+    body: JSON.stringify({ name: "Husnain", package: "SwiftNetworkKit", version: APP_VERSION }, null, 2),
     modelName: "EchoPayloadResponse"
   }
 ];

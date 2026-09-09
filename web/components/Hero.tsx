@@ -2,12 +2,13 @@
 
 import React, { useState } from "react";
 import { Terminal, Copy, Check, PlayCircle, GitCompare, ShieldCheck, Lock, RefreshCw, Compass } from "lucide-react";
+import { APP_VERSION, REPO_URL } from "../lib/config";
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
-  const spmUrl = "https://github.com/ihusnainalii/SwiftNetworkKit";
+  const spmUrl = REPO_URL;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(spmUrl);
@@ -52,7 +53,7 @@ let user: User = try await client.request(GetProfile())`;
           
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-panel border border-orange-500/30 text-xs font-semibold text-orange-600 dark:text-orange-400 mb-6 shadow-sm">
             <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-ping"></span>
-            <span>Swift 6 Strict Concurrency • Zero External Dependencies • v0.1.0</span>
+            <span>Swift 6 Strict Concurrency • Zero External Dependencies • v{APP_VERSION}</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] mb-6 text-slate-900 dark:text-white">

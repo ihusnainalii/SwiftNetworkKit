@@ -10,8 +10,31 @@
       "draft": false,
       "prerelease": false,
       "include-component-in-tag": false,
-      "tag-separator": "",
-      "extra-files": []
+      "extra-files": [
+        "version.txt",
+        {
+          "type": "json",
+          "path": "web/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "web/lib/version.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "generic",
+          "path": "Sources/SwiftNetworkKit/SwiftNetworkKit.swift",
+          "search": "public static let version = \"[^\"]+\"",
+          "replace": "public static let version = \"${version}\""
+        },
+        {
+          "type": "generic",
+          "path": "README.md",
+          "search": "from: \"[0-9]+\\.[0-9]+\\.[0-9]+[^\"]*\"",
+          "replace": "from: \"${version}\""
+        }
+      ]
     }
   },
   "changelog-sections": [

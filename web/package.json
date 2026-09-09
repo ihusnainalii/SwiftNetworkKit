@@ -1,10 +1,10 @@
 {
   "name": "swiftnetworkkit-web",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.mjs",
-    "build": "next build && rm -rf ../docs && cp -r out ../docs",
+    "dev": "node scripts/sync-version.mjs && node server.mjs",
+    "build": "node scripts/sync-version.mjs && next build && rm -rf ../docs && cp -r out ../docs",
     "start": "node server.mjs",
     "lint": "next lint"
   },
