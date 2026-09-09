@@ -13,16 +13,6 @@
       "extra-files": [
         "version.txt",
         {
-          "type": "json",
-          "path": "web/package.json",
-          "jsonpath": "$.version"
-        },
-        {
-          "type": "json",
-          "path": "web/lib/version.json",
-          "jsonpath": "$.version"
-        },
-        {
           "type": "generic",
           "path": "Sources/SwiftNetworkKit/SwiftNetworkKit.swift",
           "search": "public static let version = \"[^\"]+\"",
