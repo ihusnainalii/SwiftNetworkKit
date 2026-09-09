@@ -55,7 +55,7 @@ identifier_name:
 # NetworkClient is the composition root: it wires build -> auth -> interceptors ->
 # transport -> retry -> cache -> decode. These ceilings are raised for it specifically.
 file_length:
-  warning: 500
+  warning: 520
   error: 700
 
 type_body_length:

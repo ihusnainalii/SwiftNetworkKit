@@ -454,7 +454,9 @@ public final class NetworkClient: Sendable {
 
     private static func defaultTransport(for configuration: NetworkConfiguration) -> any NetworkTransport {
         let timeout = configuration.environment.timeout
-        #if canImport(Security)
+        #if os(WASI)
+        preconditionFailure("No default transport on WebAssembly; pass `transport:` explicitly.")
+        #elseif canImport(Security)
         let host = URLComponents(url: configuration.environment.baseURL, resolvingAgainstBaseURL: false)?.host
         let resolved: SSLPinningConfiguration?
         do {

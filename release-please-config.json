@@ -12,18 +12,7 @@
       "include-component-in-tag": false,
       "extra-files": [
         "version.txt",
-        {
-          "type": "generic",
-          "path": "Sources/SwiftNetworkKit/SwiftNetworkKit.swift",
-          "search": "public static let version = \"[^\"]+\"",
-          "replace": "public static let version = \"${version}\""
-        },
-        {
-          "type": "generic",
-          "path": "README.md",
-          "search": "from: \"[0-9]+\\.[0-9]+\\.[0-9]+[^\"]*\"",
-          "replace": "from: \"${version}\""
-        }
+        { "type": "generic", "path": "Sources/SwiftNetworkKit/SwiftNetworkKit.swift" }
       ]
     }
   },

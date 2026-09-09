@@ -17,17 +17,6 @@ history: every merge to `main` updates a rolling release PR, and merging that PR
 * **web:** automate SPM version sync from release pipeline & update r… ([0a39d5c](https://github.com/ihusnainalii/SwiftNetworkKit/commit/0a39d5c4d82e58e66e87b6eee4088747972fa163))
 * **web:** automate SPM version sync from release pipeline & update roadmap ([b80b6c7](https://github.com/ihusnainalii/SwiftNetworkKit/commit/b80b6c781f401dc787eb05781ee33503455b22dc))
 
-## [Unreleased]
-
-### Added
-
-- **Web SPM Version Automation.** Automated package version synchronization between release-please pipelines and the Next.js interactive website.
-- **Dynamic Web Components.** Sourced dynamic `v${version}` and SPM manifests across `SpmInstall`, `Hero`, `Navbar`, `RoadmapSection`, and `CodePlayground`.
-- **Pre-Build Version Hook.** Added `web/scripts/sync-version.mjs` to keep `web/lib/version.json` and `web/package.json` synchronized with `version.txt`.
-- **Release-Please Extra Files.** Added automated version bumping in `release-please-config.json` for `web/package.json`, `web/lib/version.json`, `Sources/SwiftNetworkKit/SwiftNetworkKit.swift`, and `README.md`.
-- **CI & Release Workflow Steps.** Added web build validation to `.github/workflows/ci.yml` and static site verification to `.github/workflows/release.yml`.
-- **Roadmap to 1.0.0 & Beyond.** Updated `ROADMAP.md` and `RoadmapSection` with 1.0.0 stabilization tracks and post-1.0 architectural features.
-- **Brand Assets.** Distributed vector `logo.svg` across `assets/`, `web/public/`, and `docs/`.
 ## [0.1.2](https://github.com/ihusnainalii/SwiftNetworkKit/compare/v0.1.1...v0.1.2) (2026-09-09)
 
 

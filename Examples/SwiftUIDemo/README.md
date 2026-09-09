@@ -48,7 +48,11 @@ Presentation  ──depends on──▶  Domain  ◀──implements──  Data
 | **Domain** | `SwiftUIDemo/Domain/` | entities + `UsersRepository` / `UserContentRepository` / `PostComposer` / `NetworkDiagnostics` protocols. **No import of SwiftNetworkKit or SwiftUI.** |
 | **Data** | `SwiftUIDemo/Data/` | the *only* code that imports SwiftNetworkKit and calls `client.request(...)`. Implements the Domain ports. `AppContainer` is the composition root. |
 | **Presentation** | `SwiftUIDemo/Presentation/` | `@MainActor @Observable` view models depend only on Domain protocols; SwiftUI views bind to a view model. **No import of SwiftNetworkKit** (except `NetworkError` for display). |
-| **App** | `SwiftUIDemo/App/` | `@main App`, `RootView` (TabView), the `AppContainer` environment key. |
+| **App** | `SwiftUIDemo/App/` | `@main App`, `RootView` (TabView), `SplashView` (brand splash on cold launch), the `AppContainer` environment key. |
+
+The app icon and launch screen use the SwiftNetworkKit brand mark (`Assets.xcassets/AppIcon`,
+`BrandLogo`, `LaunchBackground`); `SplashView` repeats it in-app so the handoff from the system
+launch screen is seamless.
 
 One file per type. Each screen is a `ViewModel` + `View` pair; view models expose a
 `LoadPhase<Value>` (`idle` / `loading` / `loaded` / `failed(NetworkError)`) plus intent methods,

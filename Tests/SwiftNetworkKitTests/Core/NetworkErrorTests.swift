@@ -62,6 +62,23 @@ struct NetworkErrorTests {
         #expect(box?.underlyingType.contains("Weird") == true)
     }
 
+    @Test("isRetryable flags transient failures only")
+    func isRetryable() {
+        let retryable: [NetworkError] = [
+            .noInternet, .timeout, .offline, .server(context(500)),
+            .rateLimited(retryAfter: 1, context(429)), .transport(underlying: URLError(.networkConnectionLost)),
+            .unacceptableStatusCode(503, context(503)), .unacceptableStatusCode(408, context(408)),
+        ]
+        let notRetryable: [NetworkError] = [
+            .invalidURL("x"), .unauthorized(context(401)), .forbidden(context(403)),
+            .notFound(context(404)), .validation(context(422)), .sslPinningFailed(host: "api.example.com"),
+            .sessionExpired, .cancelled, .encoding(underlying: URLError(.badURL)),
+            .unacceptableStatusCode(400, context(400)), .unknown(underlying: nil),
+        ]
+        for error in retryable { #expect(error.isRetryable, "\(error.code) should be retryable") }
+        for error in notRetryable { #expect(!error.isRetryable, "\(error.code) should not be retryable") }
+    }
+
     @Test("every case has a localized description")
     func localizedDescriptions() {
         let samples: [NetworkError] = [

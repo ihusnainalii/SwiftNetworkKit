@@ -1,0 +1,691 @@
+{
+  "concurrency" : [
+    {
+      "id" : "deduplication",
+      "label" : "Request deduplication",
+      "lanes" : [
+        {
+          "events" : [
+            {
+              "atMicros" : 59,
+              "kind" : "transport_in",
+              "note" : "/widgets"
+            },
+            {
+              "atMicros" : 10151,
+              "kind" : "transport_out",
+              "note" : "200, 25 B"
+            }
+          ],
+          "name" : "transport"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 56,
+              "kind" : "interceptor",
+              "note" : "GET /widgets"
+            },
+            {
+              "atMicros" : 10177,
+              "kind" : "response_interceptor",
+              "note" : "200"
+            }
+          ],
+          "name" : "pipeline"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 0,
+              "kind" : "issued",
+              "note" : ""
+            },
+            {
+              "atMicros" : 10255,
+              "kind" : "done",
+              "note" : ""
+            }
+          ],
+          "name" : "req1"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 5,
+              "kind" : "issued",
+              "note" : ""
+            },
+            {
+              "atMicros" : 10243,
+              "kind" : "done",
+              "note" : ""
+            }
+          ],
+          "name" : "req2"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 7,
+              "kind" : "issued",
+              "note" : ""
+            },
+            {
+              "atMicros" : 10253,
+              "kind" : "done",
+              "note" : ""
+            }
+          ],
+          "name" : "req3"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 11,
+              "kind" : "issued",
+              "note" : ""
+            },
+            {
+              "atMicros" : 10240,
+              "kind" : "done",
+              "note" : ""
+            }
+          ],
+          "name" : "req4"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 15,
+              "kind" : "issued",
+              "note" : ""
+            },
+            {
+              "atMicros" : 10246,
+              "kind" : "done",
+              "note" : ""
+            }
+          ],
+          "name" : "req5"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 13,
+              "kind" : "issued",
+              "note" : ""
+            },
+            {
+              "atMicros" : 10249,
+              "kind" : "done",
+              "note" : ""
+            }
+          ],
+          "name" : "req6"
+        }
+      ],
+      "summary" : "6 identical requests in flight, 1 reached the transport, 5 coalesced onto it"
+    },
+    {
+      "id" : "single_flight_refresh",
+      "label" : "Single-flight token refresh",
+      "lanes" : [
+        {
+          "events" : [
+            {
+              "atMicros" : 94,
+              "kind" : "refresh",
+              "note" : "exchanging refresh token"
+            }
+          ],
+          "name" : "refresh"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 76,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 76,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 77,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 77,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 83,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 87,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 96,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 109,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 110,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 121,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6444,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 6452,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6461,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 6469,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6471,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 6474,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 6477,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6481,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6505,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 6508,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            }
+          ],
+          "name" : "transport"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 70,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 70,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 70,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 72,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 86,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 90,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 99,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 102,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 113,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 127,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6439,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 6456,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6456,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 6467,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 6469,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 6472,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6479,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6484,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6501,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 6510,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            }
+          ],
+          "name" : "pipeline"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 0,
+              "kind" : "issued",
+              "note" : "401 expected"
+            },
+            {
+              "atMicros" : 6545,
+              "kind" : "done",
+              "note" : "retried with fresh token"
+            }
+          ],
+          "name" : "req1"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 9,
+              "kind" : "issued",
+              "note" : "401 expected"
+            },
+            {
+              "atMicros" : 6538,
+              "kind" : "done",
+              "note" : "retried with fresh token"
+            }
+          ],
+          "name" : "req2"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 10,
+              "kind" : "issued",
+              "note" : "401 expected"
+            },
+            {
+              "atMicros" : 6547,
+              "kind" : "done",
+              "note" : "retried with fresh token"
+            }
+          ],
+          "name" : "req3"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 20,
+              "kind" : "issued",
+              "note" : "401 expected"
+            },
+            {
+              "atMicros" : 6514,
+              "kind" : "done",
+              "note" : "retried with fresh token"
+            }
+          ],
+          "name" : "req4"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 21,
+              "kind" : "issued",
+              "note" : "401 expected"
+            },
+            {
+              "atMicros" : 6533,
+              "kind" : "done",
+              "note" : "retried with fresh token"
+            }
+          ],
+          "name" : "req5"
+        }
+      ],
+      "summary" : "5 parallel 401s → 1 refresh → all 5 retried and succeeded"
+    },
+    {
+      "id" : "priority_queue",
+      "label" : "Priority request queue",
+      "lanes" : [
+        {
+          "events" : [
+            {
+              "atMicros" : 1902,
+              "kind" : "enqueue",
+              "note" : "low priority"
+            },
+            {
+              "atMicros" : 3972,
+              "kind" : "enqueue",
+              "note" : "high priority (jumps the low one)"
+            }
+          ],
+          "name" : "queue"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 17,
+              "kind" : "transport_in",
+              "note" : "/p"
+            },
+            {
+              "atMicros" : 5105,
+              "kind" : "transport_out",
+              "note" : "200, 25 B"
+            }
+          ],
+          "name" : "blocker"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 10343,
+              "kind" : "transport_in",
+              "note" : "/p"
+            },
+            {
+              "atMicros" : 15472,
+              "kind" : "transport_out",
+              "note" : "200, 25 B"
+            }
+          ],
+          "name" : "low"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 5254,
+              "kind" : "transport_in",
+              "note" : "/p"
+            },
+            {
+              "atMicros" : 10117,
+              "kind" : "transport_out",
+              "note" : "200, 25 B"
+            }
+          ],
+          "name" : "high"
+        },
+        {
+          "events" : [
+            {
+              "atMicros" : 0,
+              "kind" : "interceptor",
+              "note" : "GET /p"
+            },
+            {
+              "atMicros" : 5127,
+              "kind" : "response_interceptor",
+              "note" : "200"
+            },
+            {
+              "atMicros" : 5242,
+              "kind" : "interceptor",
+              "note" : "GET /p"
+            },
+            {
+              "atMicros" : 10146,
+              "kind" : "response_interceptor",
+              "note" : "200"
+            },
+            {
+              "atMicros" : 10318,
+              "kind" : "interceptor",
+              "note" : "GET /p"
+            },
+            {
+              "atMicros" : 15500,
+              "kind" : "response_interceptor",
+              "note" : "200"
+            }
+          ],
+          "name" : "pipeline"
+        }
+      ],
+      "summary" : "one slot, low then high enqueued; the queue admits high before low"
+    }
+  ],
+  "environment" : {
+    "arch" : "arm64",
+    "configuration" : "release",
+    "cpuCount" : 10,
+    "os" : "macOS 26.5.2",
+    "swift" : "6"
+  },
+  "generatedAt" : "2026-09-09T15:27:33Z",
+  "package" : "SwiftNetworkKit",
+  "pipelines" : [
+    {
+      "id" : "cache_miss",
+      "label" : "Cache miss",
+      "note" : "network round trip through the full pipeline",
+      "stages" : [
+        {
+          "detail" : "client.request(Get())",
+          "durationMicros" : 97,
+          "name" : "Auth + request build",
+          "startMicros" : 96
+        },
+        {
+          "detail" : "GET /widgets",
+          "durationMicros" : 7,
+          "name" : "Request interceptors",
+          "startMicros" : 193
+        },
+        {
+          "detail" : "/widgets",
+          "durationMicros" : 2080,
+          "name" : "Transport (in flight)",
+          "startMicros" : 200
+        },
+        {
+          "detail" : "200, 25 B",
+          "durationMicros" : 19,
+          "name" : "Status mapping",
+          "startMicros" : 2280
+        },
+        {
+          "detail" : "200",
+          "durationMicros" : 71,
+          "name" : "Decode + return",
+          "startMicros" : 2299
+        }
+      ],
+      "totalMicros" : 2274
+    },
+    {
+      "id" : "cache_hit",
+      "label" : "Cache hit",
+      "note" : "resolved from the response cache, no transport call",
+      "stages" : [
+        {
+          "detail" : "client.request(Get()), entry already cached",
+          "durationMicros" : 50,
+          "name" : "Auth + request build",
+          "startMicros" : 14
+        },
+        {
+          "detail" : "GET /widgets",
+          "durationMicros" : 31,
+          "name" : "Request interceptors",
+          "startMicros" : 65
+        }
+      ],
+      "totalMicros" : 81
+    },
+    {
+      "id" : "retry",
+      "label" : "Retry with backoff",
+      "note" : "two 503s, exponential backoff, success on the third try",
+      "stages" : [
+        {
+          "detail" : "client.request(Get()), retry policy: 3 attempts",
+          "durationMicros" : 17,
+          "name" : "Auth + request build",
+          "startMicros" : 7
+        },
+        {
+          "detail" : "GET /widgets",
+          "durationMicros" : 3,
+          "name" : "Request interceptors",
+          "startMicros" : 24
+        },
+        {
+          "detail" : "/widgets",
+          "durationMicros" : 4,
+          "name" : "Transport (in flight)",
+          "startMicros" : 28
+        },
+        {
+          "detail" : "503, 0 B",
+          "durationMicros" : 6,
+          "name" : "Status mapping",
+          "startMicros" : 32
+        },
+        {
+          "detail" : "503",
+          "durationMicros" : 9216,
+          "name" : "Backoff, then re-dispatch",
+          "startMicros" : 38
+        },
+        {
+          "detail" : "GET /widgets",
+          "durationMicros" : 10,
+          "name" : "Request interceptors",
+          "startMicros" : 9254
+        },
+        {
+          "detail" : "/widgets",
+          "durationMicros" : 10,
+          "name" : "Transport (in flight)",
+          "startMicros" : 9264
+        },
+        {
+          "detail" : "503, 0 B",
+          "durationMicros" : 7,
+          "name" : "Status mapping",
+          "startMicros" : 9273
+        },
+        {
+          "detail" : "503",
+          "durationMicros" : 13203,
+          "name" : "Backoff, then re-dispatch",
+          "startMicros" : 9280
+        },
+        {
+          "detail" : "GET /widgets",
+          "durationMicros" : 11,
+          "name" : "Request interceptors",
+          "startMicros" : 22483
+        },
+        {
+          "detail" : "/widgets",
+          "durationMicros" : 20,
+          "name" : "Transport (in flight)",
+          "startMicros" : 22495
+        },
+        {
+          "detail" : "200, 25 B",
+          "durationMicros" : 19,
+          "name" : "Status mapping",
+          "startMicros" : 22515
+        },
+        {
+          "detail" : "200",
+          "durationMicros" : 45,
+          "name" : "Decode + return",
+          "startMicros" : 22534
+        }
+      ],
+      "totalMicros" : 22571
+    }
+  ],
+  "version" : "0.1.3"
+}

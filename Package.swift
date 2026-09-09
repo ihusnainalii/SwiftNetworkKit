@@ -24,6 +24,11 @@ let package = Package(
             dependencies: ["SwiftNetworkKit"],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
+        .executableTarget(
+            name: "NetworkKitBenchmarks",
+            dependencies: ["SwiftNetworkKit"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
         .testTarget(
             name: "SwiftNetworkKitTests",
             dependencies: ["SwiftNetworkKit"],
