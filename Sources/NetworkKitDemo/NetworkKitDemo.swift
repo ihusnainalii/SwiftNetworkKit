@@ -98,6 +98,7 @@ struct NetworkKitDemo {
                 print("   → unexpectedly succeeded")
             } catch let error as NetworkError {
                 print("   → caught .\(error.code) (status \(error.statusCode.map(String.init) ?? "-"))")
+                print("   → isRetryable: \(error.isRetryable) — a 404 is not worth retrying")
             }
         }
 

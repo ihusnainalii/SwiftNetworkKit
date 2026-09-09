@@ -6,6 +6,7 @@ struct SwiftUIDemoApp: App {
         WindowGroup {
             RootView()
                 .environment(\.container, .live)
+                .withSplash()
         }
     }
 }

@@ -90,6 +90,24 @@ extension NetworkError {
     /// Server-supplied message, when the body carried one.
     public var serverMessage: String? { responseContext?.serverMessage }
 
+    /// Whether re-attempting the same request could plausibly succeed.
+    ///
+    /// An advisory hint for callers — e.g. whether to show a "Try again" affordance.
+    /// The client's own automatic retries are driven separately by ``RetryPolicy``;
+    /// this does not consult it.
+    public var isRetryable: Bool {
+        switch self {
+        case .noInternet, .timeout, .offline, .rateLimited, .server, .transport:
+            true
+        case .unacceptableStatusCode(let status, _):
+            status == 408 || (500...599).contains(status)
+        case .invalidURL, .unauthorized, .forbidden, .notFound, .validation, .decoding,
+            .encoding, .sslPinningFailed, .tokenRefreshFailed, .sessionExpired, .cancelled,
+            .offlineQueued, .unknown:
+            false
+        }
+    }
+
     /// Normalizes an arbitrary thrown error: passes ``NetworkError`` through untouched,
     /// maps `URLError` / cancellation, and wraps anything else as `.unknown`.
     public static func normalize(_ error: any Error) -> NetworkError {
