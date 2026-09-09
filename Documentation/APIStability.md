@@ -26,7 +26,7 @@ Everything a caller names to configure a client, describe an endpoint, or handle
 | SwiftUI / Combine | `NetworkResource`, `Paged`, `DownloadState`, `UploadState` |
 | Namespace | `SwiftNetworkKit` |
 
-## 2. Move behind `@_spi(SwiftNetworkKitTesting)`
+## 2. Move behind `@_spi(SwiftNetworkKitTesting)`: DONE
 
 Shipped so consuming apps can use them, but not part of the stable surface. Test targets
 import with `@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit`.
@@ -44,7 +44,7 @@ import with `@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit`.
 **Breaking change** for anyone already importing these; call it out in the `1.0.0` notes and
 `CHANGELOG`.
 
-## 3. Recommend making internal
+## 3. Recommend making internal: DONE (kept `ContinuousClockAdapter`: it is a public default argument)
 
 Public today only because access control was not tightened. None appear in a public
 signature and none are meant to be constructed by a caller.

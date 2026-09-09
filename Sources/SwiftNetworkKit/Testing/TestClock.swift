@@ -9,30 +9,30 @@ import Foundation
 ///
 /// ponytail: instant recording clock, not a virtual scheduler. If a milestone needs a sleeper to
 /// actually suspend until time is moved forward, add a blocking `advance(by:)` then.
-public final class TestClock: NetworkClock, @unchecked Sendable {
+@_spi(SwiftNetworkKitTesting) public final class TestClock: NetworkClock, @unchecked Sendable {
 
     private let lock = NSLock()
     private var _sleeps: [TimeInterval] = []
     private var _virtualElapsed: TimeInterval = 0
     private let origin = ContinuousClock().now
 
-    public init() {}
+    @_spi(SwiftNetworkKitTesting) public init() {}
 
     /// Every `sleep(for:)` duration seen so far, in seconds, in order.
-    public var recordedSleeps: [TimeInterval] {
+    @_spi(SwiftNetworkKitTesting) public var recordedSleeps: [TimeInterval] {
         lock.withLock { _sleeps }
     }
 
     /// Sum of all recorded sleeps — the virtual time that has "passed".
-    public var virtualElapsed: TimeInterval {
+    @_spi(SwiftNetworkKitTesting) public var virtualElapsed: TimeInterval {
         lock.withLock { _virtualElapsed }
     }
 
-    public func now() -> ContinuousClock.Instant {
+    @_spi(SwiftNetworkKitTesting) public func now() -> ContinuousClock.Instant {
         origin.advanced(by: .seconds(virtualElapsed))
     }
 
-    public func sleep(for duration: Duration) async throws {
+    @_spi(SwiftNetworkKitTesting) public func sleep(for duration: Duration) async throws {
         try Task.checkCancellation()
         let seconds = duration.inSeconds
         lock.withLock {

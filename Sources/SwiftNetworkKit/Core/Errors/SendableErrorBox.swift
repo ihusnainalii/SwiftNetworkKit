@@ -5,11 +5,11 @@ import Foundation
 /// Foundation's common errors (`URLError`, `DecodingError`, `EncodingError`) are already `Sendable`
 /// and pass through untouched via ``asSendableError(_:)``; anything else is captured by description
 /// so ``NetworkError`` can stay fully `Sendable` without an `@unchecked` escape hatch.
-public struct SendableErrorBox: Error, Sendable, CustomStringConvertible {
-    public let underlyingType: String
-    public let description: String
+struct SendableErrorBox: Error, Sendable, CustomStringConvertible {
+    let underlyingType: String
+    let description: String
 
-    public init(_ error: any Error) {
+    init(_ error: any Error) {
         underlyingType = String(reflecting: type(of: error))
         description = String(describing: error)
     }

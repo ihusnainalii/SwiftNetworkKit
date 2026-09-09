@@ -92,6 +92,10 @@ let user = try await client.request(GetProfile())
 
 ### Testing
 
+Shipped for consumers but not part of the stable API. Import with
+`@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit` (or
+`@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit` outside a test target).
+
 - ``MockNetworkTransport``
 - ``MockScenario``
 - ``URLProtocolStub``

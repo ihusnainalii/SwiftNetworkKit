@@ -15,12 +15,12 @@ import FoundationNetworking
 /// ```
 ///
 /// Not thread-safe across concurrent tests — keep suites that use it `.serialized`.
-public final class URLProtocolStub: URLProtocol {
+@_spi(SwiftNetworkKitTesting) public final class URLProtocolStub: URLProtocol {
 
-    public struct Response: Sendable {
-        public var statusCode: Int
-        public var headers: [String: String]
-        public var body: Data
+    @_spi(SwiftNetworkKitTesting) public struct Response: Sendable {
+        @_spi(SwiftNetworkKitTesting) public var statusCode: Int
+        @_spi(SwiftNetworkKitTesting) public var headers: [String: String]
+        @_spi(SwiftNetworkKitTesting) public var body: Data
     }
 
     private struct State: @unchecked Sendable {
@@ -33,7 +33,9 @@ public final class URLProtocolStub: URLProtocol {
     private static let lock = NSLock()
 
     /// Configures a successful stub response.
-    public static func respond(status: Int = 200, headers: [String: String] = [:], body: Data = Data()) {
+    @_spi(SwiftNetworkKitTesting) public static func respond(
+        status: Int = 200, headers: [String: String] = [:], body: Data = Data()
+    ) {
         lock.lock()
         defer { lock.unlock() }
         state = State(
@@ -41,21 +43,21 @@ public final class URLProtocolStub: URLProtocol {
     }
 
     /// Configures the stub to fail with `error`.
-    public static func fail(with error: any Error) {
+    @_spi(SwiftNetworkKitTesting) public static func fail(with error: any Error) {
         lock.lock()
         defer { lock.unlock() }
         state = State(response: nil, error: error, lastRequest: nil)
     }
 
     /// The most recent request that reached the stub.
-    public static var lastRequest: URLRequest? {
+    @_spi(SwiftNetworkKitTesting) public static var lastRequest: URLRequest? {
         lock.lock()
         defer { lock.unlock() }
         return state.lastRequest
     }
 
     /// Clears all configuration. Call in test teardown.
-    public static func reset() {
+    @_spi(SwiftNetworkKitTesting) public static func reset() {
         lock.lock()
         defer { lock.unlock() }
         state = State()

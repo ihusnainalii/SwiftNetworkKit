@@ -17,20 +17,24 @@ import FoundationNetworking
 ///
 /// Every request is recorded. A non-zero `latency` makes `data(for:)` suspend (and thus throw
 /// `CancellationError` if the surrounding `Task` is cancelled). See `MockScenario` for presets.
-public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
+@_spi(SwiftNetworkKitTesting) public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
 
-    public enum Outcome: Sendable {
+    @_spi(SwiftNetworkKitTesting) public enum Outcome: Sendable {
         case success(status: Int, headers: HTTPHeaders, body: Data)
         case failure(NetworkError)
 
-        public static func json(_ body: Data, status: Int = 200, headers: HTTPHeaders = [:]) -> Outcome {
+        @_spi(SwiftNetworkKitTesting) public static func json(
+            _ body: Data, status: Int = 200, headers: HTTPHeaders = [:]
+        ) -> Outcome {
             var headers = headers
             if headers["Content-Type"] == nil { headers["Content-Type"] = "application/json" }
             return .success(status: status, headers: headers, body: body)
         }
 
         /// A bare status-code response — handy for scripting retry sequences (`503, 503, 200`).
-        public static func status(_ code: Int, headers: HTTPHeaders = [:], body: Data = Data()) -> Outcome {
+        @_spi(SwiftNetworkKitTesting) public static func status(
+            _ code: Int, headers: HTTPHeaders = [:], body: Data = Data()
+        ) -> Outcome {
             .success(status: code, headers: headers, body: body)
         }
     }
@@ -49,7 +53,7 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
     private let defaultOutcome: Outcome
     private let latency: Duration
 
-    public init(
+    @_spi(SwiftNetworkKitTesting) public init(
         default defaultOutcome: Outcome = .success(status: 200, headers: [:], body: Data()),
         latency: Duration = .zero
     ) {
@@ -58,21 +62,21 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
     }
 
     /// Requests captured so far, in order.
-    public var recordedRequests: [URLRequest] {
+    @_spi(SwiftNetworkKitTesting) public var recordedRequests: [URLRequest] {
         lock.lock()
         defer { lock.unlock() }
         return recorded
     }
 
     /// Number of requests received.
-    public var requestCount: Int {
+    @_spi(SwiftNetworkKitTesting) public var requestCount: Int {
         lock.lock()
         defer { lock.unlock() }
         return recorded.count
     }
 
     @discardableResult
-    public func enqueue(_ outcomes: Outcome...) -> Self {
+    @_spi(SwiftNetworkKitTesting) public func enqueue(_ outcomes: Outcome...) -> Self {
         lock.lock()
         defer { lock.unlock() }
         queue.append(contentsOf: outcomes)
@@ -81,7 +85,7 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
 
     /// Enqueues a JSON success by encoding `value`.
     @discardableResult
-    public func enqueueJSON(_ value: some Encodable, status: Int = 200) -> Self {
+    @_spi(SwiftNetworkKitTesting) public func enqueueJSON(_ value: some Encodable, status: Int = 200) -> Self {
         let data = (try? JSONEncoder().encode(value)) ?? Data()
         return enqueue(.json(data, status: status))
     }
@@ -89,7 +93,7 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
     /// Responds to requests matching `predicate` with `outcomes` (a scripted sequence; the last one
     /// repeats). Rules are checked before the FIFO queue, first-registered first.
     @discardableResult
-    public func stub(
+    @_spi(SwiftNetworkKitTesting) public func stub(
         matching predicate: @escaping @Sendable (URLRequest) -> Bool,
         with outcomes: Outcome...
     ) -> Self {
@@ -101,7 +105,7 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
 
     /// Responds to requests whose method and/or path substring match.
     @discardableResult
-    public func stub(
+    @_spi(SwiftNetworkKitTesting) public func stub(
         method: HTTPMethod? = nil,
         pathContains: String? = nil,
         with outcomes: Outcome...
@@ -120,7 +124,7 @@ public final class MockNetworkTransport: NetworkTransport, @unchecked Sendable {
         return self
     }
 
-    public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    @_spi(SwiftNetworkKitTesting) public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let outcome: Outcome = {
             lock.lock()
             defer { lock.unlock() }

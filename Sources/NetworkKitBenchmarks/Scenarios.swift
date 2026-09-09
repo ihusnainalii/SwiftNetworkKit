@@ -1,5 +1,5 @@
 import Foundation
-import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Every scenario exercises the real SwiftNetworkKit code paths. The network itself is replaced by
 /// the package's own ``MockNetworkTransport`` (zero latency unless a scenario needs it), so the

@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("Pagination")
 struct PaginationTests {

@@ -1,7 +1,7 @@
 import Foundation
 
 /// The outcome of asking "should this failed attempt be retried, and after how long?".
-public enum RetryDecision: Sendable, Equatable {
+enum RetryDecision: Sendable, Equatable {
     /// Wait `after` seconds (backoff or `Retry-After`, jitter already applied) then try again.
     case retry(after: TimeInterval)
     /// Give up — surface the error to the caller.

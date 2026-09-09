@@ -1,5 +1,5 @@
 import Foundation
-import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M12.
 ///

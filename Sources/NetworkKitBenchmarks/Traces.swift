@@ -1,5 +1,5 @@
 import Foundation
-import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Runs real requests through a real `NetworkClient`, instrumented only via the package's public
 /// hooks (a wrapping `NetworkTransport`, a `RequestInterceptor`, a `ResponseInterceptor`), and turns
