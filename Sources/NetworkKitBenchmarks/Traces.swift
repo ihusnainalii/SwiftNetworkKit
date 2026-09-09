@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Runs real requests through a real `NetworkClient`, instrumented only via the package's public

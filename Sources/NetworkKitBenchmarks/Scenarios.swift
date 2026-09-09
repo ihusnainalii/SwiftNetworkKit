@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Every scenario exercises the real SwiftNetworkKit code paths. The network itself is replaced by

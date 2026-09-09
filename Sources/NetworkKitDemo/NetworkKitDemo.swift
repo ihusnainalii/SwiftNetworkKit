@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// A runnable CLI tour of SwiftNetworkKit as it stands after milestones M0–M12.
@@ -286,8 +289,10 @@ struct NetworkKitDemo {
         print("   → observed: \(await observed.value)")
         print("   → connectionRestored() fired \(await restores.value)x (unsatisfied → satisfied)")
 
+        #if canImport(Network)
         let live = await PathNetworkMonitor().currentStatus
         print("   → PathNetworkMonitor seeds as \(live) before NWPathMonitor's first callback")
+        #endif
     }
 
     // MARK: - Multipart upload + download with progress (mock transport)

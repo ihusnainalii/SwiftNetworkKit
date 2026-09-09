@@ -59,10 +59,9 @@ actor OfflineRequestQueue {
     /// A stream of replay outcomes. Each call is an independent subscription.
     func events() -> AsyncStream<OfflineReplayEvent> {
         let id = UUID()
-        var escaped: AsyncStream<OfflineReplayEvent>.Continuation!
-        let stream = AsyncStream<OfflineReplayEvent> { escaped = $0 }
-        subscribers[id] = escaped
-        escaped.onTermination = { [weak self] _ in Task { await self?.removeSubscriber(id) } }
+        let (stream, continuation) = AsyncStream<OfflineReplayEvent>.makeStream()
+        subscribers[id] = continuation
+        continuation.onTermination = { [weak self] _ in Task { await self?.removeSubscriber(id) } }
         return stream
     }
 
