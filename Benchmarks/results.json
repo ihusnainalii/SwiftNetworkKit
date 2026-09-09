@@ -1,0 +1,171 @@
+{
+  "environment" : {
+    "arch" : "arm64",
+    "configuration" : "release",
+    "cpuCount" : 10,
+    "os" : "macOS 26.5.2",
+    "swift" : "6.0"
+  },
+  "generatedAt" : "2026-09-09T14:52:13Z",
+  "package" : "SwiftNetworkKit",
+  "results" : [
+    {
+      "id" : "pipeline_overhead",
+      "iterations" : 4000,
+      "label" : "Request pipeline overhead",
+      "mean" : 32.168,
+      "median" : 29.959,
+      "min" : 25.708,
+      "note" : "client.request() end to end, network replaced by MockNetworkTransport",
+      "p90" : 37.416,
+      "p99" : 67.041,
+      "stddev" : 7.748,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "pipeline_5_interceptors",
+      "iterations" : 4000,
+      "label" : "Pipeline + 5 interceptors",
+      "mean" : 32.278,
+      "median" : 30.083,
+      "min" : 25.917,
+      "note" : "same request with a 5-stage interceptor chain",
+      "p90" : 37.708,
+      "p99" : 62.5,
+      "stddev" : 7.7,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "json_decode_small",
+      "iterations" : 20000,
+      "label" : "JSON decode (1 object)",
+      "mean" : 4.807,
+      "median" : 4.666,
+      "min" : 4.458,
+      "p90" : 4.875,
+      "p99" : 6.083,
+      "stddev" : 1.72,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "json_decode_large",
+      "iterations" : 8000,
+      "label" : "JSON decode (64 objects)",
+      "mean" : 272.472,
+      "median" : 265.5,
+      "min" : 258.708,
+      "p90" : 292.583,
+      "p99" : 348,
+      "stddev" : 18.005,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "memory_cache_roundtrip",
+      "iterations" : 20000,
+      "label" : "Memory cache write + read",
+      "mean" : 0.745,
+      "median" : 0.75,
+      "min" : 0.666,
+      "p90" : 0.75,
+      "p99" : 0.834,
+      "stddev" : 0.45,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "disk_cache_roundtrip",
+      "iterations" : 4000,
+      "label" : "Disk cache write + read",
+      "mean" : 2837.9,
+      "median" : 2834.959,
+      "min" : 2539.917,
+      "p90" : 3004.625,
+      "p99" : 3158.959,
+      "stddev" : 128.027,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "cache_served_request",
+      "iterations" : 4000,
+      "label" : "Cache-served request",
+      "mean" : 26.878,
+      "median" : 25.75,
+      "min" : 22.125,
+      "note" : "client.request() answered from the response cache (no transport hit)",
+      "p90" : 29,
+      "p99" : 50.167,
+      "stddev" : 6.063,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "redaction_headers",
+      "iterations" : 50000,
+      "label" : "Header redaction",
+      "mean" : 937.927,
+      "median" : 917,
+      "min" : 833,
+      "p90" : 959,
+      "p99" : 1083,
+      "stddev" : 428.003,
+      "unit" : "ns/op"
+    },
+    {
+      "id" : "redaction_body",
+      "iterations" : 20000,
+      "label" : "JSON body redaction",
+      "mean" : 6.002,
+      "median" : 5.458,
+      "min" : 4.959,
+      "p90" : 6.917,
+      "p99" : 12,
+      "stddev" : 2.851,
+      "unit" : "µs/op"
+    },
+    {
+      "id" : "dedup_wall",
+      "iterations" : 40,
+      "label" : "Deduplicate 150 concurrent requests",
+      "mean" : 7.175,
+      "median" : 7.294,
+      "min" : 6.016,
+      "note" : "150 identical requests in flight at once, one 5 ms backend call",
+      "p90" : 7.538,
+      "p99" : 7.669,
+      "stddev" : 0.385,
+      "unit" : "ms/op"
+    },
+    {
+      "id" : "dedup_ratio",
+      "iterations" : 0,
+      "label" : "Requests coalesced per backend call",
+      "note" : "6000 requests issued, 43 reached the transport",
+      "unit" : "x",
+      "value" : 139.53
+    },
+    {
+      "id" : "single_flight_refresh",
+      "iterations" : 40,
+      "label" : "Single-flight 401 refresh (50 concurrent)",
+      "mean" : 1.052,
+      "median" : 1.041,
+      "min" : 0.719,
+      "note" : "50 parallel 401s, one token refresh, all retried",
+      "p90" : 1.278,
+      "p99" : 1.592,
+      "stddev" : 0.181,
+      "unit" : "ms/op"
+    },
+    {
+      "id" : "metrics_record",
+      "iterations" : 50000,
+      "label" : "Metrics event recording",
+      "mean" : 461.548,
+      "median" : 458,
+      "min" : 375,
+      "p90" : 459,
+      "p99" : 542,
+      "stddev" : 655.958,
+      "unit" : "ns/op"
+    }
+  ],
+  "version" : "0.1.3"
+}

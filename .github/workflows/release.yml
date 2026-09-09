@@ -59,3 +59,12 @@ jobs:
             .build/coverage/coverage.lcov .build/coverage/summary.md --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Benchmark and attach to the Release
+        # The marketing site fetches this asset at build time (falls back to the
+        # committed Benchmarks/results.json). Numbers are the package's own overhead,
+        # measured against its MockNetworkTransport.
+        run: |
+          swift run -c release NetworkKitBenchmarks --out benchmarks.json
+          gh release upload "${{ needs.release-please.outputs.tag }}" benchmarks.json --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
