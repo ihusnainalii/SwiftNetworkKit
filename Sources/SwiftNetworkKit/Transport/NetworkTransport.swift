@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// The lowest layer: turns a fully-formed `URLRequest` into response bytes.
 ///
 /// This is the seam every test double and every alternative networking stack plugs into. Only

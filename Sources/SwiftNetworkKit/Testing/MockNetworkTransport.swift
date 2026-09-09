@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// An in-memory ``NetworkTransport`` for unit tests. Shipped in the library so consuming apps can
 /// use it too.
 ///

@@ -1,5 +1,8 @@
 #if !os(WASI)  // URLSession is unavailable on WebAssembly; inject a NetworkTransport instead.
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 #if canImport(Security)
 import Security

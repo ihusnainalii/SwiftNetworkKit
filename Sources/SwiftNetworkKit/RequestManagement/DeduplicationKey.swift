@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// The identity of a request for deduplication: method + URL + whether it carries an `Authorization`
 /// header (so an authenticated and an anonymous request for the same URL never share a result).
 enum DeduplicationKey {

@@ -1,3 +1,4 @@
+#if canImport(Security)
 import Foundation
 import Security
 import Testing
@@ -104,3 +105,4 @@ extension ServerTrustDecision {
         if case .rejected(let e) = self { return e.code } else { return nil }
     }
 }
+#endif

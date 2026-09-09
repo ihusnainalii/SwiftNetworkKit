@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// The one line an app writes to enable pinning. Everything else — loading `.cer` files, deriving
 /// public-key hashes, the `URLSession` delegate, trust evaluation — is the package's job.
 ///

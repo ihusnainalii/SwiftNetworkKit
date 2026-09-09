@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// The public entry point. Compose it once, then call ``request(_:)`` (and friends) with your
 /// ``Endpoint`` values — the client owns URL building, transport, authentication, status-code
 /// mapping and decoding.

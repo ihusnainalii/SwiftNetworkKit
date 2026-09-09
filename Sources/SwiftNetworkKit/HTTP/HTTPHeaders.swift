@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A case-insensitive collection of HTTP header fields.
 ///
 /// Lookup and assignment ignore case (`headers["content-type"] == headers["Content-Type"]`), while the

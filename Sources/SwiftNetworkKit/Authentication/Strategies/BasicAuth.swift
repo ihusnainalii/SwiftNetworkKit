@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// HTTP Basic authentication: `Authorization: Basic base64(username:password)`.
 public struct BasicAuth: AuthStrategy {
     public let username: String

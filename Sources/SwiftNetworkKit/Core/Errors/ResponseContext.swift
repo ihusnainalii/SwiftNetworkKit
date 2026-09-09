@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Everything about a server response needed to diagnose a failure.
 public struct ResponseContext: Sendable {
     public let statusCode: Int

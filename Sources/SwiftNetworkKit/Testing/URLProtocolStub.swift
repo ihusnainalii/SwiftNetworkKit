@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A `URLProtocol` that intercepts every request so tests can exercise a *real* `URLSession`
 /// (and thus ``URLSessionTransport``) without touching the network.
 ///

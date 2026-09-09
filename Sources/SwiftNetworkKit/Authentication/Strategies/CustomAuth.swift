@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// An arbitrary app-supplied authentication closure.
 public struct CustomAuth: AuthStrategy {
     private let apply: @Sendable (_ request: inout URLRequest, _ token: String?) async throws -> Void

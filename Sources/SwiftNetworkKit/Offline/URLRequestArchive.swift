@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// `URLRequest` <-> `Data` via `NSKeyedArchiver` (`NSURLRequest` is `NSSecureCoding`). Method, URL,
 /// headers and an in-memory body all survive; a body backed by a temp file does not.
 enum URLRequestArchive {

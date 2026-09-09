@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Central configuration for a `NetworkClient`.
 ///
 /// **M0 scope note:** this holds the fields the request pipeline needs through milestone M1. Auth

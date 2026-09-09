@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Builds a `URLRequest` from an ``Endpoint`` and the active ``NetworkEnvironment``.
 ///
 /// Responsibilities: resolve the base URL, substitute `:path` tokens, append the path with exactly

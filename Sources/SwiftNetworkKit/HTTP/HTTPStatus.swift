@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Helpers for classifying HTTP status codes.
 public enum HTTPStatus {
     public static func isSuccess(_ code: Int) -> Bool { (200..<300).contains(code) }

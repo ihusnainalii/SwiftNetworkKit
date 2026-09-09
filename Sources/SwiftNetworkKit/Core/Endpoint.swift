@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// One API operation, defined by the consuming app.
 ///
 /// Conform an `enum` or `struct` per API. Almost everything has a default — a minimal endpoint is

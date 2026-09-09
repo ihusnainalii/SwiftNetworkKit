@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Attaches correlation headers to every outgoing request per ``TraceHeaders``.
 ///
 /// `NetworkClient` inserts this ahead of the app's own request interceptors, so they can read or

@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Persists requests made while offline and replays them FIFO when connectivity returns.
 ///
 /// Replayed requests have **no caller awaiting** — the outcome is delivered only on ``events()``.

@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Turns pipeline events into log lines, applying ``Redactor`` and the active ``LogLevel``.
 ///
 /// `basic` -> one line per request and per response. `verbose` adds redacted headers. `debug` adds
