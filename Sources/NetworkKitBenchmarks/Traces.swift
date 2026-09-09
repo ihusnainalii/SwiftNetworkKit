@@ -137,6 +137,101 @@ enum Traces {
                     "retry", "Retry with backoff", "two 503s, exponential backoff, success on the third try", rec))
         }
 
+        // 401 -> single-flight refresh -> retry -> 200.
+        do {
+            let rec = TraceRecorder()
+            let mock = MockNetworkTransport(default: .json(body))
+            mock.stub(matching: { $0.value(forHTTPHeaderField: "Authorization") != "Bearer fresh" }, with: .status(401))
+            mock.stub(matching: { $0.value(forHTTPHeaderField: "Authorization") == "Bearer fresh" }, with: .json(body))
+            let c = client(
+                transport: RecordingTransport(mock, rec), recorder: rec,
+                refresh: { _ in
+                    rec.mark("pipeline", "refresh", "exchange refresh token for a new access token")
+                    return TokenPair(accessToken: "fresh", refreshToken: "r")
+                })
+            struct Secure: Endpoint {
+                typealias Response = [Widget]
+                var path = "/me"
+                var authentication: AuthRequirement { .required }
+            }
+            rec.mark("pipeline", "issued", "client.request(Secure()) with a stale token")
+            _ = try? await c.request(Secure())
+            rec.mark("pipeline", "done", "retried with the fresh token, decoded")
+            out.append(
+                pipelineTrace(
+                    "auth_refresh", "401 token refresh",
+                    "stale token, one actor-isolated refresh, request replayed transparently", rec))
+        }
+
+        // multipart upload with byte-progress callbacks.
+        do {
+            let rec = TraceRecorder()
+            let c = client(
+                transport: RecordingTransport(
+                    MockNetworkTransport(default: .json(body), latency: .milliseconds(2)), rec), recorder: rec)
+            var form = MultipartFormData()
+            form.append(
+                Data(repeating: 0x41, count: 4096), name: "file", fileName: "a.bin",
+                mimeType: "application/octet-stream")
+            struct Up: Endpoint {
+                typealias Response = [Widget]
+                var path = "/upload"
+                var method: HTTPMethod { .post }
+            }
+            rec.mark("pipeline", "issued", "client.upload(Up(), from: .multipart) 4 KB")
+            _ = try? await c.upload(Up(), from: .multipart(form)) { ev in
+                rec.mark("pipeline", "progress", "\(ev.completed)/\(ev.total) bytes")
+            }
+            rec.mark("pipeline", "done", "server accepted the multipart body, decoded")
+            out.append(
+                pipelineTrace("upload", "Multipart upload", "RFC 7578 body, progress events, decode", rec))
+        }
+
+        // file download to a temp file.
+        do {
+            let rec = TraceRecorder()
+            let payload = Data(repeating: 0x2A, count: 8192)
+            let c = client(
+                transport: RecordingTransport(
+                    MockNetworkTransport(default: .json(payload), latency: .milliseconds(2)), rec), recorder: rec)
+            struct Down: Endpoint {
+                typealias Response = Data
+                var path = "/asset.bin"
+            }
+            rec.mark("pipeline", "issued", "client.download(Down())")
+            let url = try? await c.download(Down()) { ev in
+                rec.mark("pipeline", "progress", "\(ev.completed)/\(ev.total) bytes")
+            }
+            rec.mark("pipeline", "done", "wrote \(payload.count) bytes to \(url?.lastPathComponent ?? "temp")")
+            try? url.map { try FileManager.default.removeItem(at: $0) }
+            out.append(
+                pipelineTrace("download", "File download", "streamed to a temp file with progress", rec))
+        }
+
+        // OAuth 2.0 Authorization Code + PKCE token exchange.
+        do {
+            let rec = TraceRecorder()
+            let mock = MockNetworkTransport(
+                default: .json(
+                    Data(#"{"access_token":"at","token_type":"Bearer","refresh_token":"rt","expires_in":3600}"#.utf8)))
+            let flow = AuthorizationCodeFlow(
+                configuration: OAuthConfiguration(
+                    authorizationEndpoint: URL(string: "https://id.example.com/authorize")!,
+                    tokenEndpoint: URL(string: "https://id.example.com/token")!,
+                    clientID: "demo", redirectURI: "app://cb", scopes: ["openid", "profile"]),
+                transport: RecordingTransport(mock, rec))
+            rec.mark("pipeline", "issued", "AuthorizationCodeFlow.exchange(code:pkce:)")
+            let pkce = PKCE()
+            rec.mark("pipeline", "interceptor", "PKCE: base64url(SHA256(verifier)) challenge computed")
+            _ = flow.authorizationURL(state: "xyz", pkce: pkce)
+            rec.mark("pipeline", "interceptor", "authorization URL built (response_type=code, code_challenge)")
+            _ = try? await flow.exchange(code: "auth-code-123", pkce: pkce)
+            rec.mark("pipeline", "done", "TokenPair received (access + refresh)")
+            out.append(
+                pipelineTrace("oauth", "OAuth 2.0 + PKCE", "real PKCE challenge, code exchange over the transport", rec)
+            )
+        }
+
         return out
     }
 
