@@ -1,3 +1,4 @@
+#if canImport(Security)
 import Foundation
 import Security
 import Testing
@@ -46,3 +47,4 @@ enum PinningFixtures {
         return hash.base64EncodedString()
     }
 }
+#endif

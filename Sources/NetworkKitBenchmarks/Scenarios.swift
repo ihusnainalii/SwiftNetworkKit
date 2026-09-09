@@ -1,5 +1,8 @@
 import Foundation
-import SwiftNetworkKit
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Every scenario exercises the real SwiftNetworkKit code paths. The network itself is replaced by
 /// the package's own ``MockNetworkTransport`` (zero latency unless a scenario needs it), so the
@@ -71,17 +74,21 @@ enum Scenarios {
             ) { _ = try! await plain.request(WidgetEndpoint()) }
         )
 
-        // 2. Same path with 5 interceptors -> the site shows the delta as interceptor cost.
-        let withInterceptors = makeClient(
-            transport: MockNetworkTransport(default: .json(smallJSON)),
-            interceptors: Array(repeating: PassthroughInterceptor(), count: 5)
-        )
-        out.append(
-            await Harness.measureAsync(
-                "pipeline_5_interceptors", "Pipeline + 5 interceptors", unit: .microseconds, iterations: 4000,
-                note: "same request with a 5-stage interceptor chain"
-            ) { _ = try! await withInterceptors.request(WidgetEndpoint()) }
-        )
+        // 2. Interceptor-chain scaling: same request at 1 / 4 / 16 passthrough interceptors.
+        //    Subtract pipeline_overhead to get the per-interceptor cost.
+        for count in [1, 4, 16] {
+            let client = makeClient(
+                transport: MockNetworkTransport(default: .json(smallJSON)),
+                interceptors: Array(repeating: PassthroughInterceptor(), count: count)
+            )
+            out.append(
+                await Harness.measureAsync(
+                    "pipeline_\(count)_interceptors", "Pipeline + \(count) interceptors",
+                    unit: .microseconds, iterations: 4000,
+                    note: "request + response interceptor chain of \(count)"
+                ) { _ = try! await client.request(WidgetEndpoint()) }
+            )
+        }
 
         // 3 & 4. Decoding through the package's configured JSONDecoder.
         let decoder = JSONDecoder.networkKitDefault

@@ -1,6 +1,6 @@
 # SwiftNetworkKit Public API Reference
 
-Generated from the DocC symbol graph. 101 public types. Regenerate after any public-API change:
+Generated from the DocC symbol graph. 90 public types. Regenerate after any public-API change:
 
 ```bash
 swift package dump-symbol-graph --minimum-access-level public
@@ -9,20 +9,19 @@ python3 scripts/gen-api-reference.py > Documentation/APIReference.md
 
 | Area | Types |
 |---|---|
-| Core | `AuthRequirement`, `EmptyResponse`, `Endpoint`, `EndpointDecodingFailure`, `HTTPHeaders`, `HTTPMethod`, `HTTPStatus`, `NetworkCancellable`, `NetworkClient`, `NetworkConfiguration`, `NetworkError`, `ProgressEvent`, `QueryParameters`, `QueryValue`, `RequestBody`, `RequestID`, `RequestPriority`, `ResponseContext`, `SendableErrorBox`, `StatusCodeMapper` |
+| Core | `AuthRequirement`, `EmptyResponse`, `Endpoint`, `EndpointDecodingFailure`, `HTTPHeaders`, `HTTPMethod`, `HTTPStatus`, `NetworkCancellable`, `NetworkClient`, `NetworkConfiguration`, `NetworkError`, `ProgressEvent`, `QueryParameters`, `QueryValue`, `RequestBody`, `RequestID`, `RequestPriority`, `ResponseContext` |
 | Environment | `EnvironmentKind`, `NetworkEnvironment` |
 | Authentication | `APIKeyAuth`, `AuthStrategy`, `BasicAuth`, `BearerAuth`, `CustomAuth`, `InMemoryTokenStorage`, `KeychainAccessibility`, `KeychainError`, `KeychainTokenStorage`, `TokenManager`, `TokenPair`, `TokenStorage` |
 | OAuth 2.0 | `AuthorizationCodeFlow`, `OAuthConfiguration`, `OAuthError`, `OAuthTokenResponse`, `PKCE` |
-| Resilience | `BackoffStrategy`, `ContinuousClockAdapter`, `Jitter`, `NetworkClock`, `RetryDecision`, `RetryPolicy` |
+| Resilience | `BackoffStrategy`, `ContinuousClockAdapter`, `Jitter`, `NetworkClock`, `RetryPolicy` |
 | Caching | `CacheConfiguration`, `CachePolicy`, `CachedResponse`, `DiskCacheStore`, `MemoryCacheStore`, `ResponseCache` |
-| Offline queue | `FileOfflineStore`, `OfflineBehavior`, `OfflineReplayEvent`, `OfflineRequestQueue`, `OfflineStore`, `PersistedRequest` |
+| Offline queue | `FileOfflineStore`, `OfflineBehavior`, `OfflineReplayEvent`, `OfflineStore`, `PersistedRequest` |
 | Transport & connectivity | `ConnectionType`, `NetworkMonitor`, `NetworkStatus`, `NetworkTransport`, `PathNetworkMonitor`, `URLSessionTransport` |
 | Interceptors & observability | `AnyEndpoint`, `ConsoleNetworkLogger`, `InMemoryMetrics`, `InterceptOutcome`, `LogLevel`, `MetricEvent`, `MetricsSnapshot`, `NetworkLogger`, `NetworkMetrics`, `NoopMetrics`, `Redactor`, `RequestInterceptor`, `ResponseInterceptor`, `TraceHeaders`, `TracingInterceptor` |
 | Security & pinning | `Pin`, `PinningMode`, `SSLPinning`, `SSLPinningConfiguration`, `SSLPinningError`, `ServerTrustDecision`, `ServerTrustEvaluating`, `ServerTrustEvaluator` |
 | Transfers | `MultipartFormData`, `UploadBody` |
 | Pagination | `PaginatedEndpoint` |
 | Combine & SwiftUI | `DownloadState`, `NetworkResource`, `Paged`, `UploadState` |
-| Testing utilities | `CapturingLogger`, `InMemoryOfflineStore`, `MockNetworkMonitor`, `MockNetworkTransport`, `MockScenario`, `TestClock`, `URLProtocolStub` |
 | Other | `SwiftNetworkKit` |
 
 ## Core
@@ -148,18 +147,6 @@ Relative scheduling hint for the request queue.
 Everything about a server response needed to diagnose a failure.
 
 **Properties:** `data`, `headers`, `request`, `serverMessage`, `statusCode`
-
-### `SendableErrorBox`  `struct`
-
-A `Sendable` wrapper for an arbitrary error whose concrete type may not itself be `Sendable`.
-
-**Properties:** `description`, `localizedDescription`, `underlyingType`
-
-### `StatusCodeMapper`  `enum`
-
-The one place HTTP status codes become ``NetworkError`` values.
-
-**Methods:** `map(context:errorMapper:)()`
 
 
 ## Environment
@@ -333,12 +320,6 @@ How much randomness to fold into a computed backoff delay, so a fleet of clients
 
 The time port.
 
-### `RetryDecision`  `enum`
-
-The outcome of asking "should this failed attempt be retried, and after how long?".
-
-**Cases:** `.retry(after:)`, `.stop`
-
 ### `RetryPolicy`  `struct`
 
 Value-typed retry configuration.
@@ -408,14 +389,6 @@ What an ``Endpoint`` does when it's sent while the device is offline.
 What happened to a queued request when connectivity returned.
 
 **Cases:** `.expired(_:)`, `.failed(_:_:)`, `.replayed(_:statusCode:)`
-
-### `OfflineRequestQueue`  `class`
-
-Persists requests made while offline and replays them FIFO when connectivity returns.
-
-**Properties:** `pendingCount`
-
-**Methods:** `assertIsolated(_:file:line:)()`, `assumeIsolated(_:file:line:)()`, `enqueue(_:expiresAfter:)()`, `events()()`, `preconditionIsolated(_:file:line:)()`, `replayNow()()`, `withSerialExecutor(_:)()`
 
 ### `OfflineStore`  `protocol`
 
@@ -672,70 +645,11 @@ What an upload publisher emits: progress updates, then the decoded response.
 **Cases:** `.finished(_:)`, `.progress(_:)`
 
 
-## Testing utilities
-
-### `CapturingLogger`  `class`
-
-A ``NetworkLogger`` that keeps every line in memory for assertions.
-
-**Properties:** `entries`, `lines`
-
-**Methods:** `clear()()`, `log(_:level:)()`
-
-### `InMemoryOfflineStore`  `class`
-
-An ``OfflineStore`` that keeps the queue in memory.
-
-**Properties:** `count`
-
-**Methods:** `all()()`, `append(_:)()`, `assertIsolated(_:file:line:)()`, `assumeIsolated(_:file:line:)()`, `preconditionIsolated(_:file:line:)()`, `remove(_:)()`, `removeAll()()`, `update(_:)()`, `withSerialExecutor(_:)()`
-
-### `MockNetworkMonitor`  `class`
-
-A ``NetworkMonitor`` whose status you drive by hand.
-
-**Properties:** `currentStatus`, `subscriberCount`
-
-**Methods:** `connectionRestored()()`, `finish()()`, `send(_:)()`, `statusUpdates()()`
-
-### `MockNetworkTransport`  `class`
-
-An in-memory ``NetworkTransport`` for unit tests.
-
-**Properties:** `recordedRequests`, `requestCount`
-
-**Methods:** `data(for:)()`, `download(_:progress:)()`, `enqueue(_:)()`, `enqueueJSON(_:status:)()`, `stub(matching:with:)()`, `stub(method:pathContains:with:)()`, `upload(_:from:progress:)()`
-
-### `MockScenario`  `enum`
-
-Common server behaviors for ``MockNetworkTransport``, as a one-liner.
-
-**Cases:** `.happyPath(body:)`, `.offline`, `.rateLimited`, `.serverErrors`, `.tokenExpired(body:)`
-
-**Methods:** `transport(then:)()`
-
-### `TestClock`  `class`
-
-A ``NetworkClock`` for tests.
-
-**Properties:** `recordedSleeps`, `virtualElapsed`
-
-**Methods:** `now()()`, `sleep(for:)()`
-
-### `URLProtocolStub`  `class`
-
-A `URLProtocol` that intercepts every request so tests can exercise a *real* `URLSession` (and thus ``URLSessionTransport``) without touching the network.
-
-**Properties:** `lastRequest`
-
-**Methods:** `canInit(with:)()`, `canonicalRequest(for:)()`, `fail(with:)()`, `reset()()`, `respond(status:headers:body:)()`, `startLoading()()`, `stopLoading()()`
-
-
 ## Other
 
 ### `SwiftNetworkKit`  `enum`
 
-SwiftNetworkKit, a composable, protocol-oriented networking layer.
+SwiftNetworkKit: a composable, protocol-oriented networking layer.
 
 **Properties:** `version`
 

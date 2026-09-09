@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Adapts an outgoing `URLRequest` just before it is sent. Runs after auth and tracing, in the order
 /// interceptors appear in ``NetworkConfiguration/requestInterceptors``.
 ///

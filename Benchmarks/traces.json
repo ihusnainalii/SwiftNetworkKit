@@ -7,12 +7,12 @@
         {
           "events" : [
             {
-              "atMicros" : 59,
+              "atMicros" : 70,
               "kind" : "transport_in",
               "note" : "/widgets"
             },
             {
-              "atMicros" : 10151,
+              "atMicros" : 10179,
               "kind" : "transport_out",
               "note" : "200, 25 B"
             }
@@ -22,12 +22,12 @@
         {
           "events" : [
             {
-              "atMicros" : 56,
+              "atMicros" : 66,
               "kind" : "interceptor",
               "note" : "GET /widgets"
             },
             {
-              "atMicros" : 10177,
+              "atMicros" : 10207,
               "kind" : "response_interceptor",
               "note" : "200"
             }
@@ -42,7 +42,7 @@
               "note" : ""
             },
             {
-              "atMicros" : 10255,
+              "atMicros" : 10286,
               "kind" : "done",
               "note" : ""
             }
@@ -52,12 +52,12 @@
         {
           "events" : [
             {
-              "atMicros" : 5,
+              "atMicros" : 6,
               "kind" : "issued",
               "note" : ""
             },
             {
-              "atMicros" : 10243,
+              "atMicros" : 10286,
               "kind" : "done",
               "note" : ""
             }
@@ -67,12 +67,12 @@
         {
           "events" : [
             {
-              "atMicros" : 7,
+              "atMicros" : 8,
               "kind" : "issued",
               "note" : ""
             },
             {
-              "atMicros" : 10253,
+              "atMicros" : 10285,
               "kind" : "done",
               "note" : ""
             }
@@ -82,12 +82,12 @@
         {
           "events" : [
             {
-              "atMicros" : 11,
+              "atMicros" : 9,
               "kind" : "issued",
               "note" : ""
             },
             {
-              "atMicros" : 10240,
+              "atMicros" : 10280,
               "kind" : "done",
               "note" : ""
             }
@@ -97,12 +97,12 @@
         {
           "events" : [
             {
-              "atMicros" : 15,
+              "atMicros" : 11,
               "kind" : "issued",
               "note" : ""
             },
             {
-              "atMicros" : 10246,
+              "atMicros" : 10283,
               "kind" : "done",
               "note" : ""
             }
@@ -117,7 +117,7 @@
               "note" : ""
             },
             {
-              "atMicros" : 10249,
+              "atMicros" : 10288,
               "kind" : "done",
               "note" : ""
             }
@@ -134,7 +134,7 @@
         {
           "events" : [
             {
-              "atMicros" : 94,
+              "atMicros" : 88,
               "kind" : "refresh",
               "note" : "exchanging refresh token"
             }
@@ -144,42 +144,32 @@
         {
           "events" : [
             {
-              "atMicros" : 76,
+              "atMicros" : 71,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 76,
+              "atMicros" : 71,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 77,
-              "kind" : "transport_in",
-              "note" : "/secure"
-            },
-            {
-              "atMicros" : 77,
-              "kind" : "transport_in",
-              "note" : "/secure"
-            },
-            {
-              "atMicros" : 83,
+              "atMicros" : 78,
               "kind" : "transport_out",
               "note" : "401, 0 B"
             },
             {
-              "atMicros" : 87,
+              "atMicros" : 80,
               "kind" : "transport_out",
               "note" : "401, 0 B"
             },
             {
-              "atMicros" : 96,
-              "kind" : "transport_out",
-              "note" : "401, 0 B"
+              "atMicros" : 88,
+              "kind" : "transport_in",
+              "note" : "/secure"
             },
             {
-              "atMicros" : 109,
+              "atMicros" : 93,
               "kind" : "transport_out",
               "note" : "401, 0 B"
             },
@@ -189,59 +179,69 @@
               "note" : "/secure"
             },
             {
-              "atMicros" : 121,
-              "kind" : "transport_out",
-              "note" : "401, 0 B"
-            },
-            {
-              "atMicros" : 6444,
+              "atMicros" : 111,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 6452,
+              "atMicros" : 113,
               "kind" : "transport_out",
               "note" : "401, 0 B"
             },
             {
-              "atMicros" : 6461,
+              "atMicros" : 119,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6522,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 6469,
+              "atMicros" : 6532,
               "kind" : "transport_out",
               "note" : "401, 0 B"
             },
             {
-              "atMicros" : 6471,
+              "atMicros" : 6537,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 6474,
+              "atMicros" : 6544,
+              "kind" : "transport_out",
+              "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6575,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 6477,
+              "atMicros" : 6587,
               "kind" : "transport_out",
-              "note" : "401, 0 B"
+              "note" : "200, 25 B"
             },
             {
-              "atMicros" : 6481,
-              "kind" : "transport_out",
-              "note" : "401, 0 B"
-            },
-            {
-              "atMicros" : 6505,
+              "atMicros" : 6609,
               "kind" : "transport_in",
               "note" : "/secure"
             },
             {
-              "atMicros" : 6508,
+              "atMicros" : 6614,
               "kind" : "transport_out",
               "note" : "401, 0 B"
+            },
+            {
+              "atMicros" : 6628,
+              "kind" : "transport_in",
+              "note" : "/secure"
+            },
+            {
+              "atMicros" : 6637,
+              "kind" : "transport_out",
+              "note" : "200, 25 B"
             }
           ],
           "name" : "transport"
@@ -249,104 +249,104 @@
         {
           "events" : [
             {
-              "atMicros" : 70,
+              "atMicros" : 64,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 70,
+              "atMicros" : 64,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 70,
-              "kind" : "interceptor",
-              "note" : "GET /secure"
-            },
-            {
-              "atMicros" : 72,
-              "kind" : "interceptor",
-              "note" : "GET /secure"
-            },
-            {
-              "atMicros" : 86,
+              "atMicros" : 82,
               "kind" : "response_interceptor",
               "note" : "401"
             },
             {
-              "atMicros" : 90,
+              "atMicros" : 83,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 83,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 96,
               "kind" : "response_interceptor",
               "note" : "401"
             },
             {
               "atMicros" : 99,
-              "kind" : "response_interceptor",
-              "note" : "401"
-            },
-            {
-              "atMicros" : 102,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 113,
-              "kind" : "response_interceptor",
-              "note" : "401"
-            },
-            {
-              "atMicros" : 127,
-              "kind" : "response_interceptor",
-              "note" : "401"
-            },
-            {
-              "atMicros" : 6439,
+              "atMicros" : 103,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 6456,
+              "atMicros" : 115,
               "kind" : "response_interceptor",
               "note" : "401"
             },
             {
-              "atMicros" : 6456,
+              "atMicros" : 123,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6513,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 6467,
+              "atMicros" : 6532,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 6469,
+              "atMicros" : 6538,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6547,
+              "kind" : "response_interceptor",
+              "note" : "401"
+            },
+            {
+              "atMicros" : 6570,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 6472,
+              "atMicros" : 6599,
               "kind" : "response_interceptor",
-              "note" : "401"
+              "note" : "200"
             },
             {
-              "atMicros" : 6479,
-              "kind" : "response_interceptor",
-              "note" : "401"
-            },
-            {
-              "atMicros" : 6484,
-              "kind" : "response_interceptor",
-              "note" : "401"
-            },
-            {
-              "atMicros" : 6501,
+              "atMicros" : 6605,
               "kind" : "interceptor",
               "note" : "GET /secure"
             },
             {
-              "atMicros" : 6510,
+              "atMicros" : 6616,
               "kind" : "response_interceptor",
               "note" : "401"
+            },
+            {
+              "atMicros" : 6623,
+              "kind" : "interceptor",
+              "note" : "GET /secure"
+            },
+            {
+              "atMicros" : 6643,
+              "kind" : "response_interceptor",
+              "note" : "200"
             }
           ],
           "name" : "pipeline"
@@ -359,7 +359,7 @@
               "note" : "401 expected"
             },
             {
-              "atMicros" : 6545,
+              "atMicros" : 6625,
               "kind" : "done",
               "note" : "retried with fresh token"
             }
@@ -369,12 +369,12 @@
         {
           "events" : [
             {
-              "atMicros" : 9,
+              "atMicros" : 11,
               "kind" : "issued",
               "note" : "401 expected"
             },
             {
-              "atMicros" : 6538,
+              "atMicros" : 6629,
               "kind" : "done",
               "note" : "retried with fresh token"
             }
@@ -384,12 +384,12 @@
         {
           "events" : [
             {
-              "atMicros" : 10,
+              "atMicros" : 13,
               "kind" : "issued",
               "note" : "401 expected"
             },
             {
-              "atMicros" : 6547,
+              "atMicros" : 6612,
               "kind" : "done",
               "note" : "retried with fresh token"
             }
@@ -399,12 +399,12 @@
         {
           "events" : [
             {
-              "atMicros" : 20,
+              "atMicros" : 14,
               "kind" : "issued",
               "note" : "401 expected"
             },
             {
-              "atMicros" : 6514,
+              "atMicros" : 6665,
               "kind" : "done",
               "note" : "retried with fresh token"
             }
@@ -414,12 +414,12 @@
         {
           "events" : [
             {
-              "atMicros" : 21,
+              "atMicros" : 16,
               "kind" : "issued",
               "note" : "401 expected"
             },
             {
-              "atMicros" : 6533,
+              "atMicros" : 6612,
               "kind" : "done",
               "note" : "retried with fresh token"
             }
@@ -436,12 +436,12 @@
         {
           "events" : [
             {
-              "atMicros" : 1902,
+              "atMicros" : 1990,
               "kind" : "enqueue",
               "note" : "low priority"
             },
             {
-              "atMicros" : 3972,
+              "atMicros" : 4036,
               "kind" : "enqueue",
               "note" : "high priority (jumps the low one)"
             }
@@ -451,12 +451,12 @@
         {
           "events" : [
             {
-              "atMicros" : 17,
+              "atMicros" : 13,
               "kind" : "transport_in",
               "note" : "/p"
             },
             {
-              "atMicros" : 5105,
+              "atMicros" : 4065,
               "kind" : "transport_out",
               "note" : "200, 25 B"
             }
@@ -466,12 +466,12 @@
         {
           "events" : [
             {
-              "atMicros" : 10343,
+              "atMicros" : 9509,
               "kind" : "transport_in",
               "note" : "/p"
             },
             {
-              "atMicros" : 15472,
+              "atMicros" : 14614,
               "kind" : "transport_out",
               "note" : "200, 25 B"
             }
@@ -481,12 +481,12 @@
         {
           "events" : [
             {
-              "atMicros" : 5254,
+              "atMicros" : 4193,
               "kind" : "transport_in",
               "note" : "/p"
             },
             {
-              "atMicros" : 10117,
+              "atMicros" : 9329,
               "kind" : "transport_out",
               "note" : "200, 25 B"
             }
@@ -501,27 +501,27 @@
               "note" : "GET /p"
             },
             {
-              "atMicros" : 5127,
+              "atMicros" : 4082,
               "kind" : "response_interceptor",
               "note" : "200"
             },
             {
-              "atMicros" : 5242,
+              "atMicros" : 4185,
               "kind" : "interceptor",
               "note" : "GET /p"
             },
             {
-              "atMicros" : 10146,
+              "atMicros" : 9356,
               "kind" : "response_interceptor",
               "note" : "200"
             },
             {
-              "atMicros" : 10318,
+              "atMicros" : 9499,
               "kind" : "interceptor",
               "note" : "GET /p"
             },
             {
-              "atMicros" : 15500,
+              "atMicros" : 14642,
               "kind" : "response_interceptor",
               "note" : "200"
             }
@@ -539,7 +539,7 @@
     "os" : "macOS 26.5.2",
     "swift" : "6"
   },
-  "generatedAt" : "2026-09-09T15:27:33Z",
+  "generatedAt" : "2026-09-09T17:40:13Z",
   "package" : "SwiftNetworkKit",
   "pipelines" : [
     {
@@ -549,36 +549,36 @@
       "stages" : [
         {
           "detail" : "client.request(Get())",
-          "durationMicros" : 97,
+          "durationMicros" : 72,
           "name" : "Auth + request build",
-          "startMicros" : 96
+          "startMicros" : 69
         },
         {
           "detail" : "GET /widgets",
-          "durationMicros" : 7,
+          "durationMicros" : 6,
           "name" : "Request interceptors",
-          "startMicros" : 193
+          "startMicros" : 142
         },
         {
           "detail" : "/widgets",
-          "durationMicros" : 2080,
+          "durationMicros" : 2144,
           "name" : "Transport (in flight)",
-          "startMicros" : 200
+          "startMicros" : 148
         },
         {
           "detail" : "200, 25 B",
-          "durationMicros" : 19,
+          "durationMicros" : 26,
           "name" : "Status mapping",
-          "startMicros" : 2280
+          "startMicros" : 2292
         },
         {
           "detail" : "200",
-          "durationMicros" : 71,
+          "durationMicros" : 100,
           "name" : "Decode + return",
-          "startMicros" : 2299
+          "startMicros" : 2319
         }
       ],
-      "totalMicros" : 2274
+      "totalMicros" : 2349
     },
     {
       "id" : "cache_hit",
@@ -587,18 +587,18 @@
       "stages" : [
         {
           "detail" : "client.request(Get()), entry already cached",
-          "durationMicros" : 50,
+          "durationMicros" : 35,
           "name" : "Auth + request build",
-          "startMicros" : 14
+          "startMicros" : 25
         },
         {
           "detail" : "GET /widgets",
-          "durationMicros" : 31,
+          "durationMicros" : 33,
           "name" : "Request interceptors",
-          "startMicros" : 65
+          "startMicros" : 59
         }
       ],
-      "totalMicros" : 81
+      "totalMicros" : 67
     },
     {
       "id" : "retry",
@@ -607,85 +607,273 @@
       "stages" : [
         {
           "detail" : "client.request(Get()), retry policy: 3 attempts",
-          "durationMicros" : 17,
+          "durationMicros" : 18,
           "name" : "Auth + request build",
-          "startMicros" : 7
+          "startMicros" : 10
         },
         {
           "detail" : "GET /widgets",
           "durationMicros" : 3,
           "name" : "Request interceptors",
-          "startMicros" : 24
+          "startMicros" : 28
         },
         {
           "detail" : "/widgets",
           "durationMicros" : 4,
           "name" : "Transport (in flight)",
-          "startMicros" : 28
+          "startMicros" : 31
         },
         {
           "detail" : "503, 0 B",
-          "durationMicros" : 6,
+          "durationMicros" : 5,
           "name" : "Status mapping",
-          "startMicros" : 32
+          "startMicros" : 35
         },
         {
           "detail" : "503",
-          "durationMicros" : 9216,
+          "durationMicros" : 11046,
           "name" : "Backoff, then re-dispatch",
-          "startMicros" : 38
+          "startMicros" : 40
         },
         {
           "detail" : "GET /widgets",
-          "durationMicros" : 10,
+          "durationMicros" : 9,
           "name" : "Request interceptors",
-          "startMicros" : 9254
+          "startMicros" : 11085
         },
         {
           "detail" : "/widgets",
-          "durationMicros" : 10,
+          "durationMicros" : 13,
           "name" : "Transport (in flight)",
-          "startMicros" : 9264
+          "startMicros" : 11094
         },
         {
           "detail" : "503, 0 B",
-          "durationMicros" : 7,
+          "durationMicros" : 9,
           "name" : "Status mapping",
-          "startMicros" : 9273
+          "startMicros" : 11107
         },
         {
           "detail" : "503",
-          "durationMicros" : 13203,
+          "durationMicros" : 20811,
           "name" : "Backoff, then re-dispatch",
-          "startMicros" : 9280
+          "startMicros" : 11116
         },
         {
           "detail" : "GET /widgets",
           "durationMicros" : 11,
           "name" : "Request interceptors",
-          "startMicros" : 22483
+          "startMicros" : 31928
         },
         {
           "detail" : "/widgets",
-          "durationMicros" : 20,
+          "durationMicros" : 27,
           "name" : "Transport (in flight)",
-          "startMicros" : 22495
+          "startMicros" : 31939
         },
         {
           "detail" : "200, 25 B",
-          "durationMicros" : 19,
+          "durationMicros" : 21,
           "name" : "Status mapping",
-          "startMicros" : 22515
+          "startMicros" : 31965
         },
         {
           "detail" : "200",
-          "durationMicros" : 45,
+          "durationMicros" : 48,
           "name" : "Decode + return",
-          "startMicros" : 22534
+          "startMicros" : 31987
         }
       ],
-      "totalMicros" : 22571
+      "totalMicros" : 32025
+    },
+    {
+      "id" : "auth_refresh",
+      "label" : "401 token refresh",
+      "note" : "stale token, one actor-isolated refresh, request replayed transparently",
+      "stages" : [
+        {
+          "detail" : "client.request(Secure()) with a stale token",
+          "durationMicros" : 100,
+          "name" : "Auth + request build",
+          "startMicros" : 17
+        },
+        {
+          "detail" : "GET /me",
+          "durationMicros" : 6,
+          "name" : "Request interceptors",
+          "startMicros" : 117
+        },
+        {
+          "detail" : "/me",
+          "durationMicros" : 7,
+          "name" : "Transport (in flight)",
+          "startMicros" : 123
+        },
+        {
+          "detail" : "401, 0 B",
+          "durationMicros" : 4,
+          "name" : "Status mapping",
+          "startMicros" : 130
+        },
+        {
+          "detail" : "401",
+          "durationMicros" : 25,
+          "name" : "Decode + return",
+          "startMicros" : 134
+        },
+        {
+          "detail" : "exchange refresh token for a new access token",
+          "durationMicros" : 83,
+          "name" : "refresh",
+          "startMicros" : 160
+        },
+        {
+          "detail" : "GET /me",
+          "durationMicros" : 4,
+          "name" : "Request interceptors",
+          "startMicros" : 243
+        },
+        {
+          "detail" : "/me",
+          "durationMicros" : 11,
+          "name" : "Transport (in flight)",
+          "startMicros" : 247
+        },
+        {
+          "detail" : "200, 25 B",
+          "durationMicros" : 11,
+          "name" : "Status mapping",
+          "startMicros" : 259
+        },
+        {
+          "detail" : "200",
+          "durationMicros" : 24,
+          "name" : "Decode + return",
+          "startMicros" : 270
+        }
+      ],
+      "totalMicros" : 277
+    },
+    {
+      "id" : "upload",
+      "label" : "Multipart upload",
+      "note" : "RFC 7578 body, progress events, decode",
+      "stages" : [
+        {
+          "detail" : "client.upload(Up(), from: .multipart) 4 KB",
+          "durationMicros" : 28,
+          "name" : "Auth + request build",
+          "startMicros" : 63
+        },
+        {
+          "detail" : "POST /upload",
+          "durationMicros" : 150,
+          "name" : "Request interceptors",
+          "startMicros" : 91
+        },
+        {
+          "detail" : "0/4335 bytes",
+          "durationMicros" : 2,
+          "name" : "progress",
+          "startMicros" : 241
+        },
+        {
+          "detail" : "/upload",
+          "durationMicros" : 3104,
+          "name" : "Transport (in flight)",
+          "startMicros" : 243
+        },
+        {
+          "detail" : "200, 25 B",
+          "durationMicros" : 3,
+          "name" : "Status mapping",
+          "startMicros" : 3347
+        },
+        {
+          "detail" : "4335/4335 bytes",
+          "durationMicros" : 73,
+          "name" : "progress",
+          "startMicros" : 3350
+        }
+      ],
+      "totalMicros" : 3359
+    },
+    {
+      "id" : "download",
+      "label" : "File download",
+      "note" : "streamed to a temp file with progress",
+      "stages" : [
+        {
+          "detail" : "client.download(Down())",
+          "durationMicros" : 59,
+          "name" : "Auth + request build",
+          "startMicros" : 22
+        },
+        {
+          "detail" : "GET /asset.bin",
+          "durationMicros" : 6,
+          "name" : "Request interceptors",
+          "startMicros" : 81
+        },
+        {
+          "detail" : "/asset.bin",
+          "durationMicros" : 3121,
+          "name" : "Transport (in flight)",
+          "startMicros" : 87
+        },
+        {
+          "detail" : "200, 8192 B",
+          "durationMicros" : 541,
+          "name" : "Status mapping",
+          "startMicros" : 3207
+        },
+        {
+          "detail" : "8192/8192 bytes",
+          "durationMicros" : 47,
+          "name" : "progress",
+          "startMicros" : 3748
+        }
+      ],
+      "totalMicros" : 3773
+    },
+    {
+      "id" : "oauth",
+      "label" : "OAuth 2.0 + PKCE",
+      "note" : "real PKCE challenge, code exchange over the transport",
+      "stages" : [
+        {
+          "detail" : "AuthorizationCodeFlow.exchange(code:pkce:)",
+          "durationMicros" : 124,
+          "name" : "Auth + request build",
+          "startMicros" : 9
+        },
+        {
+          "detail" : "PKCE: base64url(SHA256(verifier)) challenge computed",
+          "durationMicros" : 29,
+          "name" : "Request interceptors",
+          "startMicros" : 133
+        },
+        {
+          "detail" : "authorization URL built (response_type=code, code_challenge)",
+          "durationMicros" : 84,
+          "name" : "Request interceptors",
+          "startMicros" : 162
+        },
+        {
+          "detail" : "/token",
+          "durationMicros" : 10,
+          "name" : "Transport (in flight)",
+          "startMicros" : 246
+        },
+        {
+          "detail" : "200, 82 B",
+          "durationMicros" : 57,
+          "name" : "Status mapping",
+          "startMicros" : 256
+        }
+      ],
+      "totalMicros" : 303
     }
   ],
-  "version" : "0.1.3"
+  "version" : "0.1.4"
 }

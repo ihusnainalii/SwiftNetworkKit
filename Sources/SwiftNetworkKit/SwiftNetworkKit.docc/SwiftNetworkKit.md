@@ -7,8 +7,8 @@ strict concurrency.
 
 The public surface is one composable ``NetworkClient`` plus an ``Endpoint`` protocol each app
 implements for its own API. Internally the client is assembled from small, individually-testable,
-protocol-backed components — transport, auth + refresh, retry, interceptors, logging, metrics,
-pinning, caching, request management, offline queue — each with a sensible default.
+protocol-backed components (transport, auth + refresh, retry, interceptors, logging, metrics,
+pinning, caching, request management, offline queue), each with a sensible default.
 
 ```swift
 let client = NetworkClient(configuration: NetworkConfiguration(
@@ -26,6 +26,22 @@ let user = try await client.request(GetProfile())
 ```
 
 ## Topics
+
+### Guides
+
+- <doc:GettingStarted>
+- <doc:DefiningEndpoints>
+- <doc:Authentication>
+- <doc:OAuth>
+- <doc:Caching>
+- <doc:CertificatePinning>
+- <doc:RetryAndResilience>
+- <doc:Interceptors>
+- <doc:Observability>
+- <doc:OfflineQueue>
+- <doc:Pagination>
+- <doc:ErrorHandling>
+- <doc:Testing>
 
 ### Essentials
 
@@ -75,6 +91,10 @@ let user = try await client.request(GetProfile())
 - ``ServerTrustDecision``
 
 ### Testing
+
+Shipped for consumers but not part of the stable API. Import with
+`@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit` (or
+`@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit` outside a test target).
 
 - ``MockNetworkTransport``
 - ``MockScenario``

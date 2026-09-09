@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// The OAuth 2.0 Authorization Code flow with PKCE — URL building and token exchange. It performs
 /// **no UI**: the app presents ``authorizationURL(state:pkce:)`` (e.g. in `ASWebAuthenticationSession`),
 /// captures the redirect, calls ``authorizationCode(fromRedirect:expectedState:)``, then

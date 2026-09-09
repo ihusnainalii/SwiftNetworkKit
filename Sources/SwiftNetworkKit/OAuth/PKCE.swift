@@ -53,7 +53,7 @@ extension Data {
         #if canImport(CryptoKit)
         return Data(SHA256.hash(data: self))
         #else
-        fatalError("SHA256 unavailable on this platform")
+        return SHA256Fallback.hash(self)
         #endif
     }
 }

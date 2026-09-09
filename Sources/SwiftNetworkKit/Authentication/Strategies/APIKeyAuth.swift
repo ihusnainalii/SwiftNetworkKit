@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A static API key, sent either as a header or as a query item.
 public struct APIKeyAuth: AuthStrategy {
     public enum Placement: Sendable {

@@ -100,7 +100,39 @@ jobs:
           -scheme SwiftUIDemo
           -destination 'generic/platform=iOS Simulator'
 
-  # 6 - DocC must compile (catches broken symbol links in doc comments).
+  # 6 - The library must compile for every Apple platform it declares support for.
+  apple-platforms:
+    name: Build (${{ matrix.platform }})
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [tvOS, watchOS, visionOS]
+    steps:
+      - uses: actions/checkout@v4
+      - run: >
+          xcodebuild build
+          -scheme SwiftNetworkKit
+          -destination 'generic/platform=${{ matrix.platform }} Simulator'
+          -skipPackagePluginValidation
+
+  # 7 - Linux: the Foundation-only subset (no Security, CryptoKit, Network or os.Logger).
+  #     Certificate pinning, KeychainTokenStorage and PathNetworkMonitor compile out;
+  #     bring your own TokenStorage / NetworkMonitor there.
+  linux:
+    name: Test (Linux, Swift ${{ matrix.swift }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        swift: ["6.1"]
+    container: swift:${{ matrix.swift }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build --build-tests
+      - run: swift test --parallel
+
+  # 8 - DocC must compile (catches broken symbol links in doc comments).
   #     Uses xcodebuild so the package keeps its zero-dependency Package.swift.
   docs:
     name: DocC build
@@ -120,7 +152,7 @@ jobs:
   ci-ok:
     name: CI passed
     runs-on: ubuntu-latest
-    needs: [lint, build, test, sanitizers, ios, docs]
+    needs: [lint, build, test, sanitizers, ios, apple-platforms, linux, docs]
     if: always()
     steps:
       - run: |

@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A request captured while offline, waiting to be replayed. Persisted as JSON.
 public struct PersistedRequest: Codable, Sendable, Hashable {
     public let id: RequestID

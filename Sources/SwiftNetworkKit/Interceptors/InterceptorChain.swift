@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Runs the configured request and response interceptors around a single transport round-trip.
 ///
 /// Request interceptors run in array order; response interceptors run in reverse (middleware

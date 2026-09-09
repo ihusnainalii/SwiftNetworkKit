@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A byte-count update for an in-flight upload or download.
 public struct ProgressEvent: Sendable, Hashable {
     /// Bytes transferred so far.

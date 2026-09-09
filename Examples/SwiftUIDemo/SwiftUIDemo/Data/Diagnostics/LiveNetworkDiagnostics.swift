@@ -1,5 +1,5 @@
 import Foundation
-import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Runs a deterministic 401 → refresh → retry against a `MockNetworkTransport` and narrates each step.
 struct LiveNetworkDiagnostics: NetworkDiagnostics {

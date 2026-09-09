@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 extension NetworkClient {
 
     /// Uploads `body` as the request body of `endpoint`, reporting byte progress, and decodes the

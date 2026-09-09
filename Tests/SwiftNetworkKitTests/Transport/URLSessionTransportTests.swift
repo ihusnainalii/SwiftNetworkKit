@@ -1,7 +1,11 @@
 import Foundation
 import Testing
 
-@testable import SwiftNetworkKit
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
+@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("URLSessionTransport", .serialized)
 struct URLSessionTransportTests {
@@ -67,6 +71,10 @@ struct URLSessionTransportTests {
         #expect(URLProtocolStub.lastRequest?.url?.path == "/upload")
     }
 
+    // swift-corelibs-foundation force-unwraps a temp-file property that only its own
+    // `_HTTPURLProtocol` sets, so driving a `downloadTask` from a custom `URLProtocol` traps in
+    // `_ProtocolClient.urlProtocolDidFinishLoading`. The download path is covered on Apple platforms.
+    #if !canImport(FoundationNetworking)
     @Test("download writes the response body to a temp file")
     func download() async throws {
         let payload = Data(repeating: 0x7F, count: 10_000)
@@ -80,4 +88,5 @@ struct URLSessionTransportTests {
         #expect(response.statusCode == 200)
         #expect(try Data(contentsOf: url) == payload)
     }
+    #endif
 }

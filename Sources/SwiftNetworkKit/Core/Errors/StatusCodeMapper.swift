@@ -4,11 +4,11 @@ import Foundation
 ///
 /// Apps customize the mapping by passing an `errorMapper` (see ``NetworkConfiguration``) — it is
 /// consulted first and any non-`nil` result wins.
-public enum StatusCodeMapper {
+enum StatusCodeMapper {
 
     /// Maps a response to a `NetworkError`, or returns `nil` for 2xx and 304 (both are "success"
     /// from the transport's point of view — 304 is resolved by the cache layer in M8).
-    public static func map(
+    static func map(
         context: ResponseContext,
         errorMapper: (@Sendable (ResponseContext) -> NetworkError?)? = nil
     ) -> NetworkError? {

@@ -1,11 +1,15 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Persists requests made while offline and replays them FIFO when connectivity returns.
 ///
 /// Replayed requests have **no caller awaiting** — the outcome is delivered only on ``events()``.
-public actor OfflineRequestQueue {
+actor OfflineRequestQueue {
 
-    public typealias Send = @Sendable (URLRequest) async throws -> HTTPURLResponse
+    typealias Send = @Sendable (URLRequest) async throws -> HTTPURLResponse
 
     private let store: any OfflineStore
     private let send: Send
@@ -15,7 +19,7 @@ public actor OfflineRequestQueue {
     private var monitorTask: Task<Void, Never>?
     private var replaying = false
 
-    public init(
+    init(
         store: any OfflineStore,
         monitor: any NetworkMonitor,
         metrics: any NetworkMetrics = NoopMetrics(),
@@ -40,7 +44,7 @@ public actor OfflineRequestQueue {
     }
 
     /// Archives `request` and adds it to the queue. Returns its id.
-    public func enqueue(_ request: URLRequest, expiresAfter: TimeInterval?) async throws -> RequestID {
+    func enqueue(_ request: URLRequest, expiresAfter: TimeInterval?) async throws -> RequestID {
         guard let archived = URLRequestArchive.archive(request) else {
             throw NetworkError.encoding(underlying: OfflineQueueError.notArchivable)
         }
@@ -53,22 +57,21 @@ public actor OfflineRequestQueue {
     }
 
     /// A stream of replay outcomes. Each call is an independent subscription.
-    public func events() -> AsyncStream<OfflineReplayEvent> {
+    func events() -> AsyncStream<OfflineReplayEvent> {
         let id = UUID()
-        var escaped: AsyncStream<OfflineReplayEvent>.Continuation!
-        let stream = AsyncStream<OfflineReplayEvent> { escaped = $0 }
-        subscribers[id] = escaped
-        escaped.onTermination = { [weak self] _ in Task { await self?.removeSubscriber(id) } }
+        let (stream, continuation) = AsyncStream<OfflineReplayEvent>.makeStream()
+        subscribers[id] = continuation
+        continuation.onTermination = { [weak self] _ in Task { await self?.removeSubscriber(id) } }
         return stream
     }
 
     /// Number of requests currently queued.
-    public var pendingCount: Int {
+    var pendingCount: Int {
         get async { await store.all().count }
     }
 
     /// Replays the queue now (also runs automatically when the monitor reports connectivity).
-    public func replayNow() async {
+    func replayNow() async {
         guard !replaying else { return }
         replaying = true
         defer { replaying = false }

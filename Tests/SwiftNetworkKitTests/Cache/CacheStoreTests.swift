@@ -49,6 +49,41 @@ struct CacheStoreTests {
         #expect(await b.value(forKey: "GET https://x/y") == nil)
     }
 
+    @Test("DiskCacheStore removeAll clears every entry")
+    func diskRemoveAll() async {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("nk-cache-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = DiskCacheStore(directory: dir)
+        await store.setValue(entry("one"), forKey: "k1")
+        await store.setValue(entry("two"), forKey: "k2")
+        await store.removeAll()
+        #expect(await store.value(forKey: "k1") == nil)
+        #expect(await store.value(forKey: "k2") == nil)
+    }
+
+    @Test("DiskCacheStore evicts oldest-first once it exceeds the byte limit")
+    func diskEviction() async {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("nk-cache-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        // Each JSON entry here is ~1 KB (base64 data + etag). Room for ~2, not 4.
+        let store = DiskCacheStore(directory: dir, limitBytes: 2500)
+
+        for key in ["k1", "k2", "k3", "k4"] {
+            await store.setValue(entry(String(repeating: "x", count: 300)), forKey: key)
+            try? await Task.sleep(for: .milliseconds(15))
+        }
+        // The oldest key must have been evicted; the newest must remain.
+        #expect(await store.value(forKey: "k1") == nil)
+        #expect(await store.value(forKey: "k4") != nil)
+    }
+
+    @Test("DiskCacheStore uses a default directory when none is given")
+    func diskDefaultDirectory() async {
+        let store = DiskCacheStore()
+        await store.setValue(entry("d"), forKey: "nk-default-\(UUID())")
+        await store.removeAll()
+    }
+
     @Test("CachedResponse.isFresh respects max-age and the fallback TTL")
     func freshness() {
         let old = Date().addingTimeInterval(-120)
@@ -64,6 +99,19 @@ struct CacheStoreTests {
         let original = entry("body", maxAge: 42)
         let data = try JSONEncoder().encode(original)
         #expect(try JSONDecoder().decode(CachedResponse.self, from: data) == original)
+    }
+
+    @Test("CacheConfiguration.memory wires up a MemoryCacheStore")
+    func memoryFactory() async {
+        let config = CacheConfiguration.memory(policy: .cacheFirst, limitBytes: 4096, defaultTTL: 42)
+        #expect(config.defaultPolicy == .cacheFirst)
+        #expect(config.defaultTTL == 42)
+        guard let store = config.store else {
+            Issue.record("expected a store")
+            return
+        }
+        await store.setValue(entry("m"), forKey: "k")
+        #expect(await store.value(forKey: "k")?.data == Data("m".utf8))
     }
 
     @Test("CacheControl parses the directives caching needs")

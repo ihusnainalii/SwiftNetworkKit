@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("NetworkMonitor")
 struct NetworkMonitorTests {
@@ -105,4 +105,21 @@ struct NetworkMonitorTests {
         #expect(NetworkStatus.unsatisfied.connectionType == nil)
         #expect(!NetworkStatus.requiresConnection.isOnline)
     }
+
+    #if canImport(Network)
+    @Test("PathNetworkMonitor starts, reports a status and yields a seeded stream")
+    func pathMonitor() async {
+        var monitor: PathNetworkMonitor? = PathNetworkMonitor()
+        let stream = await monitor!.statusUpdates()
+        _ = await monitor!.currentStatus  // starts as .requiresConnection, may update from the real path
+
+        var first: NetworkStatus?
+        for await status in stream {
+            first = status
+            break
+        }
+        #expect(first != nil)
+        monitor = nil  // exercises deinit (cancel + finishAll)
+    }
+    #endif
 }

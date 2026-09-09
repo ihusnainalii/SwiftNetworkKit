@@ -2,7 +2,7 @@
 import Foundation
 import Combine
 import Testing
-@testable import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("Combine publishers")
 struct PublisherTests {

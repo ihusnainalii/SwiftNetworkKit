@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// Applies authentication to an outgoing request.
 ///
 /// The `token` argument is the current access token from the client's ``TokenStorage`` (via

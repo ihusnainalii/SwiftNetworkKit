@@ -1,7 +1,11 @@
 import Foundation
 import Testing
 
-@testable import SwiftNetworkKit
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
+@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("InMemoryMetrics")
 struct InMemoryMetricsTests {
@@ -60,6 +64,22 @@ struct InMemoryMetricsTests {
         #expect(snap.failureCount == 4)  // i = 0, 3, 6, 9
         #expect(snap.statusCodeHistogram[200] == 6)
         #expect(snap.statusCodeHistogram[500] == 4)
+    }
+
+    @Test("reset() zeroes every counter and the histogram")
+    func reset() async {
+        let metrics = InMemoryMetrics()
+        await metrics.record(.success(RequestID(), duration: .milliseconds(5), status: 200))
+        await metrics.record(.failure(RequestID(), .timeout, status: nil))
+        await metrics.record(.retry(RequestID(), attempt: 1))
+        await metrics.reset()
+
+        let snap = await metrics.snapshot()
+        #expect(snap.requestCount == 0)
+        #expect(snap.successCount == 0)
+        #expect(snap.failureCount == 0)
+        #expect(snap.retryCount == 0)
+        #expect(snap.statusCodeHistogram.isEmpty)
     }
 
     private func dummyContext(_ status: Int) -> ResponseContext {

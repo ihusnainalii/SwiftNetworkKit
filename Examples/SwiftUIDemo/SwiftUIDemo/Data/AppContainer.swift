@@ -1,5 +1,5 @@
 import Foundation
-import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) import SwiftNetworkKit
 
 /// Composition root. Builds the `NetworkClient` once and wires the concrete repositories.
 /// Injected through the SwiftUI environment; swap `.live` for a stub container in previews/tests.

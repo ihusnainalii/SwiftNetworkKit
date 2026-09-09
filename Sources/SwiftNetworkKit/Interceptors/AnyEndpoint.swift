@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// A type-erased ``Endpoint``: the metadata an interceptor, logger or registry needs, plus a
 /// `@Sendable` decode thunk, without the `associatedtype Response` that blocks heterogeneous storage.
 ///

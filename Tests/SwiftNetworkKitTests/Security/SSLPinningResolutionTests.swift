@@ -1,3 +1,4 @@
+#if canImport(Security)
 import Foundation
 import Testing
 
@@ -83,3 +84,4 @@ struct SSLPinningResolutionTests {
     }
     #endif
 }
+#endif

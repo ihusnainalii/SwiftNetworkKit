@@ -5,7 +5,7 @@ import Foundation
 /// ```swift
 /// let transport = MockScenario.tokenExpired.transport(then: .json(userJSON))
 /// ```
-public enum MockScenario: Sendable {
+@_spi(SwiftNetworkKitTesting) public enum MockScenario: Sendable {
     /// Every request succeeds with 200 and `body`.
     case happyPath(body: Data)
     /// The first request 401s, the rest succeed with `body` (drives the refresh flow).
@@ -19,7 +19,9 @@ public enum MockScenario: Sendable {
 
     /// Builds a transport pre-configured for this scenario. `then` outcomes are appended to the FIFO
     /// queue (used after the scenario's scripted part).
-    public func transport(then extra: MockNetworkTransport.Outcome...) -> MockNetworkTransport {
+    @_spi(SwiftNetworkKitTesting) public func transport(
+        then extra: MockNetworkTransport.Outcome...
+    ) -> MockNetworkTransport {
         let transport: MockNetworkTransport
         switch self {
         case .happyPath(let body):

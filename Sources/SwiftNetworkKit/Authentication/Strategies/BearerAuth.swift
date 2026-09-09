@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// `Authorization: Bearer <token>`. No-op when `token` is `nil`.
 public struct BearerAuth: AuthStrategy {
     public init() {}
