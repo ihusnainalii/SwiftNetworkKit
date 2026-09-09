@@ -1,6 +1,10 @@
 import Foundation
 import Testing
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 @_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("Interceptors")
