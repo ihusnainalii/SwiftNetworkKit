@@ -69,3 +69,21 @@ jobs:
           gh release upload "${{ needs.release-please.outputs.tag }}" benchmarks.json traces.json --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build DocC and attach to the Release
+        # The marketing site unpacks this into /docs at build time
+        # (swiftnetworkkit.vercel.app/docs). transform-for-static-hosting makes the
+        # archive work on a plain static host; --hosting-base-path matches the subpath.
+        run: |
+          xcodebuild docbuild \
+            -scheme SwiftNetworkKit \
+            -destination 'generic/platform=iOS Simulator' \
+            -skipPackagePluginValidation \
+            -derivedDataPath "$RUNNER_TEMP/docbuild"
+          archive=$(find "$RUNNER_TEMP/docbuild" -type d -name '*.doccarchive' | head -1)
+          "$(xcrun --find docc)" process-archive transform-for-static-hosting "$archive" \
+            --output-path "$RUNNER_TEMP/docc-static" \
+            --hosting-base-path docs
+          COPYFILE_DISABLE=1 tar -C "$RUNNER_TEMP/docc-static" --no-mac-metadata -czf docc-static.tar.gz .
+          gh release upload "${{ needs.release-please.outputs.tag }}" docc-static.tar.gz --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
