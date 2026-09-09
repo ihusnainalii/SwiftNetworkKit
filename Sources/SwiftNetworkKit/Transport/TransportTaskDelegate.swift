@@ -1,3 +1,4 @@
+#if !os(WASI)  // URLSession is unavailable on WebAssembly; inject a NetworkTransport instead.
 import Foundation
 
 #if canImport(Security)
@@ -61,3 +62,4 @@ final class TransportTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked 
         #endif
     }
 }
+#endif

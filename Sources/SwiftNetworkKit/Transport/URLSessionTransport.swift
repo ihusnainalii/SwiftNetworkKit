@@ -1,3 +1,4 @@
+#if !os(WASI)  // URLSession is unavailable on WebAssembly; inject a NetworkTransport instead.
 import Foundation
 
 /// The default ``NetworkTransport``, backed by `URLSession`.
@@ -185,3 +186,4 @@ public final class URLSessionTransport: NetworkTransport, @unchecked Sendable {
         return httpResponse
     }
 }
+#endif

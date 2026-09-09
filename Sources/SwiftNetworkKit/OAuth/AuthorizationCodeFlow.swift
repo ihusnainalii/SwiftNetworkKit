@@ -23,7 +23,12 @@ public struct AuthorizationCodeFlow: Sendable {
         transport: (any NetworkTransport)? = nil
     ) {
         self.configuration = configuration
+        #if os(WASI)
+        guard let transport else { preconditionFailure("Pass `transport:` on WebAssembly.") }
+        self.transport = transport
+        #else
         self.transport = transport ?? URLSessionTransport()
+        #endif
     }
 
     /// The RFC 6749 token response is a fixed wire format — decode it with plain keys, independent of

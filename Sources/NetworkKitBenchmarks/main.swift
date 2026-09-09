@@ -1,16 +1,18 @@
 import Foundation
 import SwiftNetworkKit
 
-// Usage: swift run -c release NetworkKitBenchmarks [--out path/to/results.json]
+// Usage: swift run -c release NetworkKitBenchmarks [--out results.json] [--traces traces.json]
 //
-// Prints the JSON report to stdout; also writes it to --out when given. Consumed by the
-// SwiftNetworkKit-web site (Benchmarks/results.json in this repo, and a release asset).
+// --out     writes the timed benchmark report (also printed to stdout)
+// --traces  writes the pipeline + concurrency traces (real requests, timestamped per stage)
+//
+// Consumed by the SwiftNetworkKit-web site (committed copies in this repo + release assets).
 
-let outPath: String? = {
+func argValue(_ name: String) -> String? {
     let args = CommandLine.arguments
-    guard let i = args.firstIndex(of: "--out"), i + 1 < args.count else { return nil }
+    guard let i = args.firstIndex(of: name), i + 1 < args.count else { return nil }
     return args[i + 1]
-}()
+}
 
 func currentEnvironment() -> BenchmarkReport.Environment {
     let info = ProcessInfo.processInfo
@@ -34,28 +36,40 @@ func currentEnvironment() -> BenchmarkReport.Environment {
     #else
     let config = "release"
     #endif
-    let swift = "6.\(0)"
-    return .init(os: os, arch: arch, swift: swift, cpuCount: info.activeProcessorCount, configuration: config)
+    return .init(os: os, arch: arch, swift: "6", cpuCount: info.activeProcessorCount, configuration: config)
 }
 
-FileHandle.standardError.write(
-    Data("Running SwiftNetworkKit benchmarks (\(currentEnvironment().configuration))...\n".utf8))
+let env = currentEnvironment()
+let now = ISO8601DateFormatter().string(from: Date())
+let encoder = JSONEncoder()
+encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
 
-let results = await Scenarios.all()
+func log(_ s: String) { FileHandle.standardError.write(Data((s + "\n").utf8)) }
+
+log("SwiftNetworkKit benchmarks — \(env.configuration) build, \(env.os) \(env.arch)")
 
 let report = BenchmarkReport(
     version: SwiftNetworkKit.version,
-    generatedAt: ISO8601DateFormatter().string(from: Date()),
-    environment: currentEnvironment(),
-    results: results
+    generatedAt: now,
+    environment: env,
+    results: await Scenarios.all()
 )
-
-let encoder = JSONEncoder()
-encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-let json = try encoder.encode(report)
-
-if let outPath {
-    try json.write(to: URL(fileURLWithPath: outPath))
-    FileHandle.standardError.write(Data("Wrote \(results.count) results to \(outPath)\n".utf8))
+let reportJSON = try encoder.encode(report)
+if let out = argValue("--out") {
+    try reportJSON.write(to: URL(fileURLWithPath: out))
+    log("wrote \(report.results.count) results -> \(out)")
 }
-print(String(decoding: json, as: UTF8.self))
+
+if let tracesOut = argValue("--traces") {
+    let traces = TraceReport(
+        version: SwiftNetworkKit.version,
+        generatedAt: now,
+        environment: env,
+        pipelines: await Traces.pipelines(version: SwiftNetworkKit.version),
+        concurrency: await Traces.concurrency()
+    )
+    try encoder.encode(traces).write(to: URL(fileURLWithPath: tracesOut))
+    log("wrote \(traces.pipelines.count) pipeline + \(traces.concurrency.count) concurrency traces -> \(tracesOut)")
+}
+
+print(String(decoding: reportJSON, as: UTF8.self))

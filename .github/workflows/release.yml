@@ -60,11 +60,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Benchmark and attach to the Release
-        # The marketing site fetches this asset at build time (falls back to the
-        # committed Benchmarks/results.json). Numbers are the package's own overhead,
-        # measured against its MockNetworkTransport.
+        # The marketing site fetches these assets at build time (falls back to the
+        # committed copies in Benchmarks/). Both are the package's own behaviour,
+        # measured against its MockNetworkTransport: benchmarks.json is timed
+        # scenarios, traces.json is real requests walked stage by stage.
         run: |
-          swift run -c release NetworkKitBenchmarks --out benchmarks.json
-          gh release upload "${{ needs.release-please.outputs.tag }}" benchmarks.json --clobber
+          swift run -c release NetworkKitBenchmarks --out benchmarks.json --traces traces.json
+          gh release upload "${{ needs.release-please.outputs.tag }}" benchmarks.json traces.json --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
