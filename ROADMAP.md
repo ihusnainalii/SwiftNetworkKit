@@ -12,7 +12,7 @@ Feature-complete for the `0.1.0` series under Swift 6 strict concurrency. All co
 - **Streaming & Transfers**: RFC 7578 multipart disk streaming and `PaginatedEndpoint` AsyncSequence.
 - **Telemetry & Metrics**: Microsecond-precision timing telemetry and RFC-compliant logging.
 
-Detailed architectural documentation is available in [Documentation/Concurrency.md](Documentation/Concurrency.md) and the [Interactive Web Documentation](https://ihusnainalii.github.io/SwiftNetworkKit/).
+Detailed architectural documentation is available in [Documentation/Concurrency.md](Documentation/Concurrency.md). The marketing site source lives in [SwiftNetworkKit-web](https://github.com/ihusnainalii/SwiftNetworkKit-web).
 
 ---
 
@@ -20,7 +20,7 @@ Detailed architectural documentation is available in [Documentation/Concurrency.
 
 SwiftNetworkKit uses **Conventional Commits** and **Google release-please** to automatically maintain releases:
 - Every push to `main` updates a rolling release candidate pull request.
-- Merging the release PR triggers automated GitHub Releases, SPM tag creation, coverage publishing, and web documentation synchronization.
+- Merging the release PR triggers automated GitHub Releases, SPM tag creation, and coverage publishing.
 
 ---
 

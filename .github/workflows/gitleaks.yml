@@ -32,6 +32,6 @@ jobs:
       # Scan the whole commit graph directly with the CLI. No GitHub API calls, so
       # it needs no extra token permissions and works the same on push, PR, and cron.
       # `git` mode only sees committed content, which on a CI checkout is everything
-      # tracked; build artifacts (web/.next, .build) are gitignored and never scanned.
+      # tracked; build artifacts (.build) are gitignored and never scanned.
       - name: Scan
         run: ./gitleaks git . --config .gitleaks.toml --redact --verbose --exit-code 1

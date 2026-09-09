@@ -59,23 +59,3 @@ jobs:
             .build/coverage/coverage.lcov .build/coverage/summary.md --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Ensure the website builds cleanly for the published release tag
-  build-web:
-    needs: release-please
-    if: needs.release-please.outputs.released == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.release-please.outputs.tag }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-      - name: Install dependencies & build website
-        run: |
-          cd web
-          npm ci
-          npm run build
