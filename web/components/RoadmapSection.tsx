@@ -2,15 +2,16 @@
 
 import React from "react";
 import { Compass, CheckCircle2, Clock, Sparkles, ArrowRight, ShieldCheck, Terminal } from "lucide-react";
+import { APP_VERSION, REPO_URL } from "../lib/config";
 
 export function RoadmapSection() {
   const currentStatus = [
-    { title: "Core & Architecture", status: "Done (v0.1.0)", desc: "Swift 6 strict concurrency, Sendable conformances, protocol-oriented Endpoint." },
-    { title: "Authentication & TokenManager", status: "Done (v0.1.0)", desc: "Actor-isolated single-flight 401 token refresh, KeychainTokenStorage, loop guard." },
-    { title: "OAuth 2.0 PKCE", status: "Done (v0.1.0)", desc: "RFC 7636 Authorization Code Flow, verifier generation, token exchange handler." },
-    { title: "Security & SPKI Pinning", status: "Done (v0.1.0)", desc: "SPKI SHA-256 Public Key Pinning, Certificate pinning, .development discovery mode." },
-    { title: "Offline Queue & Caching", status: "Done (v0.1.0)", desc: "Persisted FileOfflineStore, FIFO automatic replay, DiskCacheStore with ETag / 304." },
-    { title: "Transfers & Pagination", status: "Done (v0.1.0)", desc: "RFC 7578 multipart disk streaming, PaginatedEndpoint AsyncSequence, batch/zip." },
+    { title: "Core & Architecture", status: `Done (v${APP_VERSION})`, desc: "Swift 6 strict concurrency, Sendable conformances, protocol-oriented Endpoint." },
+    { title: "Authentication & TokenManager", status: `Done (v${APP_VERSION})`, desc: "Actor-isolated single-flight 401 token refresh, KeychainTokenStorage, loop guard." },
+    { title: "OAuth 2.0 PKCE", status: `Done (v${APP_VERSION})`, desc: "RFC 7636 Authorization Code Flow, verifier generation, token exchange handler." },
+    { title: "Security & SPKI Pinning", status: `Done (v${APP_VERSION})`, desc: "SPKI SHA-256 Public Key Pinning, Certificate pinning, .development discovery mode." },
+    { title: "Offline Queue & Caching", status: `Done (v${APP_VERSION})`, desc: "Persisted FileOfflineStore, FIFO automatic replay, DiskCacheStore with ETag / 304." },
+    { title: "Transfers & Pagination", status: `Done (v${APP_VERSION})`, desc: "RFC 7578 multipart disk streaming, PaginatedEndpoint AsyncSequence, batch/zip." },
   ];
 
   const toward100 = [
@@ -36,6 +37,12 @@ export function RoadmapSection() {
       track: "Multi-Platform CI Hardening",
       target: "v1.0.0 Milestone",
       details: "Linux (Foundation-only subset), tvOS, watchOS, and visionOS simulator automated test suites.",
+      done: false
+    },
+    {
+      track: "Performance & Benchmarks",
+      target: "v1.0.0 Milestone",
+      details: "Benchmark interceptor chain and cache-key hashing; profile RequestBuilder allocations.",
       done: false
     }
   ];
@@ -72,7 +79,7 @@ export function RoadmapSection() {
                 <ShieldCheck className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                 Toward 1.0.0 Stabilization
               </h3>
-              <p className="text-xs text-slate-500 font-mono mt-0.5">Current Phase: v0.1.0 Feature Complete</p>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">Current Phase: v{APP_VERSION} Feature Complete (Toward 1.0.0)</p>
             </div>
             <span className="text-xs font-mono px-2.5 py-1 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-bold">
               In Progress
@@ -128,7 +135,7 @@ export function RoadmapSection() {
 
           <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-500 flex items-center justify-between">
             <span>Automated Releases via release-please</span>
-            <a href="https://github.com/ihusnainalii/SwiftNetworkKit/blob/main/ROADMAP.md" target="_blank" rel="noreferrer" className="text-sky-600 dark:text-sky-400 hover:underline">
+            <a href={`${REPO_URL}/blob/main/ROADMAP.md`} target="_blank" rel="noreferrer" className="text-sky-600 dark:text-sky-400 hover:underline">
               ROADMAP.md ➔
             </a>
           </div>

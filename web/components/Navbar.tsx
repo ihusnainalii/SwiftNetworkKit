@@ -23,6 +23,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
+import { APP_VERSION, REPO_URL } from "../lib/config";
 
 interface DropdownItem {
   id: string;
@@ -170,7 +171,7 @@ export function Navbar() {
             <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
               SwiftNetworkKit
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-bold">
-                v0.1.0
+                v{APP_VERSION}
               </span>
             </span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Swift 6 Strict Concurrency</span>
@@ -368,7 +369,7 @@ export function Navbar() {
           </button>
 
           <a
-            href="https://github.com/ihusnainalii/SwiftNetworkKit"
+            href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl glass-panel hover:border-orange-500/40 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
