@@ -60,4 +60,50 @@ struct OfflineStoreTests {
         let second = FileOfflineStore(fileURL: url)
         #expect(await second.all().map(\.id) == [req.id])
     }
+
+    @Test("FileOfflineStore update / remove / removeAll")
+    func fileMutations() async {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("nk-offline-\(UUID())/queue.json")
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = FileOfflineStore(fileURL: url)
+
+        let a = request("/a")
+        var b = request("/b")
+        await store.append(a)
+        await store.append(b)
+
+        b.attempts = 5
+        await store.update(b)
+        await store.update(request("/missing"))  // no-op branch
+        #expect(await store.all().first { $0.id == b.id }?.attempts == 5)
+
+        await store.remove(a.id)
+        #expect(await store.all().map(\.id) == [b.id])
+
+        await store.removeAll()
+        #expect(await store.all().isEmpty)
+    }
+
+    @Test("FileOfflineStore uses a default location when none is given")
+    func fileDefaultLocation() async {
+        let store = FileOfflineStore()
+        await store.removeAll()
+        #expect(await store.all().isEmpty)
+    }
+
+    @Test("FileOfflineStore tolerates a corrupt backing file")
+    func fileCorrupt() async {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("nk-offline-\(UUID())/queue.json")
+        try? FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? Data("not json".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let store = FileOfflineStore(fileURL: url)
+        #expect(await store.all().isEmpty)  // load() swallows the decode failure
+        await store.append(request("/recovered"))
+        #expect(await store.all().count == 1)
+    }
 }

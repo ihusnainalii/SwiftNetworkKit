@@ -15,6 +15,23 @@ struct NetworkErrorTests {
         )
     }
 
+    @Test("serverMessage reads the common error-body shapes")
+    func serverMessageShapes() {
+        func message(_ body: String) -> String? {
+            ResponseContext(
+                statusCode: 422, headers: [:], data: Data(body.utf8),
+                request: URLRequest(url: URL(string: "https://x")!)
+            ).serverMessage
+        }
+        #expect(message(#"{"message":"bad input"}"#) == "bad input")
+        #expect(message(#"{"error":"nope"}"#) == "nope")
+        #expect(message(#"{"errors":[{"message":"field required"}]}"#) == "field required")
+        #expect(message(#"{"errors":["first","second"]}"#) == "first")
+        #expect(message("plain text failure") == "plain text failure")
+        #expect(message(String(repeating: "x", count: 900)) == nil)  // too long to be a message
+        #expect(message("") == nil)
+    }
+
     @Test("response-carrying cases expose status, headers, body, message")
     func responseAccessors() {
         let error = NetworkError.server(context(503))

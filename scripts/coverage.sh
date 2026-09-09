@@ -44,3 +44,10 @@ echo "$PCT" > "$OUT/total.txt"
 } > "$OUT/summary.md"
 
 echo "coverage: ${PCT}%  ->  $OUT/"
+
+# Enforce the 1.0.0 floor. Override with COVERAGE_MIN=0 for a local spot check.
+COVERAGE_MIN="${COVERAGE_MIN:-90}"
+if awk -v p="$PCT" -v min="$COVERAGE_MIN" 'BEGIN { exit !(p + 0 < min + 0) }'; then
+  echo "::error::line coverage ${PCT}% is below the ${COVERAGE_MIN}% floor"
+  exit 1
+fi

@@ -59,5 +59,12 @@ struct TokenStorageTests {
         try await storage.removeAll()
         #expect(try await storage.accessToken() == nil)
     }
+
+    @Test("KeychainError describes its OSStatus")
+    func keychainErrorDescription() {
+        let text = KeychainError(status: errSecItemNotFound).description
+        #expect(text.contains("\(errSecItemNotFound)"))
+        #expect(text.hasPrefix("KeychainError("))
+    }
     #endif
 }

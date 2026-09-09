@@ -30,7 +30,7 @@ SwiftNetworkKit uses **Conventional Commits** and **Google release-please** to a
 |---|---|---|
 | **Public API Freeze** | In Progress | Finalize public API signatures; audit `public` vs `package` access; seal SPI test hooks. A generated inventory lives in [Documentation/APIReference.md](Documentation/APIReference.md). |
 | **DocC Articles** | In Progress | Thirteen per-topic DocC guides ship in the catalog; hosting the built archive is still open. |
-| **90% Line Coverage** | In Progress | Lift transport layer delegates and `MockScenario` tests with `URLProtocolStub`. |
+| **90% Line Coverage** | Met | Library line coverage is 90%, enforced by a floor in `scripts/coverage.sh`. TSan + ASan run on every push. |
 | **Multi-Platform CI** | In Progress | Matrix builds for iOS, macOS, tvOS, watchOS, visionOS, plus `swift test` on Linux (Foundation-only; pinning, Keychain and `PathNetworkMonitor` compile out). |
 | **Performance Profiling** | In Progress | `NetworkKitBenchmarks` covers pipeline overhead, interceptor-chain scaling, cache and redaction costs, and the concurrency wins. |
 
