@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-source--available%20proprietary-red.svg" alt="License" /></a>
 </p>
 
-- **Version:** 0.1.0 (pre-release, API stabilizing toward 1.0.0)
+- **Version:** 1.0.0 (public API frozen; see [Versioning](#versioning))
 - **Swift:** 6.0 (`swift-tools-version:6.0`, Swift 6 language mode)
 - **Platforms:** iOS 16+, macOS 13+, tvOS 16+, watchOS 9+, visionOS 1+
 - **Distribution:** Swift Package Manager
@@ -177,7 +177,7 @@ package builds and works without them.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "0.1.0")
+    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.0.0")
 ],
 targets: [
     .target(
@@ -193,10 +193,9 @@ targets: [
 
 File -> Add Package Dependencies, enter
 `https://github.com/ihusnainalii/SwiftNetworkKit.git`, and pick "Up to Next Major Version"
-from `0.1.0`.
+from `1.0.0`.
 
-Pre-1.0, a minor bump may include breaking changes; pin to `.upToNextMinor(from: "0.1.0")` if you
-need stricter guarantees.
+From 1.0.0 the public API follows semantic versioning: a breaking change means a major bump.
 
 ---
 
@@ -602,13 +601,13 @@ let client = NetworkClient(configuration: config, refresh: flow.tokenManagerRefr
 | Area | What SwiftNetworkKit does |
 |---|---|
 | Transport | System TLS via `URLSession` (TLS 1.2 floor). No ATS exceptions, no `allowsArbitraryLoads`. |
-| Cryptography | SHA-256 only, via `CryptoKit`. No MD5 / SHA-1 / DES / RC4 / ECB anywhere. |
+| Cryptography | SHA-256 only: `CryptoKit` on Apple platforms, a vetted pure-Swift FIPS 180-4 fallback where it is absent. No MD5 / SHA-1 / DES / RC4 / ECB anywhere. |
 | Randomness | `SecRandomCopyBytes` for PKCE; `SystemRandomNumberGenerator` (CSPRNG on Apple platforms) elsewhere. |
 | Certificate pinning | Opt-in, additive to system chain validation, fails closed. See below. |
 | Token storage | Keychain, device-only, not iCloud-synced by default. |
 | Logging | `Redactor` strips `Authorization`, `Cookie`, `Set-Cookie`, `X-API-Key`, and token-bearing body keys at every log level. |
 | At-rest | Disk cache and offline queue write with `.completeFileProtectionUnlessOpen` (encrypted while the device is locked). |
-| Deserialization | `NSKeyedUnarchiver.unarchivedObject(ofClass:)` (secure coding) for archived requests; `JSONDecoder` only for responses. |
+| Deserialization | Archived offline requests are stored as `Codable` JSON (no `NSKeyedUnarchiver`); `JSONDecoder` for responses. |
 | CI | `gitleaks` secret scan, SwiftLint `--strict` (`force_cast` / `force_try` are errors), ThreadSanitizer + AddressSanitizer. |
 
 Full review: [Documentation/SecurityAudit.md](Documentation/SecurityAudit.md). Reporting a
@@ -1259,7 +1258,7 @@ Apple-platform behaviors that shape the design or that you should be aware of:
 | Keychain on macOS CI | `KeychainTokenStorage` can be unavailable on headless CI runners with no keychain. `KeychainTokenStorage.isAvailable` guards this; the test suite skips those cases when it returns `false`. |
 | `URLProtocol` + request bodies | Custom `URLProtocol` subclasses (used by `URLProtocolStub` in tests) historically mishandle `httpBodyStream` (`rdar://26849668`). The stub asserts on URL, method, and headers rather than replaying streamed bodies. |
 | TLS 1.3 0-RTT | Not used. `URLSession` decides; the package does not opt into early data. |
-| `visionOS` / `watchOS` | The library builds for both, but CI currently only runs iOS and macOS destinations. Treat them as "builds, lightly exercised" until the CI matrix expands (see [ROADMAP.md](ROADMAP.md)). |
+| `visionOS` / `watchOS` / `tvOS` | CI builds the library for every declared Apple platform, and runs the full test suite on iOS, macOS, and Linux (Foundation subset). tvOS / watchOS / visionOS are "builds green, test suite not run on-device". |
 
 If you hit a platform bug not listed here, please file an issue with the OS version and a minimal
 reproduction.
@@ -1409,9 +1408,10 @@ replay queue, request deduplication, and a shipped mock transport, in one zero-d
 under a single owner. It is source-available proprietary, not open source.
 
 **Does it support Linux or Windows?**
-The core is Foundation-only and much of it should build on Linux, but it is not tested there and
-`Security` / `Network` / `CryptoKit`-backed features (pinning, Keychain, PKCE hashing, reachability)
-are Apple-only. Treat non-Apple platforms as unsupported for now.
+Linux is built and the full test suite runs on it in CI (Swift 6.1, Foundation subset). PKCE works
+there via the pure-Swift SHA-256 fallback. `Security` / `Network`-backed features (certificate
+pinning, `KeychainTokenStorage`, `PathNetworkMonitor`) are Apple-only and compile out; bring your
+own `TokenStorage` / `NetworkMonitor` on Linux. Windows is untested.
 
 **Can I use it in a SwiftUI app that targets iOS 16?**
 Yes. The whole library builds and runs on iOS 16. Only the `NetworkResource` / `Paged`
@@ -1452,8 +1452,9 @@ can be on any toolchain that supports Swift 6.
 
 ## Versioning
 
-[Semantic Versioning](https://semver.org). Pre-1.0, a **minor** bump may include breaking changes;
-**patch** bumps are always backward compatible.
+[Semantic Versioning](https://semver.org). From 1.0.0 the public API is stable: **major** for a
+breaking change, **minor** for additions, **patch** for fixes. Types behind
+`@_spi(SwiftNetworkKitTesting)` are not covered by this guarantee.
 
 Releases are automated: every merge to `main` updates a rolling release pull request (version bump
 plus a `CHANGELOG.md` section generated from the [Conventional Commit](https://www.conventionalcommits.org)
@@ -1464,10 +1465,11 @@ history). Merging that pull request tags `vX.Y.Z` and publishes a GitHub Release
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md). Toward 1.0: public API freeze, per-topic DocC articles, higher
-coverage on the transport delegates, and Linux plus tvOS/watchOS/visionOS CI. Candidate post-1.0
-features include WebSocket / SSE endpoints, response-body streaming, a background-transfer hook,
-and a `swift-log` bridge (as a separate product, keeping the core dependency-free).
+See [ROADMAP.md](ROADMAP.md). 1.0 shipped with the public API frozen, per-topic DocC articles
+(hosted at `/docs` on the site), 90% line coverage, and Linux + every Apple platform in CI.
+Candidate post-1.0 features include WebSocket / SSE endpoints, response-body streaming, a
+background-transfer hook, and a `swift-log` bridge (as a separate product, keeping the core
+dependency-free).
 
 ---
 

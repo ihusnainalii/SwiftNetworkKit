@@ -7,7 +7,7 @@ import FoundationNetworking
 /// A request captured while offline, waiting to be replayed. Persisted as JSON.
 public struct PersistedRequest: Codable, Sendable, Hashable {
     public let id: RequestID
-    /// The `URLRequest` archived with `NSKeyedArchiver` (method, URL, headers and body included).
+    /// The `URLRequest` encoded by ``URLRequestArchive`` as JSON (method, URL, headers, in-memory body).
     public let urlRequestData: Data
     public let createdAt: Date
     public let expiresAt: Date?
