@@ -4,6 +4,10 @@ import SwiftNetworkKit
 struct LiveMediaDownloader: MediaDownloader {
     let client: NetworkClient
 
+    func preview(for image: RemoteImage) async -> Data? {
+        try? await client.data(for: DownloadImageEndpoint(image: image, variant: .preview))
+    }
+
     func download(
         _ image: RemoteImage,
         onProgress: @escaping @Sendable (Double) -> Void

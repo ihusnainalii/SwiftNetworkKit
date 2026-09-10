@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
+    let model: AppModel
     @Environment(\.container) private var container
 
     var body: some View {
@@ -16,6 +17,9 @@ struct RootView: View {
 
             DiagnosticsView(container: container)
                 .tabItem { Label("Diagnostics", systemImage: "waveform.path.ecg") }
+
+            SettingsView(model: model)
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
     }
 }
