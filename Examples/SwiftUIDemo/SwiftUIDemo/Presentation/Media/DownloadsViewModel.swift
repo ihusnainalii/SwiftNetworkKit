@@ -19,12 +19,19 @@ final class DownloadsViewModel {
     }
 
     func download(_ image: RemoteImage) async {
-        phases[image.id] = .downloading(0)
+        phases[image.id] = .downloading(fraction: 0, preview: nil)
+
+        // Blurred placeholder in one hop, so the tile is never empty while the full image streams.
+        if let preview = await downloader.preview(for: image),
+            case .downloading(let fraction, _) = phases[image.id] {
+            phases[image.id] = .downloading(fraction: fraction, preview: preview)
+        }
+
         do {
             let url = try await downloader.download(image) { [weak self] fraction in
                 Task { @MainActor in
-                    guard let self, case .downloading = self.phases[image.id] else { return }
-                    self.phases[image.id] = .downloading(fraction)
+                    guard let self, case .downloading(_, let preview) = self.phases[image.id] else { return }
+                    self.phases[image.id] = .downloading(fraction: fraction, preview: preview)
                 }
             }
             phases[image.id] = .done(try Data(contentsOf: url))
