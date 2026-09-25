@@ -74,8 +74,14 @@ extension NetworkClient {
 /// holds the driving `Task` so a cancelled subscription tears it down.
 private final class PublisherBox<Output>: @unchecked Sendable {
     let subject = PassthroughSubject<Output, NetworkError>()
-    var task: Task<Void, Never>?
     private let lock = NSLock()
+    private var _task: Task<Void, Never>?
+
+    /// Written when the subscription starts and read when it is cancelled, possibly on different threads.
+    var task: Task<Void, Never>? {
+        get { lock.withLock { _task } }
+        set { lock.withLock { _task = newValue } }
+    }
 
     func send(_ value: Output) {
         lock.withLock { subject.send(value) }
