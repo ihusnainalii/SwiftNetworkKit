@@ -377,6 +377,31 @@ struct NetworkKitDemo {
             "     If-None-Match sent: \(transport.recordedRequests.last?.value(forHTTPHeaderField: "If-None-Match") ?? "-")"
         )
         print("   → transport hit \(transport.requestCount)x for 2 logical requests")
+
+        // The cache is per account: a token change never serves the previous account's response.
+        struct GetMe: Endpoint {
+            typealias Response = Doc
+            let path = "/me"
+            var authentication: AuthRequirement { .required }
+        }
+        let accountTransport = MockNetworkTransport()
+        accountTransport.enqueue(
+            .json(Data(#"{"text":"alice"}"#.utf8), headers: ["Cache-Control": "max-age=60"]),
+            .json(Data(#"{"text":"bob"}"#.utf8), headers: ["Cache-Control": "max-age=60"])
+        )
+        let storage = InMemoryTokenStorage(seed: TokenPair(accessToken: "alice-token"))
+        var accountConfig = NetworkConfiguration(baseURL: "https://api.example.com", tokenStorage: storage)
+        accountConfig.cache = CacheConfiguration(store: MemoryCacheStore(), defaultPolicy: .cacheFirst)
+        let accountClient = NetworkClient(configuration: accountConfig, transport: accountTransport)
+
+        let alice = try? await accountClient.request(GetMe())
+        try? await storage.store(TokenPair(accessToken: "bob-token"))
+        let bob = try? await accountClient.request(GetMe())
+        print(
+            "   → account switch: \"\(alice?.text ?? "-")\" then \"\(bob?.text ?? "-")\" (cache is per token, transport hit \(accountTransport.requestCount)x)"
+        )
+        await accountClient.clearCache()
+        print("   → clearCache() on sign-out empties the store")
     }
 
     // MARK: - Request management: cancellation, dedup, concurrency limit (mock transport)
