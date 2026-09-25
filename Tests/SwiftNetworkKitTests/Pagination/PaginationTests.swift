@@ -36,6 +36,27 @@ struct PaginationTests {
         return NetworkClient(configuration: config, transport: transport)
     }
 
+    @Test("collectAll throws at the page cap instead of returning a partial list")
+    func collectAllThrowsAtCap() async {
+        let transport = MockNetworkTransport(default: .json(Data(#"{"values":[1]}"#.utf8)))
+        let error = await #expect(throws: NetworkError.self) {
+            try await client(transport).collectAll(Runaway(), maxPages: 3)
+        }
+        #expect(error?.code == .unknown)
+        #expect(transport.requestCount == 3)
+    }
+
+    @Test("collectAll returns everything when the listing ends before the cap")
+    func collectAllWithinCap() async throws {
+        let transport = MockNetworkTransport()
+        transport.enqueue(
+            .json(Data(#"{"values":[1,2]}"#.utf8)),
+            .json(Data(#"{"values":[3]}"#.utf8)),
+            .json(Data(#"{"values":[]}"#.utf8))
+        )
+        #expect(try await client(transport).collectAll(Pages(), maxPages: 3) == [1, 2, 3])
+    }
+
     @Test("streams each page then finishes")
     func streamsPages() async throws {
         let transport = MockNetworkTransport()

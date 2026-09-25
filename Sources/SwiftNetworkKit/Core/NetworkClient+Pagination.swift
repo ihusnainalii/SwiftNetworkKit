@@ -12,6 +12,16 @@ extension NetworkClient {
         _ endpoint: E,
         maxPages: Int = 1000
     ) -> AsyncThrowingStream<[E.Item], any Error> {
+        paginate(endpoint, maxPages: maxPages, throwsAtLimit: false)
+    }
+
+    /// The shared stream. `throwsAtLimit` makes the page cap fail the stream instead of ending it, for
+    /// callers (like ``collectAll(_:max:maxPages:)``) that promise the complete list.
+    private func paginate<E: PaginatedEndpoint>(
+        _ endpoint: E,
+        maxPages: Int,
+        throwsAtLimit: Bool
+    ) -> AsyncThrowingStream<[E.Item], any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 var current: E? = endpoint
@@ -22,6 +32,11 @@ extension NetworkClient {
                         if pageCount >= maxPages {
                             emit(
                                 ["\u{2190} pagination stopped at maxPages=\(maxPages) for \(page.path)"], level: .error)
+                            if throwsAtLimit {
+                                continuation.finish(
+                                    throwing: NetworkError.unknown(underlying: PageLimitReached(maxPages: maxPages)))
+                                return
+                            }
                             break
                         }
                         let response = try await request(page)
@@ -38,14 +53,18 @@ extension NetworkClient {
         }
     }
 
-    /// Drains ``paginate(_:maxPages:)`` into one array, optionally stopping once `max` items are
-    /// collected.
+    /// Drains the pages into one array, optionally stopping once `max` items are collected.
+    ///
+    /// - Parameter maxPages: a safety cap against a server that always returns a next page. Unlike
+    ///   ``paginate(_:maxPages:)``, hitting it throws (`.unknown`) instead of returning a partial array
+    ///   that looks complete.
     public func collectAll<E: PaginatedEndpoint>(
         _ endpoint: E,
-        max: Int? = nil
+        max: Int? = nil,
+        maxPages: Int = 1000
     ) async throws -> [E.Item] {
         var all: [E.Item] = []
-        for try await page in paginate(endpoint) {
+        for try await page in paginate(endpoint, maxPages: maxPages, throwsAtLimit: true) {
             all.append(contentsOf: page)
             if let max, all.count >= max { return Array(all.prefix(max)) }
         }
