@@ -16,6 +16,29 @@ backoff/jitter math, `Endpoint.decode` casts, URLSession delegate lifetime (no r
 
 ---
 
+## Status
+
+Fixed after this review, each with a regression test:
+
+- **1a, 1b:** cache and dedup keys carry a fingerprint of the `Authorization` value; `clearCache()` added
+  and called on session expiry.
+- **2a, 2b, 2g, 2i, 2j:** offline store write and read failures are logged, a corrupt file is moved
+  aside, dropped requests emit `.failed`, replays stop after 10 attempts. Stale-while-revalidate
+  failures are logged.
+- **2c, 2d, 2e, 2f:** token storage failures surface instead of reading as "no token".
+- **3a:** query items are redacted from logged URLs.
+- **3d:** disk cache files are named by SHA-256, `Set-Cookie` is not cached, unreadable entries are removed.
+- **4a, 4b, 4c, 4d, 4e:** ordered path updates, cancel-aware queue waiters, revalidation runs through the
+  queue, cancelled SwiftUI loads are not failures, publisher task handle is locked.
+- **Section 5:** response interceptors now run for uploads and downloads, multipart `close()` errors
+  surface, a failed download move is reported.
+- **Section 7:** the `NetworkResource` cancellation doc and the `TokenManager` callback doc are accurate.
+
+Still open: **2h** (only reachable with a URL-less request), **3b**, **3c**, the remaining section 5 and
+section 7 items, and all of section 6 (breaking, for a 2.0).
+
+---
+
 ## 1. Cross-account data sharing (fix in 1.1, not breaking)
 
 ### 1a. Request-dedup key ignores token identity and is built pre-authorize
