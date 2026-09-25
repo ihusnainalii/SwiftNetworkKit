@@ -19,9 +19,12 @@ public actor DiskCacheStore: ResponseCache {
 
     public func value(forKey key: String) -> CachedResponse? {
         let url = fileURL(for: key)
-        guard let data = try? Data(contentsOf: url),
-            let entry = try? JSONDecoder().decode(CachedResponse.self, from: data)
-        else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let entry = try? JSONDecoder().decode(CachedResponse.self, from: data) else {
+            // An unreadable entry would miss forever and keep counting toward eviction.
+            try? fileManager.removeItem(at: url)
+            return nil
+        }
         try? fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)  // LRU touch
         return entry
     }
@@ -47,11 +50,10 @@ public actor DiskCacheStore: ResponseCache {
         directory.appendingPathComponent(Self.fileName(for: key))
     }
 
-    /// A filesystem-safe, collision-resistant name from the key.
+    /// A filesystem-safe name from the key: its SHA-256, so a crafted URL cannot be made to collide
+    /// with, overwrite or read another entry.
     static func fileName(for key: String) -> String {
-        var hash: UInt64 = 5381
-        for byte in key.utf8 { hash = (hash &* 33) ^ UInt64(byte) }
-        return String(hash, radix: 36) + "-" + String(key.utf8.count) + ".json"
+        SHA256Hex.string(key) + ".json"
     }
 
     private static func defaultDirectory() -> URL {

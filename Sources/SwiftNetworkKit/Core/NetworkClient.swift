@@ -392,7 +392,7 @@ public final class NetworkClient: Sendable {
                 await cache.setValue(
                     CachedResponse(
                         data: context.data ?? Data(),
-                        headers: context.headers,
+                        headers: context.headers.removingCredentials(also: configuration.redactedHeaders),
                         statusCode: context.statusCode,
                         etag: context.headers["ETag"],
                         maxAge: cacheControl.mustRevalidate ? 0 : cacheControl.maxAge
