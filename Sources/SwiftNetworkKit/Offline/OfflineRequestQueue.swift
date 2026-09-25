@@ -11,6 +11,10 @@ actor OfflineRequestQueue {
 
     typealias Send = @Sendable (URLRequest) async throws -> HTTPURLResponse
 
+    /// A queued request whose re-send keeps failing at the transport level is dropped after this many
+    /// attempts. Server responses of any status count as delivered, not as failures.
+    static let maxReplayAttempts = 10
+
     private let store: any OfflineStore
     private let send: Send
     private let metrics: any NetworkMetrics
@@ -83,7 +87,11 @@ actor OfflineRequestQueue {
                 continue
             }
             guard let request = URLRequestArchive.unarchive(persisted.urlRequestData) else {
+                // Cannot be rebuilt (for example after a wire-format change). Tell subscribers it is gone.
                 await store.remove(persisted.id)
+                let dropped = NetworkError.encoding(underlying: OfflineQueueError.notArchivable)
+                await metrics.record(.failure(persisted.id, dropped, status: nil))
+                emit(.failed(persisted.id, dropped))
                 continue
             }
             do {
@@ -93,7 +101,12 @@ actor OfflineRequestQueue {
                 emit(.replayed(persisted.id, statusCode: response.statusCode))
             } catch {
                 persisted.attempts += 1
-                await store.update(persisted)
+                if persisted.attempts >= Self.maxReplayAttempts {
+                    // Otherwise a request that can never succeed is re-sent on every reconnect forever.
+                    await store.remove(persisted.id)
+                } else {
+                    await store.update(persisted)
+                }
                 let mapped = NetworkError.normalize(error)
                 await metrics.record(.failure(persisted.id, mapped, status: mapped.statusCode))
                 emit(.failed(persisted.id, mapped))

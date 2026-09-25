@@ -106,7 +106,7 @@ struct OfflineStoreTests {
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
 
         let store = FileOfflineStore(fileURL: url)
-        #expect(await store.all().isEmpty)  // load() swallows the decode failure
+        #expect(await store.all().isEmpty)  // load() reports the decode failure and starts empty
         await store.append(request("/recovered"))
         #expect(await store.all().count == 1)
     }
