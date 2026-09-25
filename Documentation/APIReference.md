@@ -84,13 +84,13 @@ The public entry point.
 
 **Properties:** `configuration`
 
-**Methods:** `batch(_:)()`, `cancel(_:)()`, `cancelAll()()`, `collectAll(_:max:)()`, `data(for:)()`, `download(_:to:progress:)()`, `downloadPublisher(_:to:)()`, `offlineReplayEvents()()`, `paginate(_:maxPages:)()`, `paginatePublisher(_:)()`, `pauseQueue()()`, `publisher(for:)()`, `replayOfflineQueue()()`, `request(_:completion:)()` _(+9 more)_
+**Methods:** `batch(_:)()`, `cancel(_:)()`, `cancelAll()()`, `clearCache()()`, `collectAll(_:max:)()`, `data(for:)()`, `download(_:to:progress:)()`, `downloadPublisher(_:to:)()`, `offlineReplayEvents()()`, `paginate(_:maxPages:)()`, `paginatePublisher(_:)()`, `pauseQueue()()`, `publisher(for:)()`, `replayOfflineQueue()()` _(+10 more)_
 
 ### `NetworkConfiguration`  `struct`
 
 Central configuration for a `NetworkClient`.
 
-**Properties:** `authorization`, `cache`, `clock`, `defaultDecoder`, `defaultEncoder`, `defaultRedactedBodyKeys`, `defaultRedactedHeaders`, `enableDeduplication`, `environment`, `errorMapper`, `logger`, `maxConcurrentRequests`, `metrics`, `networkMonitor` _(+10 more)_
+**Properties:** `authorization`, `cache`, `clock`, `defaultDecoder`, `defaultEncoder`, `defaultRedactedBodyKeys`, `defaultRedactedHeaders`, `enableDeduplication`, `environment`, `errorMapper`, `logger`, `maxConcurrentRequests`, `metrics`, `networkMonitor` _(+11 more)_
 
 ### `NetworkError`  `enum`
 
@@ -510,9 +510,9 @@ The default ``NetworkMetrics``: discards every event.
 
 Pure, testable redaction of sensitive header values and JSON body keys.
 
-**Properties:** `alwaysRedactedHeaders`, `placeholder`
+**Properties:** `alwaysRedactedHeaders`, `alwaysRedactedQueryItems`, `placeholder`
 
-**Methods:** `redact(body:)()`, `redact(headers:)()`
+**Methods:** `redact(body:)()`, `redact(headers:)()`, `redact(url:)()`
 
 ### `RequestInterceptor`  `protocol`
 
