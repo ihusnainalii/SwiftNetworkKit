@@ -79,7 +79,9 @@ public struct KeychainTokenStorage: TokenStorage {
     /// Whether the keychain is usable in the current process (some CI/test hosts have no keychain).
     /// Performs a real add/delete round-trip.
     public static var isAvailable: Bool {
-        let probeService = "com.swiftnetworkkit.keychain.probe"
+        // A unique item per call, so two concurrent probes cannot collide on a shared one and make
+        // a working keychain look unavailable.
+        let probeService = "com.swiftnetworkkit.keychain.probe.\(UUID().uuidString)"
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: probeService,
