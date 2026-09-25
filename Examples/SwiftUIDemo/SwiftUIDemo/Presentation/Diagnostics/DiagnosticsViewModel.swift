@@ -34,12 +34,20 @@ final class DiagnosticsViewModel {
     }
 
     func runAuthRefreshScenario() async {
+        await run { diagnostics.runAuthRefreshScenario() }
+    }
+
+    func runAccountSwitchScenario() async {
+        await run { diagnostics.runAccountSwitchScenario() }
+    }
+
+    private func run(_ scenario: () -> AsyncStream<DiagnosticEvent>) async {
         guard !isRunning else { return }
         isRunning = true
         events = []
         defer { isRunning = false }
 
-        for await event in diagnostics.runAuthRefreshScenario() {
+        for await event in scenario() {
             events.append(event)
         }
     }

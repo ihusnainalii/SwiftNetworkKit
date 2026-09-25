@@ -50,6 +50,13 @@ struct DiagnosticsView: View {
                     }
                     .disabled(model.isRunning)
 
+                    Button {
+                        Task { await model.runAccountSwitchScenario() }
+                    } label: {
+                        Label("Switch account (cache isolation)", systemImage: "person.2.circle")
+                    }
+                    .disabled(model.isRunning)
+
                     ForEach(model.events) { event in
                         Label {
                             Text(event.message).font(.system(.callout, design: .monospaced))
@@ -59,9 +66,9 @@ struct DiagnosticsView: View {
                         }
                     }
                 } header: {
-                    Text("Automatic token refresh")
+                    Text("Walkthroughs")
                 } footer: {
-                    Text("Runs against a mock transport so the flow is deterministic.")
+                    Text("Both run against a mock transport so the flow is deterministic.")
                 }
             }
             .navigationTitle("Diagnostics")

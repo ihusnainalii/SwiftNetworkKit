@@ -18,4 +18,7 @@ protocol NetworkDiagnostics: Sendable {
     func metricsSummary() async -> [MetricsRow]
     /// Emits one event per step of a mock 401 → refresh → retry flow.
     func runAuthRefreshScenario() -> AsyncStream<DiagnosticEvent>
+    /// Emits one event per step of a mock account switch that shows the cache is per account and that
+    /// the cache can be cleared on sign-out.
+    func runAccountSwitchScenario() -> AsyncStream<DiagnosticEvent>
 }

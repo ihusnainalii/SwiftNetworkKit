@@ -16,7 +16,7 @@ Four tabs (mostly against `https://jsonplaceholder.typicode.com`):
 | **Users** | **paginated** infinite-scroll list (`_page` / `_limit`), searchable, pull-to-refresh, error state with retry → user detail (contact + posts + todos + albums, three parallel `async let` requests) |
 | **Compose** | a form that `POST`s a JSON body and decodes the created `Post` |
 | **Downloads** | downloads large images from `picsum.photos` with `client.download` and a live progress bar (per-request `baseURL` override) |
-| **Diagnostics** | the live client configuration (base URL, retry policy, SSL pinning mode, cache policy, concurrency limit + dedup, offline-queue depth, headers), live **connectivity** (`PathNetworkMonitor`), live **metrics** (requests / succeeded / failed / retries / average duration from `InMemoryMetrics`), and a narrated **401 → refresh → retry** walkthrough (mock transport) |
+| **Diagnostics** | the live client configuration (base URL, retry policy, SSL pinning mode, cache policy, concurrency limit + dedup, offline-queue depth, headers), live **connectivity** (`PathNetworkMonitor`), live **metrics** (requests / succeeded / failed / retries / average duration from `InMemoryMetrics`), and two narrated walkthroughs on a mock transport: **401 → refresh → retry**, and an **account switch** showing the cache is per account and `clearCache()` empties it |
 
 ## Run
 

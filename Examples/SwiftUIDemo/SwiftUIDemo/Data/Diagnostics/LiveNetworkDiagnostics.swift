@@ -128,4 +128,58 @@ struct LiveNetworkDiagnostics: NetworkDiagnostics {
             continuation.onTermination = { _ in task.cancel() }
         }
     }
+
+    func runAccountSwitchScenario() -> AsyncStream<DiagnosticEvent> {
+        AsyncStream { continuation in
+            let emit: @Sendable (String, DiagnosticEvent.Kind) -> Void = { message, kind in
+                continuation.yield(DiagnosticEvent(message: message, kind: kind))
+            }
+
+            let task = Task {
+                struct Profile: Codable, Sendable { let name: String }
+                struct ProfileEndpoint: Endpoint {
+                    typealias Response = Profile
+                    let path = "/me"
+                    var authentication: AuthRequirement { .required }
+                }
+
+                let cacheable: HTTPHeaders = ["Cache-Control": "max-age=300"]
+                let transport = MockNetworkTransport()
+                transport.enqueue(
+                    .json(Data(#"{"name":"Alice"}"#.utf8), headers: cacheable),
+                    .json(Data(#"{"name":"Bob"}"#.utf8), headers: cacheable),
+                    .json(Data(#"{"name":"Bob"}"#.utf8), headers: cacheable)
+                )
+                let storage = InMemoryTokenStorage(seed: TokenPair(accessToken: "alice-token"))
+                var configuration = NetworkConfiguration(baseURL: "https://api.example.com", tokenStorage: storage)
+                configuration.cache = .memory(policy: .cacheFirst)
+                let client = NetworkClient(configuration: configuration, transport: transport)
+
+                do {
+                    emit("GET /me as Alice (cacheFirst)", .info)
+                    let first = try await client.request(ProfileEndpoint())
+                    emit("Network hit -> \"\(first.name)\" (\(transport.requestCount) request sent)", .success)
+
+                    let again = try await client.request(ProfileEndpoint())
+                    emit("Same token again -> \"\(again.name)\" from cache (\(transport.requestCount) request sent)", .info)
+
+                    try await storage.store(TokenPair(accessToken: "bob-token"))
+                    emit("Token swapped: now signed in as Bob", .warning)
+                    let bob = try await client.request(ProfileEndpoint())
+                    emit(
+                        "Went to the network -> \"\(bob.name)\", not Alice's cached entry (\(transport.requestCount) requests sent)",
+                        .success)
+
+                    await client.clearCache()
+                    emit("client.clearCache(): what sign-out should call", .warning)
+                    _ = try await client.request(ProfileEndpoint())
+                    emit("Next request hit the network again (\(transport.requestCount) requests sent)", .success)
+                } catch {
+                    emit("Failed: \(error)", .failure)
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
 }
