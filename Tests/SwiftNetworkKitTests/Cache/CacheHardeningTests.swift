@@ -64,6 +64,29 @@ struct CacheHardeningTests {
         #expect(cached.headers["X-Trace"] == "t1")
     }
 
+    @Test("a failing stale-while-revalidate refresh is logged, not discarded")
+    func revalidationFailureIsLogged() async throws {
+        let transport = MockNetworkTransport()
+        transport.enqueue(
+            .json(Data(#"{"v":"stale"}"#.utf8), headers: ["Cache-Control": "max-age=0"]),
+            .failure(.noInternet)
+        )
+        let logger = CapturingLogger()
+        var config = NetworkConfiguration(baseURL: "https://api.example.com")
+        config.retry = .none
+        config.logger = logger
+        config.cache = CacheConfiguration(store: MemoryCacheStore(), defaultPolicy: .staleWhileRevalidate)
+        let client = NetworkClient(configuration: config, transport: transport)
+
+        _ = try await client.request(GetThing())  // populates the cache
+        #expect(try await client.request(GetThing()) == Thing(v: "stale"))  // served stale, refresh fails
+
+        for _ in 0..<500 where !logger.lines.contains(where: { $0.contains("background revalidation failed") }) {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        #expect(logger.lines.contains { $0.contains("background revalidation failed") })
+    }
+
     @Test("removingCredentials also honors extra names, case-insensitively")
     func extraNames() {
         let headers: HTTPHeaders = ["X-Session": "s", "Content-Type": "application/json"]

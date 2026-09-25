@@ -253,7 +253,7 @@ public final class NetworkClient: Sendable {
     // interceptors -> transport -> status map -> 304 handling -> response interceptors ->
     // cache-write -> decode. Splitting it hides that pipeline across call sites for no real gain.
     // swiftlint:disable:next cyclomatic_complexity function_body_length
-    private func execute<E: Endpoint, T: Sendable>(
+    func execute<E: Endpoint, T: Sendable>(
         _ endpoint: E,
         requestID: RequestID,
         interceptorRetries: Int,
@@ -284,12 +284,7 @@ public final class NetworkClient: Sendable {
             storedEntry = await cache.value(forKey: cacheKey)
             if let storedEntry {
                 if policy == .staleWhileRevalidate {
-                    Task.detached { [self] in
-                        _ = try? await execute(
-                            endpoint, requestID: RequestID(), interceptorRetries: 0,
-                            bypassCacheRead: true, decode: decode
-                        )
-                    }
+                    revalidateInBackground(endpoint, decode: decode)
                     return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
                 }
                 if storedEntry.isFresh(ttl: configuration.cache.defaultTTL),
