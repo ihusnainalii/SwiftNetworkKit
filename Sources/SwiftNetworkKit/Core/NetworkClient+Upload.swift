@@ -10,7 +10,8 @@ extension NetworkClient {
     /// response into `E.Response`.
     ///
     /// Uploads are **not** retried and do not run the 401-refresh hop (a partial upload is unsafe to
-    /// replay). Interceptors, tracing, logging and metrics still apply.
+    /// replay). Request and response interceptors, tracing, logging and metrics still apply; a response
+    /// interceptor's `.retry` is ignored because a transfer is never re-sent.
     ///
     /// ```swift
     /// var form = MultipartFormData()
@@ -37,11 +38,14 @@ extension NetworkClient {
             throw mapped
         }
 
-        let context = ResponseContext(
-            statusCode: response.statusCode,
-            headers: HTTPHeaders(response.allHeaderFields),
-            data: data,
-            request: request
+        let context = try await interceptTransferResponse(
+            ResponseContext(
+                statusCode: response.statusCode,
+                headers: HTTPHeaders(response.allHeaderFields),
+                data: data,
+                request: request
+            ),
+            for: endpoint, requestID: requestID, since: started
         )
         if let error = StatusCodeMapper.map(context: context, errorMapper: configuration.errorMapper) {
             await recordFailure(error, requestID: requestID, status: context.statusCode, since: started)
@@ -50,7 +54,7 @@ extension NetworkClient {
 
         let decoder = endpoint.decoder ?? configuration.defaultDecoder
         do {
-            let value = try endpoint.decode(data, response: response, using: decoder)
+            let value = try endpoint.decode(context.data ?? Data(), response: response, using: decoder)
             await configuration.metrics.record(
                 .success(requestID, duration: elapsed(since: started), status: context.statusCode)
             )
@@ -93,12 +97,21 @@ extension NetworkClient {
             throw mapped
         }
 
-        let context = ResponseContext(
-            statusCode: response.statusCode,
-            headers: HTTPHeaders(response.allHeaderFields),
-            data: nil,
-            request: request
-        )
+        let context: ResponseContext
+        do {
+            context = try await interceptTransferResponse(
+                ResponseContext(
+                    statusCode: response.statusCode,
+                    headers: HTTPHeaders(response.allHeaderFields),
+                    data: nil,
+                    request: request
+                ),
+                for: endpoint, requestID: requestID, since: started
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: fileURL)
+            throw error
+        }
         if let error = StatusCodeMapper.map(context: context, errorMapper: configuration.errorMapper) {
             try? FileManager.default.removeItem(at: fileURL)
             await recordFailure(error, requestID: requestID, status: context.statusCode, since: started)
@@ -124,6 +137,35 @@ extension NetworkClient {
     }
 
     // MARK: - Shared setup
+
+    /// Runs the response interceptors over a finished transfer, as the request pipeline does. A
+    /// transfer is never re-sent, so a `.retry` outcome is ignored; `.fail` and a substituted body take
+    /// effect. A failure is recorded and thrown as a ``NetworkError``.
+    private func interceptTransferResponse<E: Endpoint>(
+        _ context: ResponseContext,
+        for endpoint: E,
+        requestID: RequestID,
+        since started: ContinuousClock.Instant
+    ) async throws -> ResponseContext {
+        let failure: NetworkError
+        do {
+            switch try await interceptors.resolve(context, for: AnyEndpoint(endpoint)) {
+            case .proceed(let body):
+                return ResponseContext(
+                    statusCode: context.statusCode, headers: context.headers,
+                    data: context.data == nil ? nil : body, request: context.request
+                )
+            case .retry:
+                return context
+            case .fail(let error):
+                failure = error
+            }
+        } catch {
+            failure = NetworkError.normalize(error)
+        }
+        await recordFailure(failure, requestID: requestID, status: context.statusCode, since: started)
+        throw failure
+    }
 
     private func prepareTransfer<E: Endpoint>(
         _ endpoint: E

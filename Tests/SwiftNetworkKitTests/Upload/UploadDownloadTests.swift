@@ -43,6 +43,61 @@ struct UploadDownloadTests {
         #expect(seen.last?.fraction == 1)
     }
 
+    private struct RejectEverything: ResponseInterceptor {
+        func process(_ context: ResponseContext, for endpoint: AnyEndpoint) async throws -> InterceptOutcome {
+            .fail(.forbidden(context))
+        }
+    }
+
+    private struct RewriteBody: ResponseInterceptor {
+        func process(_ context: ResponseContext, for endpoint: AnyEndpoint) async throws -> InterceptOutcome {
+            .substitute(Data(#"{"id":99}"#.utf8))
+        }
+    }
+
+    private func client(
+        _ transport: MockNetworkTransport, interceptor: any ResponseInterceptor
+    ) -> NetworkClient {
+        var config = NetworkConfiguration(baseURL: "https://api.example.com")
+        config.responseInterceptors = [interceptor]
+        return NetworkClient(configuration: config, transport: transport)
+    }
+
+    @Test("upload runs response interceptors: .fail wins over a 2xx")
+    func uploadInterceptorFails() async {
+        let transport = MockNetworkTransport()
+        transport.enqueue(.json(Data(#"{"id":7}"#.utf8), status: 201))
+        let error = await #expect(throws: NetworkError.self) {
+            try await client(transport, interceptor: RejectEverything())
+                .upload(UploadEndpoint(), from: .data(Data("x".utf8)))
+        }
+        #expect(error?.code == .forbidden)
+    }
+
+    @Test("upload runs response interceptors: a substituted body is what gets decoded")
+    func uploadInterceptorSubstitutes() async throws {
+        let transport = MockNetworkTransport()
+        transport.enqueue(.json(Data(#"{"id":7}"#.utf8), status: 201))
+        let created = try await client(transport, interceptor: RewriteBody())
+            .upload(UploadEndpoint(), from: .data(Data("x".utf8)))
+        #expect(created == Created(id: 99))
+    }
+
+    @Test("download runs response interceptors and does not leave the file behind on .fail")
+    func downloadInterceptorFails() async {
+        let transport = MockNetworkTransport()
+        transport.enqueue(.success(status: 200, headers: [:], body: Data("FILE".utf8)))
+        let destination = FileManager.default.temporaryDirectory.appendingPathComponent("nk-dl-\(UUID()).txt")
+        defer { try? FileManager.default.removeItem(at: destination) }
+
+        let error = await #expect(throws: NetworkError.self) {
+            try await client(transport, interceptor: RejectEverything())
+                .download(FileEndpoint(), to: destination)
+        }
+        #expect(error?.code == .forbidden)
+        #expect(!FileManager.default.fileExists(atPath: destination.path))
+    }
+
     @Test("upload surfaces a server error")
     func uploadServerError() async {
         let transport = MockNetworkTransport()
