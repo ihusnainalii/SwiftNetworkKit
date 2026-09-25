@@ -29,7 +29,8 @@ actor RequestDeduplicator {
     /// than a runtime condition — surface it as `.unknown` instead of trapping.
     private func requireSameType<T: Sendable>(_ value: any Sendable) throws -> T {
         guard let typed = value as? T else {
-            throw NetworkError.unknown(underlying: nil)
+            throw NetworkError.unknown(
+                underlying: DeduplicationTypeMismatch(expected: "\(T.self)", actual: "\(type(of: value))"))
         }
         return typed
     }

@@ -33,6 +33,28 @@ struct RequestDeduplicatorTests {
         #expect(await calls.count == 1)
     }
 
+    @Test("callers that share a key but expect different types get a diagnosable error")
+    func typeMismatchIsDiagnosable() async throws {
+        let deduplicator = RequestDeduplicator()
+        async let first: Int = deduplicator.result(for: "k") {
+            try await Task.sleep(for: .milliseconds(60))
+            return 1
+        }
+        try await Task.sleep(for: .milliseconds(15))
+
+        do {
+            let _: String = try await deduplicator.result(for: "k") { "unused" }
+            Issue.record("expected a type-mismatch error")
+        } catch let error as NetworkError {
+            guard case .unknown(let underlying?) = error else {
+                Issue.record("expected .unknown carrying the cause, got \(error)")
+                return
+            }
+            #expect(underlying is DeduplicationTypeMismatch)
+        }
+        _ = try await first
+    }
+
     @Test("different keys execute independently")
     func differentKeys() async throws {
         let dedup = RequestDeduplicator()
