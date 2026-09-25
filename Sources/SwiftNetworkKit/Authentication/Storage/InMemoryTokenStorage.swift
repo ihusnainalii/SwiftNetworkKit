@@ -11,8 +11,11 @@ public actor InMemoryTokenStorage: TokenStorage {
     /// Seeds the storage with an initial token pair.
     public init(seed pair: TokenPair) {
         storage = [:]
-        if let data = try? JSONEncoder().encode(pair) {
-            storage[InMemoryTokenStorage.tokenPairKey] = data
+        do {
+            storage[InMemoryTokenStorage.tokenPairKey] = try JSONEncoder().encode(pair)
+        } catch {
+            // A `TokenPair` is plain strings and dates, so this cannot happen; do not hide it if it does.
+            assertionFailure("InMemoryTokenStorage could not encode its seed TokenPair: \(error)")
         }
     }
 
