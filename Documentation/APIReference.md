@@ -84,7 +84,7 @@ The public entry point.
 
 **Properties:** `configuration`
 
-**Methods:** `batch(_:)()`, `cancel(_:)()`, `cancelAll()()`, `clearCache()()`, `collectAll(_:max:)()`, `data(for:)()`, `download(_:to:progress:)()`, `downloadPublisher(_:to:)()`, `offlineReplayEvents()()`, `paginate(_:maxPages:)()`, `paginatePublisher(_:)()`, `pauseQueue()()`, `publisher(for:)()`, `replayOfflineQueue()()` _(+10 more)_
+**Methods:** `batch(_:)()`, `cancel(_:)()`, `cancelAll()()`, `clearCache()()`, `collectAll(_:max:maxPages:)()`, `data(for:)()`, `download(_:to:progress:)()`, `downloadPublisher(_:to:)()`, `offlineReplayEvents()()`, `paginate(_:maxPages:)()`, `paginatePublisher(_:)()`, `pauseQueue()()`, `publisher(for:)()`, `replayOfflineQueue()()` _(+10 more)_
 
 ### `NetworkConfiguration`  `struct`
 
