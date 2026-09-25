@@ -64,6 +64,56 @@ struct RequestQueueTests {
         #expect(await order.entries == ["high", "low"])
     }
 
+    @Test("a cancelled waiter leaves the queue at once without running")
+    func cancelledWaiterLeavesQueue() async throws {
+        let queue = RequestQueue(maxConcurrent: 1)
+        let gate = Gate()
+        let ran = QueueCounter()
+        let blocker = Task {
+            try await queue.enqueue(priority: .normal) { await gate.wait() }
+        }
+        try await poll { await queue.runningCount == 1 }
+
+        let waiter = Task {
+            try await queue.enqueue(priority: .normal) { await ran.increment() }
+        }
+        try await poll { await queue.waitingCount == 1 }
+
+        waiter.cancel()
+        // Freed while the only slot is still held, not when it eventually comes up for admission.
+        try await poll { await queue.waitingCount == 0 }
+
+        guard case .failure(let error) = await waiter.result else {
+            Issue.record("expected the cancelled waiter to throw")
+            return
+        }
+        #expect(NetworkError.normalize(error).code == .cancelled)
+
+        await gate.open()
+        _ = try await blocker.value
+        #expect(await ran.value == 0)
+        #expect(await queue.runningCount == 0)
+    }
+
+    @Test("a task that is already cancelled never enters the queue")
+    func alreadyCancelled() async throws {
+        let queue = RequestQueue(maxConcurrent: 1)
+        let ran = QueueCounter()
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await queue.enqueue(priority: .normal) { await ran.increment() }
+        }
+
+        guard case .failure(let error) = await task.result else {
+            Issue.record("expected the cancelled task to throw")
+            return
+        }
+        #expect(NetworkError.normalize(error).code == .cancelled)
+        #expect(await ran.value == 0)
+        #expect(await queue.waitingCount == 0)
+        #expect(await queue.runningCount == 0)
+    }
+
     /// Spins on an actor-state condition (max ~1s) instead of a fixed sleep, so the test does not
     /// depend on scheduling latency (which balloons under ThreadSanitizer).
     private func poll(_ condition: @Sendable () async -> Bool) async throws {
