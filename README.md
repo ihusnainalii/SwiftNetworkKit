@@ -963,6 +963,8 @@ let everyone = try await client.collectAll(ListUsers(), max: 500)   // flattened
 
 `nextPage(after:)` gives the endpoint full control of the scheme (page number, cursor, `Link:`
 header). `paginate` honors task cancellation and caps at `maxPages` (default 1000).
+`paginate` ends quietly at the cap, but `collectAll` throws instead, so a partial array is never mistaken
+for the whole list; raise the cap with `collectAll(_:max:maxPages:)`.
 
 Parallel requests:
 
@@ -1165,6 +1167,9 @@ try await client.withCorrelation("checkout-\(orderID)") {
     _ = try await client.request(ChargeCard(orderID))
 }
 ```
+
+Failure events sent to a `NetworkMetrics` sink carry no request or response body, and credential
+headers and URL query secrets are masked, so a sink that forwards to an APM does not leak tokens.
 
 `InMemoryMetrics` is an actor you inspect in tests; `NoopMetrics` is the default. A custom
 `NetworkMetrics` conformer forwards events to your APM.
