@@ -19,6 +19,9 @@ public final class URLSessionTransport: NetworkTransport, @unchecked Sendable {
     private let trustEvaluator: (any ServerTrustEvaluating)?
     #endif
 
+    /// - Parameter session: used for ordinary requests. Uploads and downloads run on their own
+    ///   sessions built from a copy of `session.configuration` (to get byte progress), so a delegate,
+    ///   credential handling or pinning attached to `session` itself does not apply to them.
     public init(session: URLSession) {
         self.session = session
         self.baseConfiguration = session.configuration
