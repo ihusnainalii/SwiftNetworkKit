@@ -49,9 +49,10 @@ struct TokenStorageTests {
     }
 
     #if canImport(Security)
-    @Test("KeychainTokenStorage round-trips when the keychain is available")
+    @Test(
+        "KeychainTokenStorage round-trips when the keychain is available",
+        .enabled(if: KeychainTokenStorage.isAvailable, "keychain unavailable in this environment"))
     func keychainRoundTrip() async throws {
-        try #require(KeychainTokenStorage.isAvailable, "keychain unavailable in this environment")
         let storage = KeychainTokenStorage(service: "com.swiftnetworkkit.tests.\(UUID().uuidString)")
         defer { Task { try? await storage.removeAll() } }
 
@@ -64,9 +65,10 @@ struct TokenStorageTests {
         #expect(try await storage.accessToken() == nil)
     }
 
-    @Test("storing over an existing item applies the current accessibility class")
+    @Test(
+        "storing over an existing item applies the current accessibility class",
+        .enabled(if: KeychainTokenStorage.isAvailable, "keychain unavailable in this environment"))
     func keychainUpdatesAccessibility() async throws {
-        try #require(KeychainTokenStorage.isAvailable, "keychain unavailable in this environment")
         let service = "com.swiftnetworkkit.tests.\(UUID().uuidString)"
         let first = KeychainTokenStorage(service: service, accessibility: .whenUnlocked)
         let second = KeychainTokenStorage(service: service, accessibility: .afterFirstUnlock)
