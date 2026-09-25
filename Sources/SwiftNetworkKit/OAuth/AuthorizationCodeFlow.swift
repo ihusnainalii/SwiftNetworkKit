@@ -21,12 +21,17 @@ public struct AuthorizationCodeFlow: Sendable {
 
     public let configuration: OAuthConfiguration
     private let transport: any NetworkTransport
+    private let logger: (any NetworkLogger)?
 
+    /// - Parameter logger: receives the decoding error when a token endpoint answers 2xx with a body
+    ///   that is not a valid token response, which ``OAuthError/malformedTokenResponse`` cannot carry.
     public init(
         configuration: OAuthConfiguration,
-        transport: (any NetworkTransport)? = nil
+        transport: (any NetworkTransport)? = nil,
+        logger: (any NetworkLogger)? = nil
     ) {
         self.configuration = configuration
+        self.logger = logger
         #if os(WASI)
         guard let transport else { preconditionFailure("Pass `transport:` on WebAssembly.") }
         self.transport = transport
@@ -122,10 +127,12 @@ public struct AuthorizationCodeFlow: Sendable {
             let redactor = Redactor(redactedBodyKeys: NetworkConfiguration.defaultRedactedBodyKeys)
             throw OAuthError.tokenRequestFailed(status: response.statusCode, body: redactor.redact(body: data))
         }
-        guard let token = try? decoder.decode(OAuthTokenResponse.self, from: data) else {
+        do {
+            return try decoder.decode(OAuthTokenResponse.self, from: data)
+        } catch {
+            logger?.log("OAuth token response could not be decoded: \(error)", level: .error)
             throw OAuthError.malformedTokenResponse
         }
-        return token
     }
 
     static func formEncoded(_ fields: [String: String]) -> Data {

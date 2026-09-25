@@ -123,6 +123,19 @@ struct AuthorizationCodeFlowTests {
         }
     }
 
+    @Test("a malformed token response logs the decoding cause")
+    func malformedTokenResponseIsLogged() async {
+        let transport = MockNetworkTransport()
+        transport.enqueue(.json(Data(#"{"unexpected":true}"#.utf8)))
+        let logger = CapturingLogger()
+        let flow = AuthorizationCodeFlow(configuration: config(), transport: transport, logger: logger)
+
+        await #expect(throws: OAuthError.malformedTokenResponse) {
+            _ = try await flow.refresh(refreshToken: "RT")
+        }
+        #expect(logger.entries.contains { $0.level == .error && $0.line.contains("could not be decoded") })
+    }
+
     @Test("client secret is included when set")
     func clientSecret() async throws {
         var c = config()
