@@ -11,20 +11,28 @@ public final class PathNetworkMonitor: NetworkMonitor, @unchecked Sendable {
     private let broadcaster = NetworkStatusBroadcaster(initial: .requiresConnection)
     private let pathMonitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "digital.ili.SwiftNetworkKit.PathNetworkMonitor")
+    private let updates: AsyncStream<NetworkStatus>.Continuation
 
     public init() {
         let broadcaster = broadcaster
+        // Path updates arrive serially, but a separate `Task` per update could reach the broadcaster
+        // out of order and leave it reporting "offline" while the device is online. One consumer
+        // draining an ordered stream keeps the last update the last one published.
+        let (stream, continuation) = AsyncStream<NetworkStatus>.makeStream()
+        updates = continuation
         pathMonitor.pathUpdateHandler = { path in
-            let status = NetworkStatus(path)
-            Task { await broadcaster.publish(status) }
+            continuation.yield(NetworkStatus(path))
+        }
+        Task {
+            for await status in stream { await broadcaster.publish(status) }
+            await broadcaster.finishAll()
         }
         pathMonitor.start(queue: queue)
     }
 
     deinit {
         pathMonitor.cancel()
-        let broadcaster = broadcaster
-        Task { await broadcaster.finishAll() }
+        updates.finish()
     }
 
     public var currentStatus: NetworkStatus {
