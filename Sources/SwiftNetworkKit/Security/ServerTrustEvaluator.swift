@@ -16,7 +16,8 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
     let configuration: SSLPinningConfiguration
     private let log: @Sendable (String) -> Void
 
-    /// - Parameter log: sink for `recordOnly` output (the client wires this to its logger at `.error`).
+    /// - Parameter log: sink for `recordOnly` output and for the reason a pin check failed (the client
+    ///   wires this to its logger at `.error`). Without it a pinning failure only reports the host.
     public init(configuration: SSLPinningConfiguration, log: @escaping @Sendable (String) -> Void = { _ in }) {
         self.configuration = configuration
         self.log = log
@@ -41,6 +42,8 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
         if configuration.validateCertificateChain {
             var error: CFError?
             guard SecTrustEvaluateWithError(trust, &error) else {
+                let reason = error.map { ($0 as any Error).localizedDescription } ?? "unknown reason"
+                log("SSLPinning \(host): system trust evaluation failed: \(reason)")
                 return .rejected(.sslPinningFailed(host: host))
             }
         }
@@ -55,6 +58,9 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
                 }
             }
         }
+        // Say what the server actually presented, so a rotation outage can be fixed from the log.
+        let presented = chain.compactMap { Self.spkiSHA256($0) }.map { "sha256/\($0.base64EncodedString())" }
+        log("SSLPinning \(host): no pin matched; the server presented \(presented.joined(separator: ", "))")
         return .rejected(.sslPinningFailed(host: host))
     }
 
@@ -82,7 +88,7 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
         #if canImport(CryptoKit)
         return Data(SHA256.hash(data: spki))
         #else
-        return nil
+        return SHA256Fallback.hash(spki)
         #endif
     }
 }

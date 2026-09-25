@@ -41,6 +41,34 @@ struct ServerTrustEvaluatorTests {
         #expect(result.rejectionCode == .sslPinningFailed)
     }
 
+    @Test("a rejected pin logs the pins the server actually presented")
+    func wrongPinLogsPresentedPins() throws {
+        let logged = LoggedLines()
+        let config = SSLPinningConfiguration(pins: [
+            PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]
+        ])
+        let result = evaluator(config) { logged.append($0) }
+            .evaluate(trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
+        #expect(result.rejectionCode == .sslPinningFailed)
+        #expect(logged.all.contains { $0.contains("no pin matched") && $0.contains(PinningFixtures.rsaSPKISHA256) })
+    }
+
+    @Test("a failed system trust evaluation is logged with its reason")
+    func chainFailureLogsReason() throws {
+        var untrusted: SecTrust?
+        SecTrustCreateWithCertificates(
+            try PinningFixtures.certificate("pinning-rsa"), SecPolicyCreateBasicX509(), &untrusted)  // no anchor set
+        let logged = LoggedLines()
+        let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
+        let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
+
+        let result = evaluator(config) { logged.append($0) }
+            .evaluate(trust: try #require(untrusted), host: PinningFixtures.rsaHost)
+
+        #expect(result.rejectionCode == .sslPinningFailed)
+        #expect(logged.all.contains { $0.contains("system trust evaluation failed") })
+    }
+
     @Test("unmatched host is .notPinned (defers to system TLS, does not vouch)")
     func unmatchedHost() throws {
         let config = SSLPinningConfiguration(pins: ["other.example.com": [.publicKeySHA256(PinningFixtures.bogusHash)]])
