@@ -105,6 +105,24 @@ struct AuthorizationCodeFlowTests {
         }
     }
 
+    @Test("credentials echoed by the token endpoint are masked in the error")
+    func tokenErrorBodyIsRedacted() async {
+        let transport = MockNetworkTransport()
+        transport.enqueue(.status(400, body: Data(#"{"error":"invalid_grant","refresh_token":"LEAKED"}"#.utf8)))
+        let flow = AuthorizationCodeFlow(configuration: config(), transport: transport)
+
+        do {
+            _ = try await flow.refresh(refreshToken: "stale")
+            Issue.record("expected the exchange to fail")
+        } catch OAuthError.tokenRequestFailed(let status, let body) {
+            #expect(status == 400)
+            #expect(body?.contains("invalid_grant") == true)
+            #expect(body?.contains("LEAKED") == false)
+        } catch {
+            Issue.record("unexpected error \(error)")
+        }
+    }
+
     @Test("client secret is included when set")
     func clientSecret() async throws {
         var c = config()

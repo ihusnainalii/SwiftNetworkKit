@@ -131,6 +131,9 @@ extension NetworkError {
     }
 }
 
+/// - Important: descriptions can include text taken from the server's response and from underlying
+///   errors, and are not passed through ``Redactor``. Treat them as untrusted when logging or
+///   reporting; use `code` and `statusCode` where a description could leak.
 extension NetworkError: LocalizedError {
     public var errorDescription: String? {
         switch self {

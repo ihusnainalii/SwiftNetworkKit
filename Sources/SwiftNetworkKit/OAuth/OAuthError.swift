@@ -8,7 +8,8 @@ public enum OAuthError: Error, Sendable, Equatable {
     case authorizationDenied(String)
     /// No `code` query item in the redirect URL.
     case missingAuthorizationCode
-    /// The token endpoint returned a non-2xx response.
+    /// The token endpoint returned a non-2xx response. `body` has sensitive JSON keys (`access_token`,
+    /// `refresh_token`, ...) masked, and is a byte count for a body that is not JSON.
     case tokenRequestFailed(status: Int, body: String?)
     /// The token endpoint's body was not a valid `OAuthTokenResponse`.
     case malformedTokenResponse

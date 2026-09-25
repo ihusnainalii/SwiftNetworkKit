@@ -118,7 +118,9 @@ public struct AuthorizationCodeFlow: Sendable {
         }
 
         guard (200..<300).contains(response.statusCode) else {
-            throw OAuthError.tokenRequestFailed(status: response.statusCode, body: String(data: data, encoding: .utf8))
+            // A token endpoint can echo credentials back, so the body is masked before it goes in an error.
+            let redactor = Redactor(redactedBodyKeys: NetworkConfiguration.defaultRedactedBodyKeys)
+            throw OAuthError.tokenRequestFailed(status: response.statusCode, body: redactor.redact(body: data))
         }
         guard let token = try? decoder.decode(OAuthTokenResponse.self, from: data) else {
             throw OAuthError.malformedTokenResponse
