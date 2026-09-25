@@ -95,20 +95,19 @@ public final class NetworkClient: Sendable {
     ) async throws -> E.Response {
         let work = Task { try await self.dispatch(endpoint) }
         await registry.register(id) { work.cancel() }
-        defer {
-            let registry = registry
-            Task { await registry.deregister(id) }
-        }
 
-        return try await withTaskCancellationHandler {
+        let result: Result<E.Response, NetworkError> = await withTaskCancellationHandler {
             do {
-                return try await work.value
+                return .success(try await work.value)
             } catch {
-                throw NetworkError.normalize(error)
+                return .failure(NetworkError.normalize(error))
             }
         } onCancel: {
             work.cancel()
         }
+        // Deregister before returning, so a finished request is never still listed as in flight.
+        await registry.deregister(id)
+        return try result.get()
     }
 
     /// Cancels a specific in-flight request. No-op if it already finished.
@@ -149,10 +148,18 @@ public final class NetworkClient: Sendable {
     }
 
     /// Persists `request` for later replay if the endpoint opted in and the body can be archived.
-    private func offlineQueueID<E: Endpoint>(for endpoint: E, request: URLRequest) async throws -> RequestID? {
+    private func offlineQueueID<E: Endpoint>(for endpoint: E, request: URLRequest) async -> RequestID? {
         guard let offlineQueue, case .queue(let expiresAfter) = endpoint.offlineBehavior else { return nil }
         if case .multipart = endpoint.body { return nil }  // multipart bodies don't survive archiving
-        return try? await offlineQueue.enqueue(request, expiresAfter: expiresAfter)
+        do {
+            return try await offlineQueue.enqueue(request, expiresAfter: expiresAfter)
+        } catch {
+            // The caller still gets the original network error; this says why it was not queued.
+            emit(
+                ["offline enqueue failed, request not queued: \(NetworkError.normalize(error).code.rawValue)"],
+                level: .error)
+            return nil
+        }
     }
 
     /// Runs `operation` through the concurrency queue unless the endpoint opts out. Used by the
@@ -313,7 +320,7 @@ public final class NetworkClient: Sendable {
                 emit(["\u{2190} serving cached response (network failed: \(mapped.code.rawValue))"], level: .basic)
                 return try decodeCached(storedEntry, endpoint: endpoint, request: urlRequest, decode: decode)
             }
-            if mapped.code == .noInternet, let queued = try await offlineQueueID(for: endpoint, request: urlRequest) {
+            if mapped.code == .noInternet, let queued = await offlineQueueID(for: endpoint, request: urlRequest) {
                 await recordFailure(mapped, requestID: requestID, status: nil, since: started)
                 throw NetworkError.offlineQueued(queued)
             }

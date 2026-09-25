@@ -27,6 +27,13 @@ struct NetworkClientManagementTests {
         return NetworkClient(configuration: config, transport: transport)
     }
 
+    @Test("a finished request is deregistered before request() returns")
+    func deregistersBeforeReturning() async throws {
+        let c = client(MockNetworkTransport(default: .json(body)))
+        for _ in 0..<25 { _ = try await c.request(GetThing()) }
+        #expect(await c.registry.activeCount == 0)
+    }
+
     @Test("cancel(id:) cancels a specific in-flight request")
     func cancelByID() async throws {
         let transport = MockNetworkTransport(latency: .milliseconds(300))
