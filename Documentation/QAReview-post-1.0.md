@@ -27,15 +27,34 @@ Fixed after this review, each with a regression test:
   failures are logged.
 - **2c, 2d, 2e, 2f:** token storage failures surface instead of reading as "no token".
 - **3a:** query items are redacted from logged URLs.
+- **3b:** a failed OAuth token response has credentials masked in the error. `NetworkError` descriptions
+  are documented as not redaction-safe.
+- **3c:** failure metric events carry no bodies, and credentials in headers and URLs are masked.
 - **3d:** disk cache files are named by SHA-256, `Set-Cookie` is not cached, unreadable entries are removed.
-- **4a, 4b, 4c, 4d, 4e:** ordered path updates, cancel-aware queue waiters, revalidation runs through the
-  queue, cancelled SwiftUI loads are not failures, publisher task handle is locked.
-- **Section 5:** response interceptors now run for uploads and downloads, multipart `close()` errors
-  surface, a failed download move is reported.
-- **Section 7:** the `NetworkResource` cancellation doc and the `TokenManager` callback doc are accurate.
+- **4a to 4e:** ordered path updates, cancel-aware queue waiters, revalidation runs through the queue and
+  is cancelled by `cancelAll()`, cancelled SwiftUI loads are not failures, publisher task handle is locked.
+- **Section 5:** response interceptors run for uploads and downloads, multipart `close()` errors surface,
+  a failed download move is reported, `collectAll` throws at the page cap, and a pin failure logs whether
+  the chain or the pin failed and which pins the server presented.
+- **Section 7:** `NetworkResource` and `TokenManager` docs are accurate, status and offline event buffers
+  are bounded, SPKI hashing works without CryptoKit, a dedup type mismatch names both types, an
+  unreadable pin file is reported as unreadable, the keychain accessibility class is applied on update,
+  and the keychain availability probe no longer races. Transfer sessions and offline replay limits are
+  documented.
 
-Still open: **2h** (only reachable with a URL-less request), **3b**, **3c**, the remaining section 5 and
-section 7 items, and all of section 6 (breaking, for a 2.0).
+Deliberately not changed:
+
+- **2h:** the enqueue `try?` only fails for a request with no URL, which cannot reach it.
+- **Percent-encoding `?? value` fallbacks:** `addingPercentEncoding` only returns `nil` for unpaired
+  surrogates, which a Swift `String` cannot hold.
+- **Default retry of `.noInternet`:** it is governed by `retryableURLErrorCodes`, and an endpoint that
+  opts into the offline queue never reaches the retry loop with that error.
+- **`kSecUseDataProtectionKeychain`:** switching would orphan existing macOS items and needs a migration.
+- **`DateFormatter` per `Retry-After` parse, registry deregistration task, `InMemoryTokenStorage`
+  seed encoding, disk eviction listing failure:** negligible or unreachable.
+- **OAuth decode cause and an `underlying` on `sslPinningFailed`:** need a new enum payload, so they
+  belong with section 6. The pin failure reason is logged in the meantime.
+- **Section 6:** breaking changes, for a 2.0.
 
 ---
 
