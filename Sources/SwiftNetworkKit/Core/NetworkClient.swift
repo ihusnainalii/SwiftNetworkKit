@@ -61,7 +61,8 @@ public final class NetworkClient: Sendable {
         self.logFormatter = NetworkLogFormatter(
             redactor: Redactor(
                 redactedHeaders: configuration.redactedHeaders,
-                redactedBodyKeys: configuration.redactedBodyKeys
+                redactedBodyKeys: configuration.redactedBodyKeys,
+                redactedQueryItems: configuration.loggedQueryItemDenylist
             )
         )
         if let refresh {

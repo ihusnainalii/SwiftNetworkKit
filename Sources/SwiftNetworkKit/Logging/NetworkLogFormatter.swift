@@ -14,7 +14,7 @@ struct NetworkLogFormatter: Sendable {
     func requestLines(_ request: URLRequest, endpoint: AnyEndpoint, level: LogLevel) -> [String] {
         guard level >= .basic else { return [] }
         let method = request.httpMethod ?? endpoint.method.rawValue
-        let target = request.url?.absoluteString ?? endpoint.path
+        let target = request.url.map { redactor.redact(url: $0) } ?? endpoint.path
         var lines = ["\u{2192} \(method) \(target)"]
         if level >= .verbose {
             lines += headerLines(HTTPHeaders(request.allHTTPHeaderFields ?? [:]), arrow: "\u{2192}")

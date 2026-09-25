@@ -27,6 +27,11 @@ public struct NetworkConfiguration: Sendable {
     /// JSON body keys whose values must never appear in logs.
     public var redactedBodyKeys: Set<String>
 
+    /// URL query item names (case-insensitive) whose values must never appear in logs, on top of
+    /// ``Redactor/alwaysRedactedQueryItems``. The name used by ``APIKeyAuth`` when it sends its key in
+    /// the query is added automatically.
+    public var redactedQueryItems: Set<String>
+
     /// App hook to override status-code → error mapping. Consulted before the built-in mapping.
     public var errorMapper: (@Sendable (ResponseContext) -> NetworkError?)?
 
@@ -119,13 +124,15 @@ public struct NetworkConfiguration: Sendable {
         maxConcurrentRequests: Int = 6,
         enableDeduplication: Bool = false,
         offlineStore: (any OfflineStore)? = nil,
-        networkMonitor: (any NetworkMonitor)? = nil
+        networkMonitor: (any NetworkMonitor)? = nil,
+        redactedQueryItems: Set<String> = []
     ) {
         self.environment = environment
         self.defaultDecoder = defaultDecoder
         self.defaultEncoder = defaultEncoder
         self.redactedHeaders = Set(redactedHeaders.map { $0.lowercased() })
         self.redactedBodyKeys = redactedBodyKeys
+        self.redactedQueryItems = Set(redactedQueryItems.map { $0.lowercased() })
         self.errorMapper = errorMapper
         self.authorization = authorization
         self.tokenStorage = tokenStorage
@@ -188,6 +195,16 @@ public struct NetworkConfiguration: Sendable {
             tokenStorage: tokenStorage,
             errorMapper: errorMapper
         )
+    }
+
+    /// Query names to mask in logged URLs: the configured set plus the key name of ``APIKeyAuth`` when
+    /// it travels in the query, so a default client never logs its own API key.
+    var loggedQueryItemDenylist: Set<String> {
+        var names = redactedQueryItems
+        if let apiKey = authorization as? APIKeyAuth, case .query(let name) = apiKey.placement {
+            names.insert(name.lowercased())
+        }
+        return names
     }
 
     public static let defaultRedactedHeaders: Set<String> = [
