@@ -15,6 +15,9 @@ actor OfflineRequestQueue {
     /// attempts. Server responses of any status count as delivered, not as failures.
     static let maxReplayAttempts = 10
 
+    /// How many undelivered replay events a subscriber may hold before the oldest are dropped.
+    static let bufferedEvents = 256
+
     private let store: any OfflineStore
     private let send: Send
     private let metrics: any NetworkMetrics
@@ -63,7 +66,9 @@ actor OfflineRequestQueue {
     /// A stream of replay outcomes. Each call is an independent subscription.
     func events() -> AsyncStream<OfflineReplayEvent> {
         let id = UUID()
-        let (stream, continuation) = AsyncStream<OfflineReplayEvent>.makeStream()
+        // Bounded so a subscriber that never reads cannot grow memory; the newest events are kept.
+        let (stream, continuation) = AsyncStream<OfflineReplayEvent>.makeStream(
+            bufferingPolicy: .bufferingNewest(Self.bufferedEvents))
         subscribers[id] = continuation
         continuation.onTermination = { [weak self] _ in Task { await self?.removeSubscriber(id) } }
         return stream

@@ -11,11 +11,17 @@ actor NetworkStatusBroadcaster {
         self.current = initial
     }
 
+    /// How many undelivered updates a slow subscriber may hold. Older ones are dropped, so an absent
+    /// consumer cannot grow memory and always still sees the most recent state.
+    static let bufferedUpdates = 16
+
     /// A new subscription. Immediately yields ``current``, then every later ``publish(_:)``.
     func stream() -> AsyncStream<NetworkStatus> {
         let id = UUID()
         var escaped: AsyncStream<NetworkStatus>.Continuation!
-        let stream = AsyncStream<NetworkStatus> { escaped = $0 }
+        let stream = AsyncStream<NetworkStatus>(bufferingPolicy: .bufferingNewest(Self.bufferedUpdates)) {
+            escaped = $0
+        }
         let continuation = escaped!
 
         continuations[id] = continuation
