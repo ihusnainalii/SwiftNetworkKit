@@ -51,11 +51,7 @@ enum StatusCodeMapper {
         if let seconds = TimeInterval(raw), seconds.isFinite {
             return min(max(0, seconds), maxRetryAfter)
         }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "GMT")
-        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss 'GMT'"
-        if let date = formatter.date(from: raw) {
+        if let date = HTTPDateParser.shared.date(from: raw) {
             return min(max(0, date.timeIntervalSinceNow), maxRetryAfter)
         }
         return nil
