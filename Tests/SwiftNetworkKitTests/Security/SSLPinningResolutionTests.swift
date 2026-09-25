@@ -99,9 +99,10 @@ struct SSLPinningResolutionTests {
         #expect(resolved.mode == .recordOnly)
     }
 
-    // Exit tests (`#expect(processExitsWith:)`) require Swift 6.2+. On older toolchains the
-    // precondition in `SSLPinningConfiguration.init` still stands; it just is not asserted here.
-    #if compiler(>=6.2)
+    // Exit tests (`#expect(processExitsWith:)`) require Swift 6.2+ and a host that can spawn a process
+    // (not iOS, tvOS, watchOS or visionOS). Elsewhere the precondition in
+    // `SSLPinningConfiguration.init` still stands; it just is not asserted here.
+    #if compiler(>=6.2) && (os(macOS) || os(Linux) || os(Windows))
     @Test("SSLPinningConfiguration traps on an empty pin list for a host")
     func emptyPinsIsProgrammerError() async {
         await #expect(processExitsWith: .failure) {
