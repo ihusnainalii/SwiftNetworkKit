@@ -42,19 +42,23 @@ Fixed after this review, each with a regression test:
   and the keychain availability probe no longer races. Transfer sessions and offline replay limits are
   documented.
 
+Also fixed since: the offline enqueue failure is logged (2h), the `Retry-After` date formatter is
+shared, requests are deregistered before `request()` returns, `InMemoryTokenStorage` no longer hides a
+failed seed encoding, the OAuth decoding cause is logged (`AuthorizationCodeFlow(logger:)`), the
+`withCorrelation` deprecation warning is gone so `-warnings-as-errors` builds clean on Swift 6.4, and
+the test suite compiles and passes on the iOS simulator (keychain tests skip when the host has none).
+
 Deliberately not changed:
 
-- **2h:** the enqueue `try?` only fails for a request with no URL, which cannot reach it.
 - **Percent-encoding `?? value` fallbacks:** `addingPercentEncoding` only returns `nil` for unpaired
   surrogates, which a Swift `String` cannot hold.
 - **Default retry of `.noInternet`:** it is governed by `retryableURLErrorCodes`, and an endpoint that
   opts into the offline queue never reaches the retry loop with that error.
-- **`kSecUseDataProtectionKeychain`:** switching would orphan existing macOS items and needs a migration.
-- **`DateFormatter` per `Retry-After` parse, registry deregistration task, `InMemoryTokenStorage`
-  seed encoding, disk eviction listing failure:** negligible or unreachable.
-- **OAuth decode cause and an `underlying` on `sslPinningFailed`:** need a new enum payload, so they
-  belong with section 6. The pin failure reason is logged in the meantime.
-- **Section 6:** breaking changes, for a 2.0.
+- **`kSecUseDataProtectionKeychain`:** switching would orphan existing macOS items, and it needs a
+  signed app with a keychain entitlement, so unsigned tools would start failing. It needs a migration.
+- **Disk cache listing failure:** the cache is best-effort, and a failure there degrades to cache misses.
+- **An `underlying` on `sslPinningFailed` and section 6:** these change public enum payloads and
+  initializer signatures, so they need a major version. The pin failure reason is logged meanwhile.
 
 ---
 
