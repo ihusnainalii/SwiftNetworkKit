@@ -1,7 +1,7 @@
 import Foundation
 
-/// A key/value store of ``CachedResponse`` values. The client computes the key (method + URL, plus
-/// whether an `Authorization` header is present), so a store never has to know the keying rules.
+/// A key/value store of ``CachedResponse`` values. The client computes the key (method + URL, plus a
+/// fingerprint of the `Authorization` value), so a store never has to know the keying rules.
 ///
 /// Built-ins: ``MemoryCacheStore`` (default) and ``DiskCacheStore``.
 public protocol ResponseCache: Sendable {
@@ -11,10 +11,10 @@ public protocol ResponseCache: Sendable {
     func removeAll() async
 }
 
-/// The cache key for a request: `METHOD URL` plus an `+auth` marker when an `Authorization` header
-/// is set, so an authenticated and an anonymous response for the same URL don't collide.
+/// The cache key for a request: `METHOD URL` plus a fingerprint of the `Authorization` value, so
+/// responses for different accounts (or an account and an anonymous caller) never collide.
 enum CacheKey {
-    static func make(method: String, url: URL?, isAuthenticated: Bool) -> String {
-        "\(method) \(url?.absoluteString ?? "?")\(isAuthenticated ? " +auth" : "")"
+    static func make(method: String, url: URL?, authorization: String?) -> String {
+        "\(method) \(url?.absoluteString ?? "?")\(AuthFingerprint.suffix(for: authorization))"
     }
 }

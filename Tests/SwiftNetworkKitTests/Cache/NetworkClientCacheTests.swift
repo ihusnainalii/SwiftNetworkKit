@@ -123,6 +123,6 @@ struct NetworkClientCacheTests {
     }
 
     private let cacheKey = CacheKey.make(
-        method: "GET", url: URL(string: "https://api.example.com/thing"), isAuthenticated: false
+        method: "GET", url: URL(string: "https://api.example.com/thing"), authorization: nil
     )
 }

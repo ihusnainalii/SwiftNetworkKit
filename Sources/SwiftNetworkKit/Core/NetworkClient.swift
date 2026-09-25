@@ -65,11 +65,16 @@ public final class NetworkClient: Sendable {
             )
         )
         if let refresh {
+            // A dead session must not leave the previous account's responses readable.
+            let cache = configuration.cache.store
             self.tokenManager = TokenManager(
                 storage: configuration.tokenStorage,
                 proactiveLeeway: configuration.proactiveRefreshLeeway,
                 refresh: refresh,
-                onSessionExpired: onSessionExpired
+                onSessionExpired: {
+                    await cache?.removeAll()
+                    await onSessionExpired()
+                }
             )
         } else {
             self.tokenManager = nil
@@ -112,6 +117,12 @@ public final class NetworkClient: Sendable {
     /// Cancels every in-flight request.
     public func cancelAll() async {
         await registry.cancelAll()
+    }
+
+    /// Removes every cached response. Call it when the signed-in user changes or logs out. The client
+    /// also does this itself when a token refresh fails or a request 401s twice.
+    public func clearCache() async {
+        await configuration.cache.store?.removeAll()
     }
 
     /// Stops admitting queued requests. Running requests continue; new ones wait for ``resumeQueue()``.
@@ -171,10 +182,18 @@ public final class NetworkClient: Sendable {
         guard wantsDedup else {
             return try await perform(endpoint, decode: decode)
         }
-        let request = try? RequestBuilder.build(
-            endpoint: endpoint, environment: configuration.environment, configuration: configuration
-        )
-        guard let request else {
+        // The key must reflect the credentials the request will carry, so authorize before keying.
+        // Any failure here is left for `perform` to surface through the normal pipeline.
+        guard
+            var request = try? RequestBuilder.build(
+                endpoint: endpoint, environment: configuration.environment, configuration: configuration
+            )
+        else {
+            return try await perform(endpoint, decode: decode)
+        }
+        do {
+            try await authorize(&request, for: endpoint)
+        } catch {
             return try await perform(endpoint, decode: decode)
         }
         return try await deduplicator.result(for: DeduplicationKey.make(request)) { [self] in
@@ -255,7 +274,7 @@ public final class NetworkClient: Sendable {
         let cacheKey = CacheKey.make(
             method: endpoint.method.rawValue,
             url: urlRequest.url,
-            isAuthenticated: urlRequest.value(forHTTPHeaderField: "Authorization") != nil
+            authorization: urlRequest.value(forHTTPHeaderField: "Authorization")
         )
         var storedEntry: CachedResponse?
 
@@ -434,73 +453,4 @@ public final class NetworkClient: Sendable {
         }
     }
 
-    func authorize<E: Endpoint>(_ request: inout URLRequest, for endpoint: E) async throws {
-        let strategy: any AuthStrategy
-        switch endpoint.authentication {
-        case .none:
-            return
-        case .required:
-            strategy = configuration.authorization
-        case .custom(let custom):
-            strategy = custom
-        }
-
-        let token: String?
-        if let tokenManager {
-            token = await tokenManager.tokenForOutgoingRequest()
-        } else {
-            token = try? await configuration.tokenStorage.accessToken()
-        }
-        try await strategy.authorize(&request, token: token)
-    }
-
-    // MARK: - Transport construction
-
-    private static func defaultTransport(for configuration: NetworkConfiguration) -> any NetworkTransport {
-        let timeout = configuration.environment.timeout
-        #if os(WASI)
-        preconditionFailure("No default transport on WebAssembly; pass `transport:` explicitly.")
-        #elseif canImport(Security)
-        let host = URLComponents(url: configuration.environment.baseURL, resolvingAgainstBaseURL: false)?.host
-        let resolved: SSLPinningConfiguration?
-        do {
-            resolved = try configuration.sslPinning.resolve(defaultHost: host)
-        } catch {
-            preconditionFailure("SSLPinning could not be resolved: \(error)")
-        }
-        guard let resolved else {
-            return URLSessionTransport(timeout: timeout)
-        }
-        let logger = configuration.logger
-        let evaluator = ServerTrustEvaluator(configuration: resolved) { line in
-            logger.log(line, level: .error)
-        }
-        return URLSessionTransport(timeout: timeout, trustEvaluator: evaluator)
-        #else
-        return URLSessionTransport(timeout: timeout)
-        #endif
-    }
-
-    // MARK: - Logging & metrics helpers
-
-    var logLevel: LogLevel { configuration.environment.logLevel }
-
-    func elapsed(since start: ContinuousClock.Instant) -> Duration {
-        start.duration(to: configuration.clock.now())
-    }
-
-    func emit(_ lines: [String], level: LogLevel) {
-        guard logLevel != .none, !lines.isEmpty else { return }
-        for line in lines { configuration.logger.log(line, level: level) }
-    }
-
-    func recordFailure(
-        _ error: NetworkError, requestID: RequestID, status: Int?, since start: ContinuousClock.Instant
-    ) async {
-        await configuration.metrics.record(.failure(requestID, error, status: status ?? error.statusCode))
-        if error.code == .timeout { await configuration.metrics.record(.timeout(requestID)) }
-        if let line = logFormatter.failureLine(error, duration: elapsed(since: start), level: logLevel) {
-            configuration.logger.log(line, level: .error)
-        }
-    }
 }
