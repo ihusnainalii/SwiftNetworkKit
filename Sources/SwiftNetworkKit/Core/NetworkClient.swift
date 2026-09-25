@@ -74,7 +74,8 @@ public final class NetworkClient: Sendable {
                 onSessionExpired: {
                     await cache?.removeAll()
                     await onSessionExpired()
-                }
+                },
+                logger: configuration.logger
             )
         } else {
             self.tokenManager = nil

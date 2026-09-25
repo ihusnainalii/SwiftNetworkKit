@@ -20,11 +20,13 @@ extension NetworkClient {
             strategy = custom
         }
 
+        // Only "nothing stored" means no token. A locked keychain or a corrupt pair must surface,
+        // not turn into an unauthenticated request and a spurious logout.
         let token: String?
         if let tokenManager {
-            token = await tokenManager.tokenForOutgoingRequest()
+            token = try await tokenManager.outgoingToken()
         } else {
-            token = try? await configuration.tokenStorage.accessToken()
+            token = try await configuration.tokenStorage.accessToken()
         }
         try await strategy.authorize(&request, token: token)
     }
