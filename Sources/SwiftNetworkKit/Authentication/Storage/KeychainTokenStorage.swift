@@ -56,7 +56,7 @@ public struct KeychainTokenStorage: TokenStorage {
         case errSecDuplicateItem:
             let updateStatus = SecItemUpdate(
                 baseQuery(account: key) as CFDictionary,
-                [kSecValueData as String: data] as CFDictionary
+                [kSecValueData as String: data, kSecAttrAccessible as String: accessibility.cfValue] as CFDictionary
             )
             guard updateStatus == errSecSuccess else { throw KeychainError(status: updateStatus) }
         default:

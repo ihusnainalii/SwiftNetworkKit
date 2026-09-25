@@ -1,6 +1,10 @@
 import Foundation
 import Testing
 
+#if canImport(Security)
+import Security
+#endif
+
 @testable import SwiftNetworkKit
 
 @Suite("TokenStorage")
@@ -58,6 +62,33 @@ struct TokenStorageTests {
         #expect(try await storage.accessToken() == "k2")
         try await storage.removeAll()
         #expect(try await storage.accessToken() == nil)
+    }
+
+    @Test("storing over an existing item applies the current accessibility class")
+    func keychainUpdatesAccessibility() async throws {
+        try #require(KeychainTokenStorage.isAvailable, "keychain unavailable in this environment")
+        let service = "com.swiftnetworkkit.tests.\(UUID().uuidString)"
+        let first = KeychainTokenStorage(service: service, accessibility: .whenUnlocked)
+        let second = KeychainTokenStorage(service: service, accessibility: .afterFirstUnlock)
+        defer { Task { try? await second.removeAll() } }
+
+        try await first.store(TokenPair(accessToken: "a"))
+        try await second.store(TokenPair(accessToken: "b"))
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var result: AnyObject?
+        #expect(SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess)
+        #if !os(macOS)
+        // The macOS file-based keychain ignores accessibility classes, so this only holds elsewhere.
+        let attributes = try #require(result as? [String: Any])
+        #expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlock as String)
+        #endif
+        #expect(try await second.accessToken() == "b")
     }
 
     @Test("KeychainError describes its OSStatus")
