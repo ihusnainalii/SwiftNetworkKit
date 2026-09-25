@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-source--available%20proprietary-red.svg" alt="License" /></a>
 </p>
 
-- **Version:** 1.0.0 (public API frozen; see [Versioning](#versioning))
+- **Version:** 1.1.0 (public API frozen; see [Versioning](#versioning))
 - **Swift:** 6.0 (`swift-tools-version:6.0`, Swift 6 language mode)
 - **Platforms:** iOS 16+, macOS 13+, tvOS 16+, watchOS 9+, visionOS 1+
 - **Distribution:** Swift Package Manager
@@ -177,7 +177,7 @@ package builds and works without them.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.0.0")
+    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.1.0")
 ],
 targets: [
     .target(
@@ -193,7 +193,7 @@ targets: [
 
 File -> Add Package Dependencies, enter
 `https://github.com/ihusnainalii/SwiftNetworkKit.git`, and pick "Up to Next Major Version"
-from `1.0.0`.
+from `1.1.0`.
 
 From 1.0.0 the public API follows semantic versioning: a breaking change means a major bump.
 
@@ -489,7 +489,7 @@ config.authorization = BearerAuth()                       // Authorization: Bear
 config.authorization = APIKeyAuth(key: "...", field: .header("X-API-Key"))
 config.authorization = BasicAuth(username: "u", password: "p")
 config.authorization = CustomAuth { request, _ in
-    var r = request; r.setValue(sign(r), forHTTPHeaderField: "X-Signature"); return r
+    request.setValue(sign(request), forHTTPHeaderField: "X-Signature")
 }
 ```
 
@@ -557,6 +557,9 @@ Guarantees:
   `NetworkError.sessionExpired` and calls `onSessionExpired` once.
 - **Proactive refresh.** If the stored `TokenPair` has an `expiryDate`, the client refreshes
   `proactiveRefreshLeeway` seconds early (default 60) instead of waiting for a 401.
+- **Storage failures are not "no token".** A locked keychain or an undecodable pair fails the
+  request instead of sending it unauthenticated, and a refreshed pair that cannot be saved fails the
+  refresh with `tokenRefreshFailed` rather than leaving the stale token in place.
 - **No deadlock.** The refresh request should set `skipRequestQueue = true` so a full concurrency
   queue plus an expired token cannot wedge.
 
@@ -766,7 +769,8 @@ struct GetConfig: Endpoint {
 }
 ```
 
-Deduplication keys on method + URL (+ auth state). It never applies to non-idempotent methods or
+Deduplication keys on method + URL + a fingerprint of the `Authorization` value, so requests made
+with different accounts never share a result. It never applies to non-idempotent methods or
 anything user-specific.
 
 ---
@@ -819,6 +823,10 @@ config.cache = CacheConfiguration(
 | `.staleWhileRevalidate` | Return the cached response now, refresh in the background |
 
 - Only `GET` / `HEAD` are cached.
+- Entries are keyed per account (a fingerprint of the `Authorization` value), so a response fetched
+  with one token is never served to another. Call `await client.clearCache()` when the signed-in
+  user changes; the client also clears the cache itself when a session expires.
+- `Set-Cookie` and other credential headers are never written to the cache.
 - `ETag` responses are revalidated with `If-None-Match`; a `304` reuses the stored body.
 - `Cache-Control: no-store` is never persisted; `max-age` and `no-cache` are honored.
 - Per-endpoint override via `Endpoint.cachePolicy`.
@@ -841,6 +849,7 @@ let created: Photo = try await client.upload(CreatePhoto(), from: .multipart(for
 - RFC 7578 boundary construction, per-part `Content-Type`, `Content-Disposition`.
 - Large file parts stream from disk.
 - Uploads are not retried and skip the 401-refresh hop; a partial upload is unsafe to replay.
+  Response interceptors still run (a `.retry` outcome is ignored).
 - An in-memory body can also be sent with `.data` or `.file`:
 
 ```swift
@@ -921,6 +930,14 @@ await client.replayOfflineQueue()   // also force a replay manually
 ```
 
 Multipart bodies cannot be archived, so a multipart endpoint always fails fast instead of queueing.
+
+A queued request is never dropped silently:
+
+- A request whose re-send keeps failing at the transport level is dropped after 10 attempts, and
+  `.failed` is emitted each time.
+- A queued request that can no longer be rebuilt emits `.failed` before it is dropped.
+- `FileOfflineStore` logs write failures, moves a file that is not valid JSON aside to
+  `<file>.corrupt`, and leaves a file it cannot read untouched. Pass `logger:` to route those lines.
 
 ---
 
@@ -1103,6 +1120,7 @@ config.environment.logLevel = .basic    // .none / .error / .basic / .verbose / 
 config.logger = ConsoleNetworkLogger()  // default; writes to os.Logger
 config.redactedHeaders = ["x-internal-signature"]
 config.redactedBodyKeys = ["ssn", "card_number"]
+config.redactedQueryItems = ["session"]     // on top of access_token, api_key, signature, code, ...
 ```
 
 | Level | Emits |
