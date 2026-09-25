@@ -133,7 +133,8 @@ public final class URLSessionTransport: NetworkTransport, @unchecked Sendable {
         }
 
         guard let response = delegate.httpResponse, let fileURL = delegate.downloadedFile else {
-            throw NetworkError.transport(underlying: URLError(.cannotOpenFile))
+            throw NetworkError.transport(
+                underlying: delegate.downloadMoveFailure.map(asSendableError) ?? URLError(.cannotOpenFile))
         }
         return (fileURL, response)
     }

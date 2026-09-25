@@ -29,6 +29,7 @@ final class TransportSessionDelegate: NSObject,
     private var _fileURL: URL?
     private var _response: HTTPURLResponse?
     private var _pinFailure: NetworkError?
+    private var _moveFailure: (any Error)?
 
     /// Called exactly once when the task finishes.
     var completion: (@Sendable (Result<Void, any Error>) -> Void)?
@@ -37,6 +38,8 @@ final class TransportSessionDelegate: NSObject,
     var downloadedFile: URL? { lock.withLock { _fileURL } }
     var httpResponse: HTTPURLResponse? { lock.withLock { _response } }
     var pinningFailure: NetworkError? { lock.withLock { _pinFailure } }
+    /// Why the finished download could not be moved out of `URLSession`'s temporary location.
+    var downloadMoveFailure: (any Error)? { lock.withLock { _moveFailure } }
 
     #if canImport(Security)
     init(evaluator: (any ServerTrustEvaluating)?, onProgress: (@Sendable (ProgressEvent) -> Void)?) {
@@ -120,8 +123,13 @@ final class TransportSessionDelegate: NSObject,
     ) {
         let stable = FileManager.default.temporaryDirectory
             .appendingPathComponent("swiftnetworkkit-download-\(UUID().uuidString)")
-        try? FileManager.default.moveItem(at: location, to: stable)
-        lock.withLock { _fileURL = stable }
+        do {
+            try FileManager.default.moveItem(at: location, to: stable)
+            lock.withLock { _fileURL = stable }
+        } catch {
+            // Never hand back a URL to a file that is not there; the transport reports this instead.
+            lock.withLock { _moveFailure = error }
+        }
     }
 
     // MARK: Task completion
