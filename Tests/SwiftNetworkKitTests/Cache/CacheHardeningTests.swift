@@ -87,6 +87,31 @@ struct CacheHardeningTests {
         #expect(logger.lines.contains { $0.contains("background revalidation failed") })
     }
 
+    @Test("cancelAll() also stops a background revalidation")
+    func revalidationIsCancellable() async throws {
+        let stale = Data(#"{"v":"stale"}"#.utf8)
+        let transport = MockNetworkTransport(latency: .milliseconds(100))
+        transport.enqueue(
+            .json(stale, headers: ["Cache-Control": "max-age=0"]),
+            .json(Data(#"{"v":"fresh"}"#.utf8), headers: ["Cache-Control": "max-age=60"])
+        )
+        let store = MemoryCacheStore()
+        var config = NetworkConfiguration(baseURL: "https://api.example.com")
+        config.retry = .none
+        config.cache = CacheConfiguration(store: store, defaultPolicy: .staleWhileRevalidate)
+        let client = NetworkClient(configuration: config, transport: transport)
+
+        _ = try await client.request(GetThing())  // populates the cache
+        _ = try await client.request(GetThing())  // served stale, refresh starts
+        try await Task.sleep(for: .milliseconds(30))
+        await client.cancelAll()
+        try await Task.sleep(for: .milliseconds(250))
+
+        let key = CacheKey.make(
+            method: "GET", url: URL(string: "https://api.example.com/thing"), authorization: nil)
+        #expect(await store.value(forKey: key)?.data == stale)
+    }
+
     @Test("removingCredentials also honors extra names, case-insensitively")
     func extraNames() {
         let headers: HTTPHeaders = ["X-Session": "s", "Content-Type": "application/json"]
