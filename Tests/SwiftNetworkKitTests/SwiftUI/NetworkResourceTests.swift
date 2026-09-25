@@ -70,6 +70,59 @@ struct NetworkResourceTests {
         #expect(resource.value?.count == 2)
     }
 
+    @Test("a superseded load does not flash a failure")
+    @MainActor
+    @available(iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, *)
+    func supersededLoadIsNotAFailure() async throws {
+        let transport = MockNetworkTransport(
+            default: .json(Data(#"[{"v":1}]"#.utf8)), latency: .milliseconds(150))
+        let resource = NetworkResource<[Thing]>(client: client(transport))
+
+        let first = Task { @MainActor in await resource.load(GetThing()) }
+        try await Task.sleep(for: .milliseconds(30))
+        let second = Task { @MainActor in await resource.load(GetThing()) }
+
+        await first.value  // the first load was cancelled by the second
+        #expect(resource.error == nil)
+
+        await second.value
+        #expect(resource.value == [Thing(v: 1)])
+    }
+
+    @Test("cancelling the caller of load cancels the request without a failure")
+    @MainActor
+    @available(iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, *)
+    func cancellingCallerCancelsRequest() async throws {
+        let transport = MockNetworkTransport(
+            default: .json(Data(#"[{"v":1}]"#.utf8)), latency: .milliseconds(150))
+        let resource = NetworkResource<[Thing]>(client: client(transport))
+
+        let caller = Task { @MainActor in await resource.load(GetThing()) }
+        try await Task.sleep(for: .milliseconds(30))
+        caller.cancel()
+        await caller.value
+
+        #expect(resource.error == nil)
+        #expect(resource.value == nil)
+    }
+
+    @Test("a cancelled first page does not end pagination")
+    @MainActor
+    @available(iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, *)
+    func cancelledPageKeepsPaginationAlive() async throws {
+        let transport = MockNetworkTransport(
+            default: .json(Data(#"[{"id":1}]"#.utf8)), latency: .milliseconds(150))
+        let paged = Paged<Row>(client: client(transport))
+
+        let start = Task { @MainActor in await paged.start(RowsPage()) }
+        try await Task.sleep(for: .milliseconds(30))
+        start.cancel()
+        await start.value
+
+        #expect(paged.error == nil)
+        #expect(paged.canLoadMore)
+    }
+
     @Test("Paged.start loads the first page; loadMoreIfNeeded appends the next")
     @MainActor
     @available(iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, *)

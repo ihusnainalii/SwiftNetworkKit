@@ -15,7 +15,8 @@ import Observation
 /// }
 /// ```
 ///
-/// A new ``load(_:)`` cancels the previous request; `deinit` cancels the in-flight one.
+/// A new ``load(_:)`` cancels the previous request, and cancelling the task that called `load` (for
+/// example when a `.task` ends) cancels its request. A cancelled load never shows as a failure.
 @available(iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, *)
 @MainActor
 @Observable
@@ -65,14 +66,18 @@ public final class NetworkResource<Value: Sendable> {
             do {
                 let response = try await client.request(endpoint)
                 self?.phase = .loaded(response)
-            } catch is CancellationError {
-                // leave the previous phase in place
             } catch {
-                self?.phase = .failed(NetworkError.normalize(error))
+                let mapped = NetworkError.normalize(error)
+                // Superseded or cancelled: leave the previous phase in place.
+                if mapped.code != .cancelled { self?.phase = .failed(mapped) }
             }
         }
         task = work
-        await work.value
+        await withTaskCancellationHandler {
+            await work.value
+        } onCancel: {
+            work.cancel()
+        }
     }
 
     /// Re-runs the last ``load(_:)``.

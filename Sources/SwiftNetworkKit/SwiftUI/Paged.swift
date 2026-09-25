@@ -62,6 +62,8 @@ public final class Paged<Item: Sendable & Identifiable> {
             if page.isEmpty { canLoadMore = false }
         case .finished:
             canLoadMore = false
+        case .cancelled:
+            break  // the caller went away; leave the list as it is so a later call can continue
         case .failure(let error):
             self.error = error
             canLoadMore = false
@@ -74,6 +76,7 @@ public final class Paged<Item: Sendable & Identifiable> {
 enum PagedResult<Item: Sendable>: Sendable {
     case page([Item])
     case finished
+    case cancelled
     case failure(NetworkError)
 }
 
@@ -94,10 +97,9 @@ private actor PageCursor<E: PaginatedEndpoint> {
             let response = try await client.request(page)
             current = page.nextPage(after: response)
             return .page(page.items(from: response))
-        } catch is CancellationError {
-            return .finished
         } catch {
-            return .failure(NetworkError.normalize(error))
+            let mapped = NetworkError.normalize(error)
+            return mapped.code == .cancelled ? .cancelled : .failure(mapped)
         }
     }
 }
