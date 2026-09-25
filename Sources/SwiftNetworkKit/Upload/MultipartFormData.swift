@@ -85,6 +85,8 @@ public struct MultipartFormData: Sendable {
                 try handle.write(contentsOf: Data("\r\n".utf8))
             }
             try handle.write(contentsOf: Data("--\(boundary)--\r\n".utf8))
+            // `close()` is where a failed flush surfaces; the deferred close only tidies up error paths.
+            try handle.close()
         } catch let error as NetworkError {
             throw error
         } catch {
