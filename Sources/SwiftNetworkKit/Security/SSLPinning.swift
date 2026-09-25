@@ -61,12 +61,17 @@ extension SSLPinning {
 
         case .certificateResources(let resources, let ext, let bundle, let hosts):
             let pins = try resources.flatMap { name -> [Pin] in
-                guard let url = bundle.url(forResource: name, withExtension: ext),
-                    let der = try? Data(contentsOf: url)
-                else {
+                guard let url = bundle.url(forResource: name, withExtension: ext) else {
                     throw SSLPinningError.resourceNotFound(
                         name: name, extension: ext, bundle: bundle.bundleIdentifier ?? bundle.bundlePath
                     )
+                }
+                let der: Data
+                do {
+                    der = try Data(contentsOf: url)
+                } catch {
+                    // The file is there but unreadable: not the same problem as a missing resource.
+                    throw SSLPinningError.invalidCertificate(source: "\(name).\(ext) (\(error.localizedDescription))")
                 }
                 return try Self.pins(forCertificate: der, source: "\(name).\(ext)")
             }

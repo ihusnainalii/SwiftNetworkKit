@@ -31,6 +31,32 @@ struct SSLPinningResolutionTests {
         #expect(Set(resolved.pins.keys) == ["a.example.com", "b.example.com"])
     }
 
+    @Test(
+        ".certificateResources with an unreadable file reports it as unreadable, not missing",
+        .enabled(if: geteuid() != 0, "permission bits do not apply to root"))
+    func unreadableResource() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("nk-pin-\(UUID())")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let file = dir.appendingPathComponent("locked.cer")
+        try Data("x".utf8).write(to: file)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: file.path)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
+            try? FileManager.default.removeItem(at: dir)
+        }
+        let bundle = try #require(Bundle(url: dir))
+
+        do {
+            _ = try SSLPinning.certificateResources(["locked"], extension: "cer", bundle: bundle)
+                .resolve(defaultHost: "api.example.com")
+            Issue.record("expected resolution to fail")
+        } catch SSLPinningError.invalidCertificate(let source) {
+            #expect(source.contains("locked.cer"))
+        } catch {
+            Issue.record("expected invalidCertificate, got \(error)")
+        }
+    }
+
     @Test(".certificateResources with a missing file throws resourceNotFound")
     func missingResource() {
         #expect(throws: SSLPinningError.self) {

@@ -5,7 +5,7 @@ import Foundation
 public enum SSLPinningError: Error, Sendable, Equatable {
     /// A named certificate resource was not in the bundle.
     case resourceNotFound(name: String, extension: String, bundle: String)
-    /// A certificate file's bytes were not a valid DER certificate.
+    /// A certificate file could not be read, or its bytes were not a valid DER certificate.
     case invalidCertificate(source: String)
     /// A `.publicKeys` entry was not valid base64 (optionally `sha256/`-prefixed) of 32 bytes.
     case invalidPublicKeyHash(String)
