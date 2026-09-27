@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-source--available%20proprietary-red.svg" alt="License" /></a>
 </p>
 
-- **Version:** 1.2.0 (public API frozen; see [Versioning](#versioning))
+- **Version:** 2.0.0 (public API frozen; see [Versioning](#versioning))
 - **Swift:** 6.0 (`swift-tools-version:6.0`, Swift 6 language mode)
 - **Platforms:** iOS 16+, macOS 13+, tvOS 16+, watchOS 9+, visionOS 1+
 - **Distribution:** Swift Package Manager
@@ -177,7 +177,7 @@ package builds and works without them.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.2.0")
+    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "2.0.0")
 ],
 targets: [
     .target(
@@ -193,7 +193,7 @@ targets: [
 
 File -> Add Package Dependencies, enter
 `https://github.com/ihusnainalii/SwiftNetworkKit.git`, and pick "Up to Next Major Version"
-from `1.2.0`.
+from `2.0.0`.
 
 From 1.0.0 the public API follows semantic versioning: a breaking change means a major bump.
 
@@ -414,6 +414,9 @@ config.metrics = InMemoryMetrics()
 config.environment.logLevel = .basic
 
 let client = NetworkClient(configuration: config)
+
+// Or validate configuration at runtime with throwing initialization:
+// let client = try NetworkClient.validated(configuration: config)
 ```
 
 | Concern | Where |
@@ -630,7 +633,11 @@ var config = NetworkConfiguration(baseURL: "https://api.acme.com")
 config.sslPinning = .certificateResources(["acme-2025", "acme-2026"])
 
 // or pin the public key (SPKI SHA-256), which survives certificate renewal with the same key:
-config.sslPinning = .publicKeys(["sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="], hosts: ["api.acme.com"])
+config.sslPinning = .publicKeys(
+    ["sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="],
+    hosts: ["acme.com"],
+    includeSubdomains: true
+)
 
 // or discover the values first (never blocks; logs the sha256/... to paste above):
 config.sslPinning = .development(.publicKeys([]))
