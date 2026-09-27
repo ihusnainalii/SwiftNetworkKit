@@ -13,4 +13,9 @@ public enum OAuthError: Error, Sendable, Equatable {
     case tokenRequestFailed(status: Int, body: String?)
     /// The token endpoint's body was not a valid `OAuthTokenResponse`.
     case malformedTokenResponse
+    /// `OAuthConfiguration.authorizationEndpoint` could not be turned into a request URL, either
+    /// because it isn't decomposable into `URLComponents` or because appending the required query
+    /// items produced an invalid URL. Both are extremely unlikely for a URL the app already
+    /// constructed, but Foundation does not guarantee they can't happen.
+    case invalidAuthorizationURL
 }

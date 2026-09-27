@@ -15,19 +15,18 @@ public struct SSLPinningConfiguration: Sendable, Hashable {
 
     public var mode: PinningMode
 
+    /// - Throws: ``SSLPinningError/emptyPinList(host:)`` if any host has an empty pin list under
+    ///   ``PinningMode/enforced``, which would silently allow all certificates for that host and is
+    ///   always a bug, never a deliberate choice. `.recordOnly` may legitimately start with no pins.
     public init(
         pins: [String: [Pin]],
         includeSubdomains: Bool = false,
         validateCertificateChain: Bool = true,
         mode: PinningMode = .enforced
-    ) {
-        // An empty pin list would silently "allow all" under .enforced — that is always a bug.
-        // .recordOnly legitimately starts with no pins (you are discovering them).
-        let emptyHost = pins.first { $0.value.isEmpty }?.key ?? "?"
-        precondition(
-            mode == .recordOnly || pins.allSatisfy { !$0.value.isEmpty },
-            "SSLPinningConfiguration: host \(emptyHost) has no pins — that is a programmer error, not 'allow all'"
-        )
+    ) throws {
+        if mode != .recordOnly, let emptyHost = pins.first(where: { $0.value.isEmpty })?.key {
+            throw SSLPinningError.emptyPinList(host: emptyHost)
+        }
         self.pins = Dictionary(uniqueKeysWithValues: pins.map { ($0.key.lowercased(), $0.value) })
         self.includeSubdomains = includeSubdomains
         self.validateCertificateChain = validateCertificateChain

@@ -36,7 +36,7 @@ do {
 | ``NetworkError/unacceptableStatusCode(_:_:)`` | an out-of-range status |
 | ``NetworkError/decoding(underlying:_:)`` | the body did not decode |
 | ``NetworkError/encoding(underlying:)`` | the request body did not encode |
-| ``NetworkError/sslPinningFailed(host:)`` | a pinned host failed evaluation |
+| ``NetworkError/sslPinningFailed(host:reason:)`` | a pinned host failed evaluation |
 | ``NetworkError/tokenRefreshFailed(underlying:)`` | the refresh handler threw |
 | ``NetworkError/sessionExpired`` | refresh failed or a request 401'd twice |
 | ``NetworkError/cancelled`` | the task or request was cancelled |

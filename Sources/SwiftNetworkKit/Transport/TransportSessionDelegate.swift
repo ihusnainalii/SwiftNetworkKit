@@ -68,7 +68,7 @@ final class TransportSessionDelegate: NSObject,
         }
         let host = challenge.protectionSpace.host
         guard let trust = challenge.protectionSpace.serverTrust else {
-            lock.withLock { _pinFailure = .sslPinningFailed(host: host) }
+            lock.withLock { _pinFailure = .sslPinningFailed(host: host, reason: .missingServerTrust) }
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }

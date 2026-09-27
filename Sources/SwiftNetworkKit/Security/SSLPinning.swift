@@ -20,14 +20,22 @@ public enum SSLPinning: Sendable {
     case disabled
 
     /// Pin to certificate files already loaded as DER `Data`.
-    case certificates(_ certificates: [Data], hosts: [String] = [])
+    ///
+    /// - Parameter includeSubdomains: also apply these pins to subdomains of each host in `hosts`
+    ///   (`api.example.com` covers `x.api.example.com`).
+    case certificates(_ certificates: [Data], hosts: [String] = [], includeSubdomains: Bool = false)
 
     /// Pin to `.cer`/`.der` resources in a bundle. Missing file -> init fails.
+    ///
+    /// - Parameter includeSubdomains: also apply these pins to subdomains of each host in `hosts`.
     case certificateResources(
-        _ names: [String], extension: String = "cer", bundle: Bundle = .main, hosts: [String] = [])
+        _ names: [String], extension: String = "cer", bundle: Bundle = .main, hosts: [String] = [],
+        includeSubdomains: Bool = false)
 
     /// Pin to SubjectPublicKeyInfo SHA-256 hashes: `"sha256/<base64>"` or bare base64.
-    case publicKeys(_ spkiSHA256: [String], hosts: [String] = [])
+    ///
+    /// - Parameter includeSubdomains: also apply these pins to subdomains of each host in `hosts`.
+    case publicKeys(_ spkiSHA256: [String], hosts: [String] = [], includeSubdomains: Bool = false)
 
     /// Wrap another mode in ``PinningMode/recordOnly``: never blocks, logs the `sha256/…` values to
     /// paste into a production `.publicKeys([...])`.
@@ -53,13 +61,15 @@ extension SSLPinning {
         case .development(let base):
             return try base.resolve(defaultHost: defaultHost, mode: .recordOnly)
 
-        case .certificates(let certificates, let hosts):
+        case .certificates(let certificates, let hosts, let includeSubdomains):
             let pins = try certificates.enumerated().flatMap { index, der in
                 try Self.pins(forCertificate: der, source: "certificates[\(index)]")
             }
-            return SSLPinningConfiguration(pins: try Self.map(pins, to: hosts, defaultHost: defaultHost), mode: mode)
+            return try SSLPinningConfiguration(
+                pins: try Self.map(pins, to: hosts, defaultHost: defaultHost),
+                includeSubdomains: includeSubdomains, mode: mode)
 
-        case .certificateResources(let resources, let ext, let bundle, let hosts):
+        case .certificateResources(let resources, let ext, let bundle, let hosts, let includeSubdomains):
             let pins = try resources.flatMap { name -> [Pin] in
                 guard let url = bundle.url(forResource: name, withExtension: ext) else {
                     throw SSLPinningError.resourceNotFound(
@@ -75,11 +85,15 @@ extension SSLPinning {
                 }
                 return try Self.pins(forCertificate: der, source: "\(name).\(ext)")
             }
-            return SSLPinningConfiguration(pins: try Self.map(pins, to: hosts, defaultHost: defaultHost), mode: mode)
+            return try SSLPinningConfiguration(
+                pins: try Self.map(pins, to: hosts, defaultHost: defaultHost),
+                includeSubdomains: includeSubdomains, mode: mode)
 
-        case .publicKeys(let hashes, let hosts):
+        case .publicKeys(let hashes, let hosts, let includeSubdomains):
             let pins = try hashes.map { Pin.publicKeySHA256(try Self.decodeHash($0)) }
-            return SSLPinningConfiguration(pins: try Self.map(pins, to: hosts, defaultHost: defaultHost), mode: mode)
+            return try SSLPinningConfiguration(
+                pins: try Self.map(pins, to: hosts, defaultHost: defaultHost),
+                includeSubdomains: includeSubdomains, mode: mode)
         }
     }
 

@@ -17,7 +17,7 @@ public enum NetworkError: Error, Sendable {
     case unacceptableStatusCode(Int, ResponseContext)
     case decoding(underlying: any Error & Sendable, ResponseContext?)
     case encoding(underlying: any Error & Sendable)
-    case sslPinningFailed(host: String)
+    case sslPinningFailed(host: String, reason: SSLPinningFailureReason = .unspecified)
     case tokenRefreshFailed(underlying: any Error & Sendable)
     case sessionExpired
     case cancelled
@@ -156,7 +156,19 @@ extension NetworkError: LocalizedError {
             context.serverMessage ?? "Unexpected status code \(code)"
         case .decoding(let underlying, _): "Failed to decode response: \(underlying)"
         case .encoding(let underlying): "Failed to encode request: \(underlying)"
-        case .sslPinningFailed(let host): "SSL pinning validation failed for \(host)"
+        case .sslPinningFailed(let host, let reason):
+            switch reason {
+            case .unspecified:
+                "SSL pinning validation failed for \(host)"
+            case .missingServerTrust:
+                "SSL pinning validation failed for \(host): no server trust was presented"
+            case .systemTrustEvaluationFailed(let underlying):
+                "SSL pinning validation failed for \(host): system trust evaluation failed"
+                    + (underlying.map { " (\($0))" } ?? "")
+            case .noPinMatched(let hashes):
+                "SSL pinning validation failed for \(host): no configured pin matched; server presented "
+                    + hashes.joined(separator: ", ")
+            }
         case .tokenRefreshFailed(let underlying): "Token refresh failed: \(underlying)"
         case .sessionExpired: "The session has expired"
         case .cancelled: "The request was cancelled"

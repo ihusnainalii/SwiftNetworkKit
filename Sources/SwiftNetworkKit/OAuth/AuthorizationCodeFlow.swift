@@ -13,7 +13,7 @@ import FoundationNetworking
 /// let flow = AuthorizationCodeFlow(configuration: config)
 /// let state = AuthorizationCodeFlow.makeState()
 /// let pkce = PKCE()
-/// // present flow.authorizationURL(state: state, pkce: pkce), get back `redirectURL`
+/// // present try flow.authorizationURL(state: state, pkce: pkce), get back `redirectURL`
 /// let code = try flow.authorizationCode(fromRedirect: redirectURL, expectedState: state)
 /// let tokens = try await flow.exchange(code: code, pkce: pkce)
 /// ```
@@ -51,8 +51,12 @@ public struct AuthorizationCodeFlow: Sendable {
 
     // MARK: Authorization URL
 
-    public func authorizationURL(state: String, pkce: PKCE) -> URL {
-        var components = URLComponents(url: configuration.authorizationEndpoint, resolvingAgainstBaseURL: false)!
+    public func authorizationURL(state: String, pkce: PKCE) throws -> URL {
+        guard
+            var components = URLComponents(url: configuration.authorizationEndpoint, resolvingAgainstBaseURL: false)
+        else {
+            throw OAuthError.invalidAuthorizationURL
+        }
         var items = [
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "client_id", value: configuration.clientID),
@@ -68,7 +72,8 @@ public struct AuthorizationCodeFlow: Sendable {
             items.append(URLQueryItem(name: key, value: value))
         }
         components.queryItems = (components.queryItems ?? []) + items
-        return components.url!
+        guard let url = components.url else { throw OAuthError.invalidAuthorizationURL }
+        return url
     }
 
     /// Validates the provider's redirect and returns the authorization `code`.

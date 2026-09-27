@@ -82,6 +82,27 @@ struct SSLPinningResolutionTests {
         }
     }
 
+    @Test("includeSubdomains is reachable through .publicKeys, .certificates and .certificateResources")
+    func includeSubdomainsIsReachable() throws {
+        let hash = PinningFixtures.rsaSPKISHA256
+        let der = try PinningFixtures.der("pinning-rsa")
+
+        let byKey = try #require(
+            try SSLPinning.publicKeys([hash], hosts: ["api.example.com"], includeSubdomains: true)
+                .resolve(defaultHost: nil))
+        #expect(byKey.includeSubdomains)
+
+        let byCert = try #require(
+            try SSLPinning.certificates([der], hosts: ["api.example.com"], includeSubdomains: true)
+                .resolve(defaultHost: nil))
+        #expect(byCert.includeSubdomains)
+
+        // and the default stays false when the caller does not ask for it
+        let defaulted = try #require(
+            try SSLPinning.publicKeys([hash], hosts: ["api.example.com"]).resolve(defaultHost: nil))
+        #expect(!defaulted.includeSubdomains)
+    }
+
     @Test("no host anywhere throws noHostForPins")
     func noHost() throws {
         let der = try PinningFixtures.der("pinning-rsa")
@@ -99,16 +120,17 @@ struct SSLPinningResolutionTests {
         #expect(resolved.mode == .recordOnly)
     }
 
-    // Exit tests (`#expect(processExitsWith:)`) require Swift 6.2+ and a host that can spawn a process
-    // (not iOS, tvOS, watchOS or visionOS). Elsewhere the precondition in
-    // `SSLPinningConfiguration.init` still stands; it just is not asserted here.
-    #if compiler(>=6.2) && (os(macOS) || os(Linux) || os(Windows))
-    @Test("SSLPinningConfiguration traps on an empty pin list for a host")
-    func emptyPinsIsProgrammerError() async {
-        await #expect(processExitsWith: .failure) {
-            _ = SSLPinningConfiguration(pins: ["api.example.com": []])
+    @Test("an empty pin list for a host under .enforced throws emptyPinList, not 'allow all'")
+    func emptyPinsThrows() {
+        #expect(throws: SSLPinningError.emptyPinList(host: "api.example.com")) {
+            _ = try SSLPinningConfiguration(pins: ["api.example.com": []])
         }
     }
-    #endif
+
+    @Test(".recordOnly may legitimately start with an empty pin list")
+    func emptyPinsAllowedUnderRecordOnly() throws {
+        let config = try SSLPinningConfiguration(pins: ["api.example.com": []], mode: .recordOnly)
+        #expect(config.pins["api.example.com"] == [])
+    }
 }
 #endif

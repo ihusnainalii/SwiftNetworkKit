@@ -42,9 +42,11 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
         if configuration.validateCertificateChain {
             var error: CFError?
             guard SecTrustEvaluateWithError(trust, &error) else {
-                let reason = error.map { ($0 as any Error).localizedDescription } ?? "unknown reason"
-                log("SSLPinning \(host): system trust evaluation failed: \(reason)")
-                return .rejected(.sslPinningFailed(host: host))
+                let underlying = error.map(asSendableError)
+                let description = underlying?.localizedDescription ?? "unknown reason"
+                log("SSLPinning \(host): system trust evaluation failed: \(description)")
+                return .rejected(
+                    .sslPinningFailed(host: host, reason: .systemTrustEvaluationFailed(underlying: underlying)))
             }
         }
 
@@ -58,10 +60,11 @@ public struct ServerTrustEvaluator: ServerTrustEvaluating {
                 }
             }
         }
-        // Say what the server actually presented, so a rotation outage can be fixed from the log.
+        // Say what the server actually presented, so a rotation outage can be fixed from the log or
+        // the error alone.
         let presented = chain.compactMap { Self.spkiSHA256($0) }.map { "sha256/\($0.base64EncodedString())" }
         log("SSLPinning \(host): no pin matched; the server presented \(presented.joined(separator: ", "))")
-        return .rejected(.sslPinningFailed(host: host))
+        return .rejected(.sslPinningFailed(host: host, reason: .noPinMatched(presentedSPKIHashes: presented)))
     }
 
     // MARK: - Chain / SPKI helpers

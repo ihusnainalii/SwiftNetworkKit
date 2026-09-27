@@ -10,7 +10,7 @@ import Security
 
 /// A per-request task delegate for ``URLSessionTransport/data(for:)``: it answers the server-trust
 /// challenge (SSL pinning) and records a rejection so the transport can surface the real
-/// ``NetworkError/sslPinningFailed(host:)`` instead of a bare cancellation.
+/// ``NetworkError/sslPinningFailed(host:reason:)`` instead of a bare cancellation.
 ///
 /// Upload/download use ``TransportSessionDelegate`` instead — the async `data(for:delegate:)` family
 /// does not reliably forward byte-progress callbacks to a per-task delegate.
@@ -47,7 +47,7 @@ final class TransportTaskDelegate: NSObject, URLSessionTaskDelegate, @unchecked 
         }
         let host = challenge.protectionSpace.host
         guard let trust = challenge.protectionSpace.serverTrust else {
-            lock.withLock { _failure = .sslPinningFailed(host: host) }
+            lock.withLock { _failure = .sslPinningFailed(host: host, reason: .missingServerTrust) }
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }

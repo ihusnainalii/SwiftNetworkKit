@@ -582,7 +582,7 @@ let flow = AuthorizationCodeFlow(configuration: OAuthConfiguration(
 let state = AuthorizationCodeFlow.makeState()
 let pkce  = PKCE()
 
-let authURL = flow.authorizationURL(state: state, pkce: pkce)
+let authURL = try flow.authorizationURL(state: state, pkce: pkce)
 // present authURL, receive redirectURL
 
 let code   = try flow.authorizationCode(fromRedirect: redirectURL, expectedState: state)
@@ -641,7 +641,7 @@ config.sslPinning = .disabled          // normal system TLS, no delegate install
 
 - The system chain is validated (`SecTrustEvaluateWithError`) **before** pin matching; pinning is
   additive, not a replacement.
-- A mismatch fails the request with `NetworkError.sslPinningFailed(host:)` and never falls back to
+- A mismatch fails the request with `NetworkError.sslPinningFailed(host:reason:)` and never falls back to
   "allow".
 - Hosts the configuration does not cover keep normal system TLS: enabling pinning for one host
   never weakens TLS for another.
@@ -1048,7 +1048,7 @@ NetworkError
 ├── unacceptableStatusCode(Int, ResponseContext)
 ├── decoding(underlying: Error, ResponseContext?)
 ├── encoding(underlying: Error)
-├── sslPinningFailed(host: String)
+├── sslPinningFailed(host: String, reason: SSLPinningFailureReason)
 ├── tokenRefreshFailed(underlying: Error)
 ├── sessionExpired
 ├── cancelled

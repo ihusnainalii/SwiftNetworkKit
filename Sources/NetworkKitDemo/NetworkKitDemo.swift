@@ -481,13 +481,13 @@ struct NetworkKitDemo {
 
         let state = AuthorizationCodeFlow.makeState()
         let pkce = PKCE()
-        let authURL = flow.authorizationURL(state: state, pkce: pkce)
-        print("   → authorization URL (open this in ASWebAuthenticationSession):")
-        print("       \(authURL.absoluteString)")
-
         // The provider redirects back with ?code=...&state=...
         let redirect = URL(string: "networkkitdemo://callback?code=AUTH_CODE&state=\(state)")!
         do {
+            let authURL = try flow.authorizationURL(state: state, pkce: pkce)
+            print("   → authorization URL (open this in ASWebAuthenticationSession):")
+            print("       \(authURL.absoluteString)")
+
             let code = try flow.authorizationCode(fromRedirect: redirect, expectedState: state)
             let tokens = try await flow.exchange(code: code, pkce: pkce)
             print(

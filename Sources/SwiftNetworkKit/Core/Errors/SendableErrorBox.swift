@@ -17,9 +17,15 @@ struct SendableErrorBox: Error, Sendable, CustomStringConvertible {
 
 /// Wraps an arbitrary thrown error so it can be carried by the (fully `Sendable`) ``NetworkError``.
 ///
-/// `Sendable` has no runtime witness, so an arbitrary `any Error` cannot be checked for conformance —
-/// it is always boxed. Call sites that already hold a statically-`Sendable` error (e.g. `URLError`)
-/// pass it to ``NetworkError`` directly and skip this.
+/// `Sendable` has no runtime witness, so an arbitrary `any Error` cannot be checked for conformance in
+/// general. The handful of concrete error types this package actually receives from Foundation and the
+/// standard library (`URLError`, `DecodingError`, `EncodingError`) are known statically to conform,
+/// though, so they are checked for by concrete type and passed through untouched, introspectable and
+/// pattern-matchable by callers. Anything else is boxed by description.
 func asSendableError(_ error: any Error) -> any Error & Sendable {
-    (error as? SendableErrorBox) ?? SendableErrorBox(error)
+    if let boxed = error as? SendableErrorBox { return boxed }
+    if let urlError = error as? URLError { return urlError }
+    if let decodingError = error as? DecodingError { return decodingError }
+    if let encodingError = error as? EncodingError { return encodingError }
+    return SendableErrorBox(error)
 }
