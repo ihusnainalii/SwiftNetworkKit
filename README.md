@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-source--available%20proprietary-red.svg" alt="License" /></a>
 </p>
 
-- **Version:** 1.1.0 (public API frozen; see [Versioning](#versioning))
+- **Version:** 1.2.0 (public API frozen; see [Versioning](#versioning))
 - **Swift:** 6.0 (`swift-tools-version:6.0`, Swift 6 language mode)
 - **Platforms:** iOS 16+, macOS 13+, tvOS 16+, watchOS 9+, visionOS 1+
 - **Distribution:** Swift Package Manager
@@ -177,7 +177,7 @@ package builds and works without them.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.1.0")
+    .package(url: "https://github.com/ihusnainalii/SwiftNetworkKit.git", from: "1.2.0")
 ],
 targets: [
     .target(
@@ -193,7 +193,7 @@ targets: [
 
 File -> Add Package Dependencies, enter
 `https://github.com/ihusnainalii/SwiftNetworkKit.git`, and pick "Up to Next Major Version"
-from `1.1.0`.
+from `1.2.0`.
 
 From 1.0.0 the public API follows semantic versioning: a breaking change means a major bump.
 
