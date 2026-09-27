@@ -12,20 +12,10 @@ extension NetworkClient {
     ///     return try await Receipt(cart: cart, user: user) // both carry X-Correlation-ID: <checkoutID>
     /// }
     /// ```
-    #if compiler(>=6.2)
-    // Swift 6.2 deprecated the isolation-parameter overload of `withValue` in favor of this one.
-    public func withCorrelation<T>(
-        _ id: String,
-        operation: nonisolated(nonsending) () async throws -> T
-    ) async rethrows -> T {
-        try await TraceContext.$correlationID.withValue(id, operation: operation)
-    }
-    #else
     public func withCorrelation<T>(
         _ id: String,
         operation: () async throws -> T
     ) async rethrows -> T {
         try await TraceContext.$correlationID.withValue(id, operation: operation)
     }
-    #endif
 }
