@@ -82,6 +82,27 @@ struct SSLPinningResolutionTests {
         }
     }
 
+    @Test("includeSubdomains is reachable through .publicKeys, .certificates and .certificateResources")
+    func includeSubdomainsIsReachable() throws {
+        let hash = PinningFixtures.rsaSPKISHA256
+        let der = try PinningFixtures.der("pinning-rsa")
+
+        let byKey = try #require(
+            try SSLPinning.publicKeys([hash], hosts: ["api.example.com"], includeSubdomains: true)
+                .resolve(defaultHost: nil))
+        #expect(byKey.includeSubdomains)
+
+        let byCert = try #require(
+            try SSLPinning.certificates([der], hosts: ["api.example.com"], includeSubdomains: true)
+                .resolve(defaultHost: nil))
+        #expect(byCert.includeSubdomains)
+
+        // and the default stays false when the caller does not ask for it
+        let defaulted = try #require(
+            try SSLPinning.publicKeys([hash], hosts: ["api.example.com"]).resolve(defaultHost: nil))
+        #expect(!defaulted.includeSubdomains)
+    }
+
     @Test("no host anywhere throws noHostForPins")
     func noHost() throws {
         let der = try PinningFixtures.der("pinning-rsa")
