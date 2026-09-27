@@ -5,5 +5,5 @@
 /// conforming types to ``Endpoint``; the package itself ships no app-specific code.
 public enum SwiftNetworkKit {
     /// Semantic version of the package. Kept in step with the git tag by release-please.
-    public static let version = "1.2.0"  // x-release-please-version
+    public static let version = "1.2.1"  // x-release-please-version
 }
