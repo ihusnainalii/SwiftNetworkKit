@@ -103,7 +103,13 @@ struct CacheHardeningTests {
 
         _ = try await client.request(GetThing())  // populates the cache
         _ = try await client.request(GetThing())  // served stale, refresh starts
-        try await Task.sleep(for: .milliseconds(30))
+
+        // Wait for the revalidation to actually register (queue admission, cache read, etc. all happen
+        // before that), not a fixed sleep: under a sanitizer's overhead a short sleep can elapse before
+        // the task has registered anything to cancel, making the test flaky rather than the feature wrong.
+        for _ in 0..<500 where await client.registry.activeCount == 0 {
+            await Task.yield()
+        }
         await client.cancelAll()
         try await Task.sleep(for: .milliseconds(250))
 
