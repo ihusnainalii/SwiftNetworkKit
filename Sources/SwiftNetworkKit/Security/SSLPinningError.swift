@@ -11,4 +11,7 @@ public enum SSLPinningError: Error, Sendable, Equatable {
     case invalidPublicKeyHash(String)
     /// No host could be determined for a pin set (empty `hosts:` and no usable base URL).
     case noHostForPins
+    /// A host was given an empty pin list under ``PinningMode/enforced``, which would silently allow
+    /// all certificates for that host. That is rejected instead. `.recordOnly` may start with none.
+    case emptyPinList(host: String)
 }

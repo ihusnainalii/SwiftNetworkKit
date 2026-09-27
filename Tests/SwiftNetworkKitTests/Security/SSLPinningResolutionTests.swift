@@ -120,16 +120,17 @@ struct SSLPinningResolutionTests {
         #expect(resolved.mode == .recordOnly)
     }
 
-    // Exit tests (`#expect(processExitsWith:)`) require Swift 6.2+ and a host that can spawn a process
-    // (not iOS, tvOS, watchOS or visionOS). Elsewhere the precondition in
-    // `SSLPinningConfiguration.init` still stands; it just is not asserted here.
-    #if compiler(>=6.2) && (os(macOS) || os(Linux) || os(Windows))
-    @Test("SSLPinningConfiguration traps on an empty pin list for a host")
-    func emptyPinsIsProgrammerError() async {
-        await #expect(processExitsWith: .failure) {
-            _ = SSLPinningConfiguration(pins: ["api.example.com": []])
+    @Test("an empty pin list for a host under .enforced throws emptyPinList, not 'allow all'")
+    func emptyPinsThrows() {
+        #expect(throws: SSLPinningError.emptyPinList(host: "api.example.com")) {
+            _ = try SSLPinningConfiguration(pins: ["api.example.com": []])
         }
     }
-    #endif
+
+    @Test(".recordOnly may legitimately start with an empty pin list")
+    func emptyPinsAllowedUnderRecordOnly() throws {
+        let config = try SSLPinningConfiguration(pins: ["api.example.com": []], mode: .recordOnly)
+        #expect(config.pins["api.example.com"] == [])
+    }
 }
 #endif

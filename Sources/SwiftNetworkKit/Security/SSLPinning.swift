@@ -65,7 +65,7 @@ extension SSLPinning {
             let pins = try certificates.enumerated().flatMap { index, der in
                 try Self.pins(forCertificate: der, source: "certificates[\(index)]")
             }
-            return SSLPinningConfiguration(
+            return try SSLPinningConfiguration(
                 pins: try Self.map(pins, to: hosts, defaultHost: defaultHost),
                 includeSubdomains: includeSubdomains, mode: mode)
 
@@ -85,13 +85,13 @@ extension SSLPinning {
                 }
                 return try Self.pins(forCertificate: der, source: "\(name).\(ext)")
             }
-            return SSLPinningConfiguration(
+            return try SSLPinningConfiguration(
                 pins: try Self.map(pins, to: hosts, defaultHost: defaultHost),
                 includeSubdomains: includeSubdomains, mode: mode)
 
         case .publicKeys(let hashes, let hosts, let includeSubdomains):
             let pins = try hashes.map { Pin.publicKeySHA256(try Self.decodeHash($0)) }
-            return SSLPinningConfiguration(
+            return try SSLPinningConfiguration(
                 pins: try Self.map(pins, to: hosts, defaultHost: defaultHost),
                 includeSubdomains: includeSubdomains, mode: mode)
         }

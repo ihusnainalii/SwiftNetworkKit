@@ -25,7 +25,7 @@ struct ServerTrustEvaluatorTests {
     @Test("matching public-key pin is .pinned")
     func publicKeyMatch() throws {
         let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
-        let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
+        let config = try SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result == .pinned)
@@ -33,7 +33,7 @@ struct ServerTrustEvaluatorTests {
 
     @Test("wrong pin is .rejected(.sslPinningFailed)")
     func wrongPin() throws {
-        let config = SSLPinningConfiguration(pins: [
+        let config = try SSLPinningConfiguration(pins: [
             PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]
         ])
         let result = evaluator(config).evaluate(
@@ -49,7 +49,7 @@ struct ServerTrustEvaluatorTests {
     @Test("a rejected pin logs the pins the server actually presented")
     func wrongPinLogsPresentedPins() throws {
         let logged = LoggedLines()
-        let config = SSLPinningConfiguration(pins: [
+        let config = try SSLPinningConfiguration(pins: [
             PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]
         ])
         let result = evaluator(config) { logged.append($0) }
@@ -65,7 +65,7 @@ struct ServerTrustEvaluatorTests {
             try PinningFixtures.certificate("pinning-rsa"), SecPolicyCreateBasicX509(), &untrusted)  // no anchor set
         let logged = LoggedLines()
         let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
-        let config = SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
+        let config = try SSLPinningConfiguration(pins: [PinningFixtures.rsaHost: [pin]])
 
         let result = evaluator(config) { logged.append($0) }
             .evaluate(trust: try #require(untrusted), host: PinningFixtures.rsaHost)
@@ -80,7 +80,9 @@ struct ServerTrustEvaluatorTests {
 
     @Test("unmatched host is .notPinned (defers to system TLS, does not vouch)")
     func unmatchedHost() throws {
-        let config = SSLPinningConfiguration(pins: ["other.example.com": [.publicKeySHA256(PinningFixtures.bogusHash)]])
+        let config = try SSLPinningConfiguration(pins: [
+            "other.example.com": [.publicKeySHA256(PinningFixtures.bogusHash)]
+        ])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result == .notPinned)
@@ -89,7 +91,7 @@ struct ServerTrustEvaluatorTests {
     @Test("rotation: any pin in the list may match")
     func rotation() throws {
         let good = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.rsaSPKISHA256)!)
-        let config = SSLPinningConfiguration(pins: [
+        let config = try SSLPinningConfiguration(pins: [
             PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash), good]
         ])
         let result = evaluator(config).evaluate(
@@ -99,7 +101,7 @@ struct ServerTrustEvaluatorTests {
 
     @Test("certificate (DER) pin is .pinned")
     func certificatePin() throws {
-        let config = SSLPinningConfiguration(pins: [
+        let config = try SSLPinningConfiguration(pins: [
             PinningFixtures.rsaHost: [.certificate(try PinningFixtures.der("pinning-rsa"))]
         ])
         let result = evaluator(config).evaluate(
@@ -110,7 +112,7 @@ struct ServerTrustEvaluatorTests {
     @Test("EC-P256 fixture pins by public key")
     func ecPublicKey() throws {
         let pin = Pin.publicKeySHA256(Data(base64Encoded: PinningFixtures.ecSPKISHA256)!)
-        let config = SSLPinningConfiguration(pins: [PinningFixtures.ecHost: [pin]])
+        let config = try SSLPinningConfiguration(pins: [PinningFixtures.ecHost: [pin]])
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-ec"), host: PinningFixtures.ecHost)
         #expect(result == .pinned)
@@ -119,7 +121,7 @@ struct ServerTrustEvaluatorTests {
     @Test("recordOnly logs the computed pin but returns .notPinned (system TLS still applies)")
     func recordOnly() throws {
         let logged = LoggedLines()
-        let config = SSLPinningConfiguration(
+        let config = try SSLPinningConfiguration(
             pins: [PinningFixtures.rsaHost: [.publicKeySHA256(PinningFixtures.bogusHash)]],
             mode: .recordOnly
         )
