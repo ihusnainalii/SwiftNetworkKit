@@ -5,7 +5,7 @@ import Testing
 import FoundationNetworking
 #endif
 
-@testable import SwiftNetworkKit
+@_spi(SwiftNetworkKitTesting) @testable import SwiftNetworkKit
 
 @Suite("NetworkError")
 struct NetworkErrorTests {
@@ -81,6 +81,42 @@ struct NetworkErrorTests {
         }
         let box = try? #require(underlying as? SendableErrorBox)
         #expect(box?.underlyingType.contains("Weird") == true)
+    }
+
+    @Test("asSendableError passes URLError, DecodingError and EncodingError through untouched")
+    func asSendableErrorPassesThroughKnownTypes() {
+        let urlError = URLError(.timedOut)
+        #expect(asSendableError(urlError) as? URLError == urlError)
+
+        let decodingError = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "x"))
+        #expect(asSendableError(decodingError) is DecodingError)
+
+        let encodingError = EncodingError.invalidValue(1, .init(codingPath: [], debugDescription: "x"))
+        #expect(asSendableError(encodingError) is EncodingError)
+
+        // Anything else is still boxed, so NetworkError stays fully Sendable.
+        struct Weird: Error {}
+        #expect(asSendableError(Weird()) is SendableErrorBox)
+    }
+
+    @Test("a decode failure carries the real DecodingError, not a box")
+    func decodingFailureCarriesRealDecodingError() async throws {
+        struct Thing: Codable, Sendable {}
+        struct GetThing: Endpoint {
+            typealias Response = Thing
+            let path = "/thing"
+        }
+        var config = NetworkConfiguration(baseURL: "https://api.example.com")
+        config.retry = .none
+        let transport = MockNetworkTransport(default: .json(Data("not json".utf8)))
+        let client = NetworkClient(configuration: config, transport: transport)
+
+        let error = await #expect(throws: NetworkError.self) { try await client.request(GetThing()) }
+        guard case .decoding(let underlying, _) = error else {
+            Issue.record("expected .decoding")
+            return
+        }
+        #expect(underlying is DecodingError)
     }
 
     @Test("isRetryable flags transient failures only")
