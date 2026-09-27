@@ -41,6 +41,6 @@ following release.
 |---|---|---|
 | `.pinned` | `.useCredential` | connection proceeds |
 | `.notPinned` | `.performDefaultHandling` | host not covered by any pin, normal system TLS |
-| `.rejected` | `.cancelAuthenticationChallenge` | request throws ``NetworkError/sslPinningFailed(host:)`` |
+| `.rejected` | `.cancelAuthenticationChallenge` | request throws ``NetworkError/sslPinningFailed(host:reason:)`` |
 
 An empty pin list under enforced mode is a `precondition` failure, not "allow all".

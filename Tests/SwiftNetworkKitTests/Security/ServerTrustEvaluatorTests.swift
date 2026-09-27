@@ -39,6 +39,11 @@ struct ServerTrustEvaluatorTests {
         let result = evaluator(config).evaluate(
             trust: try PinningFixtures.trust(for: "pinning-rsa"), host: PinningFixtures.rsaHost)
         #expect(result.rejectionCode == .sslPinningFailed)
+        guard case .noPinMatched(let presented) = result.rejectionReason else {
+            Issue.record("expected .noPinMatched, got \(String(describing: result.rejectionReason))")
+            return
+        }
+        #expect(presented.contains("sha256/\(PinningFixtures.rsaSPKISHA256)"))
     }
 
     @Test("a rejected pin logs the pins the server actually presented")
@@ -67,6 +72,10 @@ struct ServerTrustEvaluatorTests {
 
         #expect(result.rejectionCode == .sslPinningFailed)
         #expect(logged.all.contains { $0.contains("system trust evaluation failed") })
+        guard case .systemTrustEvaluationFailed = result.rejectionReason else {
+            Issue.record("expected .systemTrustEvaluationFailed, got \(String(describing: result.rejectionReason))")
+            return
+        }
     }
 
     @Test("unmatched host is .notPinned (defers to system TLS, does not vouch)")
@@ -131,6 +140,10 @@ private final class LoggedLines: @unchecked Sendable {
 extension ServerTrustDecision {
     fileprivate var rejectionCode: NetworkError.Code? {
         if case .rejected(let e) = self { return e.code } else { return nil }
+    }
+
+    fileprivate var rejectionReason: SSLPinningFailureReason? {
+        if case .rejected(.sslPinningFailed(_, let reason)) = self { return reason } else { return nil }
     }
 }
 #endif

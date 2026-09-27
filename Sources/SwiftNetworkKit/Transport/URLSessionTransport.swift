@@ -10,7 +10,7 @@ import FoundationNetworking
 /// shared session with a per-request ``TransportTaskDelegate`` for the server-trust challenge
 /// (SSL pinning). `upload` / `download` each spin up a short-lived session with a
 /// ``TransportSessionDelegate`` so byte-progress callbacks are delivered reliably. A rejected pin
-/// surfaces as ``NetworkError/sslPinningFailed(host:)`` rather than a bare cancellation.
+/// surfaces as ``NetworkError/sslPinningFailed(host:reason:)`` rather than a bare cancellation.
 public final class URLSessionTransport: NetworkTransport, @unchecked Sendable {
 
     private let session: URLSession
