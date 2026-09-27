@@ -18,10 +18,10 @@ struct AuthorizationCodeFlowTests {
     }
 
     @Test("authorization URL carries every required parameter")
-    func authorizationURL() {
+    func authorizationURL() throws {
         let flow = AuthorizationCodeFlow(configuration: config())
         let pkce = PKCE(verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
-        let url = flow.authorizationURL(state: "xyz", pkce: pkce)
+        let url = try flow.authorizationURL(state: "xyz", pkce: pkce)
 
         let items = Dictionary(
             uniqueKeysWithValues: URLComponents(url: url, resolvingAgainstBaseURL: false)!

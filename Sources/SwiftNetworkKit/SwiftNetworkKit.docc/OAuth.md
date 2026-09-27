@@ -24,7 +24,7 @@ let pkce = PKCE()
 let state = UUID().uuidString
 
 // 2. Present the authorization URL.
-let url = flow.authorizationURL(state: state, pkce: pkce)
+let url = try flow.authorizationURL(state: state, pkce: pkce)
 
 // 3. On the redirect, validate state and pull the code.
 let code = try flow.authorizationCode(fromRedirect: redirectURL, expectedState: state)

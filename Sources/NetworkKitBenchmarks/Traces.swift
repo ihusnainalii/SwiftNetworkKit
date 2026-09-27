@@ -226,7 +226,7 @@ enum Traces {
             rec.mark("pipeline", "issued", "AuthorizationCodeFlow.exchange(code:pkce:)")
             let pkce = PKCE()
             rec.mark("pipeline", "interceptor", "PKCE: base64url(SHA256(verifier)) challenge computed")
-            _ = flow.authorizationURL(state: "xyz", pkce: pkce)
+            _ = try? flow.authorizationURL(state: "xyz", pkce: pkce)
             rec.mark("pipeline", "interceptor", "authorization URL built (response_type=code, code_challenge)")
             _ = try? await flow.exchange(code: "auth-code-123", pkce: pkce)
             rec.mark("pipeline", "done", "TokenPair received (access + refresh)")

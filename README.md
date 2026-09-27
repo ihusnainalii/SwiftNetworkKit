@@ -582,7 +582,7 @@ let flow = AuthorizationCodeFlow(configuration: OAuthConfiguration(
 let state = AuthorizationCodeFlow.makeState()
 let pkce  = PKCE()
 
-let authURL = flow.authorizationURL(state: state, pkce: pkce)
+let authURL = try flow.authorizationURL(state: state, pkce: pkce)
 // present authURL, receive redirectURL
 
 let code   = try flow.authorizationCode(fromRedirect: redirectURL, expectedState: state)
